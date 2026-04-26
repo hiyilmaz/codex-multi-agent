@@ -1,6 +1,6 @@
 # Codex Template V2
 
-**Version:** 2.3
+**Version:** 2.4
 **Updated:** 2026-04-27
 
 ---
@@ -31,9 +31,10 @@ It is self-contained and does not depend on another agent runtime.
 
 ## ECC Model
 
-Base ECC content lives under `ECC_ROOT`. User-specific reusable overrides live
-under `~/.codex/`. Project `AGENTS.md` declares what is active but does not
-store reusable bodies.
+Base ECC content lives under `ECC_ROOT`, which must be a git clone of
+`https://github.com/affaan-m/everything-claude-code`. User-specific reusable
+overrides live under `~/.codex/`. Project `AGENTS.md` declares what is active
+but does not store reusable bodies.
 
 Reusable content locations:
 
@@ -46,10 +47,22 @@ Reusable bodies should not be copied into project `AGENTS.md`.
 
 ## Quick Start
 
-Install/update the global ECC surface first:
+Clone the base ECC repo once:
+
+```bash
+git clone https://github.com/affaan-m/everything-claude-code ~/Codex-ECC
+```
+
+Install the global Codex surface:
 
 ```bash
 bin/codex-ecc-install
+```
+
+Update the base ECC repo later:
+
+```bash
+bin/codex-ecc-update
 ```
 
 Then initialize a project:

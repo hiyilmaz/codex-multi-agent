@@ -11,38 +11,36 @@
 > `~/.codex/AGENTS.md`.
 
 ```text
-PROJECT_NAME:        Codex Template V2
-PROJECT_SUMMARY:     Codex-native project instruction template and helper scripts for initializing project AGENTS.md files, Codex config, prompts, reusable ECC structure, and a local index of official OpenAI Codex docs.
+PROJECT_NAME:        [Project name]
+PROJECT_SUMMARY:     [1-2 sentences: what it does, what problem it solves]
 
-STACK_BACKEND:       Python docs indexer / Bash scripts / Markdown templates / TOML config examples
-STACK_FRONTEND:      Documentation and CLI template project
+STACK_BACKEND:       [e.g. Python / FastAPI / PostgreSQL / Redis]
+STACK_FRONTEND:      [e.g. Next.js / TypeScript / shadcn/ui]
 
-CHANGELOG_PATH:      docs/CHANGELOG.md
-EVIDENCE_PATH:       docs/reports/
+CHANGELOG_PATH:      [e.g. docs/CHANGELOG.md]
+EVIDENCE_PATH:       [e.g. docs/reports/]
 
 ECC_ROOT:            $ECC_ROOT
 
 ACTIVE_RULE_SETS:
-  - python: scripting, documentation-indexing, testing
-  - shell: scripting, safety, testing
-  - markdown: documentation, templates
-  - toml: configuration
+  - [e.g. python: coding-style, security, testing, patterns]
+  - [e.g. typescript: coding-style, security, testing, patterns]
+  - [e.g. web: patterns, performance, security]
 
 ACTIVE_SKILLS:
-  - tdd-workflow
-  - openai-docs
+  - [e.g. tdd-workflow]
+  - [e.g. openai-docs]
 
 ACTIVE_AGENT_ROLES:
-  - planner
-  - tdd-guide
-  - code-reviewer
-  - security-reviewer
+  - [e.g. planner]
+  - [e.g. tdd-guide]
+  - [e.g. code-reviewer]
+  - [e.g. security-reviewer]
 
 DOMAIN_RULES:
-  - Project AGENTS.md files declare project deltas only; do not inline reusable ECC rule, skill, or agent bodies.
-  - Helper scripts must preserve existing global or project Codex files unless the documented confirmation or force flag is used.
-  - Keep Codex config examples valid for Codex config.toml schema; do not add custom reserved runtime metadata tables.
-  - Local OpenAI Codex docs entries are compact indexes only; official OpenAI docs remain authoritative.
+  - [Project-specific rule 1]
+  - [Project-specific rule 2]
+  - [Remove these lines if not needed]
 ```
 
 ---

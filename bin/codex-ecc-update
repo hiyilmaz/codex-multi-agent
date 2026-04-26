@@ -5,8 +5,10 @@ usage() {
   cat <<'EOF'
 Usage: codex-ecc-update [--ecc-root <path>] [--codex-home <path>]
 
-Updates the base ECC root when it is a git repository and reports global Codex
-file status. This command does not rewrite project files or user custom content.
+Updates the base ECC root. ECC_ROOT must be a git clone of:
+https://github.com/affaan-m/everything-claude-code
+
+This command does not rewrite project files or user custom content.
 EOF
 }
 
@@ -35,12 +37,23 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -d "$ECC_ROOT/.git" ]]; then
-  git -C "$ECC_ROOT" pull --ff-only
-else
-  echo "ECC_ROOT is not a git repository: $ECC_ROOT"
-  echo "No base ECC update performed."
+if [[ ! -d "$ECC_ROOT/.git" ]]; then
+  echo "FAILED: ECC_ROOT must be a git clone of everything-claude-code: $ECC_ROOT" >&2
+  echo "Expected remote: https://github.com/affaan-m/everything-claude-code" >&2
+  exit 1
 fi
+
+REMOTE_URL="$(git -C "$ECC_ROOT" config --get remote.origin.url || true)"
+case "$REMOTE_URL" in
+  *affaan-m/everything-claude-code*)
+    ;;
+  *)
+    echo "FAILED: ECC_ROOT remote does not look like everything-claude-code: $REMOTE_URL" >&2
+    exit 1
+    ;;
+esac
+
+git -C "$ECC_ROOT" pull --ff-only
 
 if [[ -e "$CODEX_HOME/AGENTS.md" ]]; then
   echo "Found: $CODEX_HOME/AGENTS.md"

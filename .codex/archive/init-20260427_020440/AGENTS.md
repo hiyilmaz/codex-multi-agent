@@ -29,7 +29,6 @@ ACTIVE_RULE_SETS:
   - toml: configuration
 
 ACTIVE_SKILLS:
-  - tdd-workflow
   - openai-docs
 
 ACTIVE_AGENT_ROLES:

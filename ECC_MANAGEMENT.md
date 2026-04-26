@@ -1,6 +1,6 @@
 # Codex ECC Management
 
-**Version:** 2.1
+**Version:** 2.2
 **Updated:** 2026-04-27
 
 ---
@@ -21,13 +21,13 @@ Base ECC:
 
 ```text
 ~/Codex-ECC/
-  VERSION
+  .git/
+  agents/
   rules/
   skills/
-  agents/
-  templates/
+  commands/
+  hooks/
   docs/
-  bin/
 ```
 
 User-global Codex:
@@ -55,8 +55,13 @@ Project:
 
 ## Ownership
 
-`ECC_ROOT` is the base/vendor layer. Keep it updateable and avoid direct local
-edits unless maintaining ECC itself.
+`ECC_ROOT` is the base/vendor layer and must be a git clone of:
+
+```text
+https://github.com/affaan-m/everything-claude-code
+```
+
+Keep it updateable and avoid direct local edits unless maintaining ECC itself.
 
 `~/.codex` is the user-global layer. Put reusable user-specific rules, skills,
 and agents here.
@@ -67,6 +72,12 @@ Project `AGENTS.md` is the project delta. It should not store reusable bodies.
 
 ## Install
 
+Prerequisite:
+
+```bash
+git clone https://github.com/affaan-m/everything-claude-code ~/Codex-ECC
+```
+
 Recommended command:
 
 ```bash
@@ -75,7 +86,7 @@ bin/codex-ecc-install
 
 Default behavior:
 
-- create `~/Codex-ECC` if missing
+- verify `~/Codex-ECC` is a git clone of `everything-claude-code`
 - create `~/.codex` if missing
 - install `~/.codex/AGENTS.md` from `GLOBAL_AGENTS_TEMPLATE.md` if missing
 - install `~/.codex/config.toml` from `CODEX_CONFIG_EXAMPLE.toml` if missing
@@ -100,7 +111,8 @@ bin/codex-ecc-update
 
 Default behavior:
 
-- update `ECC_ROOT` if it is a git repository
+- update `ECC_ROOT` with `git pull --ff-only`
+- fail if `ECC_ROOT` is not a git clone of `everything-claude-code`
 - report current global `~/.codex/AGENTS.md` and config status
 - do not rewrite project files
 - do not overwrite user-global custom rules, skills, or agents

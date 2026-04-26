@@ -28,14 +28,14 @@ ACTIVE_RULE_SETS:
   - [e.g. web: patterns, performance, security]
 
 ACTIVE_SKILLS:
-  - [e.g. tdd-workflow]
-  - [e.g. openai-docs]
+  - tdd-workflow
+  - openai-docs
 
 ACTIVE_AGENT_ROLES:
-  - [e.g. planner]
-  - [e.g. tdd-guide]
-  - [e.g. code-reviewer]
-  - [e.g. security-reviewer]
+  - planner
+  - tdd-guide
+  - code-reviewer
+  - security-reviewer
 
 DOMAIN_RULES:
   - [Project-specific rule 1]

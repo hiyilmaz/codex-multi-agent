@@ -29,6 +29,12 @@ Rules:
 - For non-trivial implementation, bugfix, refactor, security, or test-driven
   work, `ACTIVE_AGENT_ROLES` must include:
   `planner`, `tdd-guide`, `code-reviewer`, `security-reviewer`.
+- For projects using the mandatory orchestration chain, `ACTIVE_SKILLS` must
+  include `tdd-workflow`.
+- For this Codex adapter project and OpenAI/Codex documentation work,
+  `ACTIVE_SKILLS` must include `openai-docs`.
+- Do not remove baseline skills or agent roles that are present in
+  `PROJECT_AGENTS_TEMPLATE.md` unless the user explicitly confirms removal.
 - `CHANGELOG_PATH` and `EVIDENCE_PATH` must be concrete paths. If they do not
   exist and no convention is documented, ask the user before editing.
 - `ECC_ROOT` must be generic and portable. Use `$ECC_ROOT` in templates or a

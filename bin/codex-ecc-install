@@ -12,7 +12,7 @@ Defaults:
   CODEX_HOME=~/.codex
 
 Behavior:
-  - creates ECC_ROOT when missing
+  - requires ECC_ROOT to be a git clone of everything-claude-code
   - creates ~/.codex and user-global rules/skills/agents directories
   - installs ~/.codex/AGENTS.md if missing
   - installs ~/.codex/config.toml if missing
@@ -57,8 +57,23 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-mkdir -p "$ECC_ROOT" "$CODEX_HOME/rules" "$CODEX_HOME/skills" "$CODEX_HOME/agents"
-mkdir -p "$ECC_ROOT/rules" "$ECC_ROOT/skills" "$ECC_ROOT/agents" "$ECC_ROOT/templates" "$ECC_ROOT/docs" "$ECC_ROOT/bin"
+if [[ ! -d "$ECC_ROOT/.git" ]]; then
+  echo "FAILED: ECC_ROOT must be a git clone of everything-claude-code: $ECC_ROOT" >&2
+  echo "Expected remote: https://github.com/affaan-m/everything-claude-code" >&2
+  exit 1
+fi
+
+REMOTE_URL="$(git -C "$ECC_ROOT" config --get remote.origin.url || true)"
+case "$REMOTE_URL" in
+  *affaan-m/everything-claude-code*)
+    ;;
+  *)
+    echo "FAILED: ECC_ROOT remote does not look like everything-claude-code: $REMOTE_URL" >&2
+    exit 1
+    ;;
+esac
+
+mkdir -p "$CODEX_HOME/rules" "$CODEX_HOME/skills" "$CODEX_HOME/agents"
 
 GLOBAL_AGENTS="$CODEX_HOME/AGENTS.md"
 if [[ ! -e "$GLOBAL_AGENTS" || "$FORCE_AGENTS" == "true" ]]; then
@@ -76,11 +91,6 @@ if [[ ! -e "$GLOBAL_CONFIG" || "$FORCE_CONFIG" == "true" ]]; then
   echo "Installed: $GLOBAL_CONFIG"
 else
   echo "Skipped existing: $GLOBAL_CONFIG"
-fi
-
-if [[ ! -e "$ECC_ROOT/VERSION" ]]; then
-  printf '2.0\n' > "$ECC_ROOT/VERSION"
-  echo "Created: $ECC_ROOT/VERSION"
 fi
 
 echo "ECC_ROOT: $ECC_ROOT"

@@ -1,6 +1,6 @@
 # Codex Template V2 — Usage Guide
 
-**Version:** 2.3
+**Version:** 2.4
 **Updated:** 2026-04-27
 
 ---
@@ -13,10 +13,23 @@ Before using this template, prepare the reusable Codex/ECC surface once:
 |---|---|---|
 | Global Codex instructions | `~/.codex/AGENTS.md` | Yes |
 | Global Codex config | `~/.codex/config.toml` | Optional |
-| Base ECC root | `~/Codex-ECC` | Yes |
+| Base ECC root | `~/Codex-ECC` git clone of `everything-claude-code` | Yes |
 | User rules | `~/.codex/rules/` | Optional |
 | User skills | `~/.codex/skills/` | Optional |
 | User agents | `~/.codex/agents/` | Optional |
+
+---
+
+## Base ECC Clone
+
+Run once before install:
+
+```bash
+git clone https://github.com/affaan-m/everything-claude-code ~/Codex-ECC
+```
+
+`~/Codex-ECC` must remain the upstream git clone. Do not replace it with
+Codex-Multi-Agent adapter files.
 
 ---
 
@@ -28,9 +41,9 @@ Run once:
 bin/codex-ecc-install
 ```
 
-This prepares:
+This verifies/prepares:
 
-- `~/Codex-ECC`
+- `~/Codex-ECC` as a git clone of `everything-claude-code`
 - `~/.codex/AGENTS.md`
 - `~/.codex/config.toml`
 - `~/.codex/rules/`
@@ -38,6 +51,27 @@ This prepares:
 - `~/.codex/agents/`
 
 Existing global files are not overwritten by default.
+
+---
+
+## Global ECC Update
+
+Run whenever you want to update the base ECC repo:
+
+```bash
+bin/codex-ecc-update
+```
+
+This command:
+
+- verifies `ECC_ROOT` is a git clone of `everything-claude-code`
+- runs `git pull --ff-only` in `ECC_ROOT`
+- reports global `~/.codex/AGENTS.md` and `~/.codex/config.toml` status
+- leaves user-global `~/.codex/rules`, `~/.codex/skills`, and
+  `~/.codex/agents` unchanged
+- does not rewrite project files
+
+If `ECC_ROOT` is not a git clone of `everything-claude-code`, the command fails.
 
 ---
 
@@ -98,6 +132,7 @@ ACTIVE_RULE_SETS:
   - web: patterns, performance, security
 
 ACTIVE_SKILLS:
+  - tdd-workflow
   - openai-docs
 
 ACTIVE_AGENT_ROLES:
@@ -177,6 +212,12 @@ that item.
 
 ```text
 Install/update global ECC
+        ↓
+Clone base ECC repo if missing
+        ↓
+Run codex-ecc-install
+        ↓
+Run codex-ecc-update when base ECC updates are needed
         ↓
 Run codex-project-init and confirm reset
         ↓
