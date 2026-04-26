@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: codex-project-init <project-path>
+
+Archives existing project-local Codex files and resets the project to the
+standard Codex/ECC structure.
+
+Behavior:
+  - asks for confirmation before writing
+  - archives conflicting files under <project>/.codex/archive/init-YYYYMMDD_HHMMSS
+  - writes <project>/AGENTS.md from PROJECT_AGENTS_TEMPLATE.md
+  - writes <project>/.codex/config.toml from CODEX_CONFIG_EXAMPLE.toml
+  - writes <project>/.codex/prompts/fill-project-configuration.md
+  - does not create project-local reusable rules/skills/agents directories
+EOF
+}
+
+if [[ $# -lt 1 ]]; then
+  usage
+  exit 1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_PATH="$1"
+
+if [[ $# -ne 1 ]]; then
+  usage
+  exit 1
+fi
+
+mkdir -p "$PROJECT_PATH"
+PROJECT_PATH="$(cd "$PROJECT_PATH" && pwd)"
+
+TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+ARCHIVE_DIR="$PROJECT_PATH/.codex/archive/init-$TIMESTAMP"
+
+CONFLICTS=(
+  "AGENTS.md"
+  "AGENTS.codex-template.md"
+  ".codex/config.toml"
+  ".codex/agents"
+  ".codex/prompts"
+  ".codex/rules"
+  ".codex/skills"
+  ".agents"
+)
+
+echo "This will archive existing Codex project files and reset the project Codex structure."
+echo "Target: $PROJECT_PATH"
+echo "Archive: $ARCHIVE_DIR"
+echo
+echo "Items that will be archived if present:"
+for item in "${CONFLICTS[@]}"; do
+  if [[ -e "$PROJECT_PATH/$item" ]]; then
+    echo "  - $item"
+  fi
+done
+echo
+printf "Continue? [y/N] "
+read -r answer
+
+case "$answer" in
+  y|Y|yes|YES)
+    ;;
+  *)
+    echo "Cancelled."
+    exit 0
+    ;;
+esac
+
+mkdir -p "$ARCHIVE_DIR"
+
+for item in "${CONFLICTS[@]}"; do
+  source_path="$PROJECT_PATH/$item"
+  if [[ -e "$source_path" ]]; then
+    target_path="$ARCHIVE_DIR/$item"
+    mkdir -p "$(dirname "$target_path")"
+    mv "$source_path" "$target_path"
+    echo "Archived: $item"
+  fi
+done
+
+mkdir -p "$PROJECT_PATH/.codex/prompts"
+
+cp "$TEMPLATE_DIR/PROJECT_AGENTS_TEMPLATE.md" "$PROJECT_PATH/AGENTS.md"
+cp "$TEMPLATE_DIR/CODEX_CONFIG_EXAMPLE.toml" "$PROJECT_PATH/.codex/config.toml"
+cp "$TEMPLATE_DIR/PROJECT_CONFIG_PROMPT.md" "$PROJECT_PATH/.codex/prompts/fill-project-configuration.md"
+
+echo "Created: $PROJECT_PATH/AGENTS.md"
+echo "Created: $PROJECT_PATH/.codex/config.toml"
+echo "Created: $PROJECT_PATH/.codex/prompts/fill-project-configuration.md"
+
+if [[ ! -e "$HOME/.codex/AGENTS.md" ]]; then
+  echo "Warning: ~/.codex/AGENTS.md is missing. Run codex-ecc-install first." >&2
+fi
+
+echo "Next: run the prompt in $PROJECT_PATH/.codex/prompts/fill-project-configuration.md to fill AGENTS.md Project Configuration."

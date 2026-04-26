@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: codex-ecc-install [--ecc-root <path>] [--codex-home <path>] [--force-global-agents] [--force-config]
+
+Installs the Codex/ECC global surface.
+
+Defaults:
+  ECC_ROOT=~/Codex-ECC
+  CODEX_HOME=~/.codex
+
+Behavior:
+  - creates ECC_ROOT when missing
+  - creates ~/.codex and user-global rules/skills/agents directories
+  - installs ~/.codex/AGENTS.md if missing
+  - installs ~/.codex/config.toml if missing
+  - never overwrites existing files unless a force flag is provided
+EOF
+}
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ECC_ROOT="$HOME/Codex-ECC"
+CODEX_HOME="$HOME/.codex"
+FORCE_AGENTS="false"
+FORCE_CONFIG="false"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --ecc-root)
+      ECC_ROOT="$2"
+      shift 2
+      ;;
+    --codex-home)
+      CODEX_HOME="$2"
+      shift 2
+      ;;
+    --force-global-agents)
+      FORCE_AGENTS="true"
+      shift
+      ;;
+    --force-config)
+      FORCE_CONFIG="true"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+mkdir -p "$ECC_ROOT" "$CODEX_HOME/rules" "$CODEX_HOME/skills" "$CODEX_HOME/agents"
+mkdir -p "$ECC_ROOT/rules" "$ECC_ROOT/skills" "$ECC_ROOT/agents" "$ECC_ROOT/templates" "$ECC_ROOT/docs" "$ECC_ROOT/bin"
+
+GLOBAL_AGENTS="$CODEX_HOME/AGENTS.md"
+if [[ ! -e "$GLOBAL_AGENTS" || "$FORCE_AGENTS" == "true" ]]; then
+  cp "$TEMPLATE_DIR/GLOBAL_AGENTS_TEMPLATE.md" "$GLOBAL_AGENTS"
+  perl -0pi -e "s#ECC_ROOT: ~/Codex-ECC#ECC_ROOT: $ECC_ROOT#g" "$GLOBAL_AGENTS"
+  echo "Installed: $GLOBAL_AGENTS"
+else
+  echo "Skipped existing: $GLOBAL_AGENTS"
+fi
+
+GLOBAL_CONFIG="$CODEX_HOME/config.toml"
+if [[ ! -e "$GLOBAL_CONFIG" || "$FORCE_CONFIG" == "true" ]]; then
+  cp "$TEMPLATE_DIR/CODEX_CONFIG_EXAMPLE.toml" "$GLOBAL_CONFIG"
+  perl -0pi -e "s#ECC_ROOT=~/Codex-ECC#ECC_ROOT=$ECC_ROOT#g" "$GLOBAL_CONFIG"
+  echo "Installed: $GLOBAL_CONFIG"
+else
+  echo "Skipped existing: $GLOBAL_CONFIG"
+fi
+
+if [[ ! -e "$ECC_ROOT/VERSION" ]]; then
+  printf '2.0\n' > "$ECC_ROOT/VERSION"
+  echo "Created: $ECC_ROOT/VERSION"
+fi
+
+echo "ECC_ROOT: $ECC_ROOT"
+echo "CODEX_HOME: $CODEX_HOME"

@@ -1,0 +1,18 @@
+# Codex configuration example
+# Version: 2.1
+# Updated: 2026-04-27
+#
+# This file must remain valid for Codex's config.toml schema.
+# Do not add custom [agents] or [skills] metadata tables here; Codex reserves
+# some table names for runtime configuration.
+#
+# ECC reference values are intentionally documented as comments:
+#
+# ECC_ROOT=~/Codex-ECC
+# CODEX_HOME=~/.codex
+# USER_RULES=~/.codex/rules
+# USER_SKILLS=~/.codex/skills
+# USER_AGENTS=~/.codex/agents
+#
+# Project-local config should stay minimal. Reusable ECC declarations belong in
+# AGENTS.md, not config.toml.

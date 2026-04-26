@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+"""Build a local, updateable index of official OpenAI Codex docs.
+
+This script intentionally stores compact page metadata, headings, and short
+snippets rather than full page copies. The source of truth remains the official
+OpenAI developer docs URL recorded for each page.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import html
+import json
+import re
+import sys
+import time
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from html.parser import HTMLParser
+from pathlib import Path
+from typing import Iterable
+from urllib.error import HTTPError, URLError
+from urllib.parse import urldefrag, urljoin, urlparse
+from urllib.request import Request, urlopen
+
+
+BASE_URL = "https://developers.openai.com/codex"
+DOCS_DIR = Path("docs/openai-codex")
+PAGES_DIR = DOCS_DIR / "pages"
+SNAPSHOTS_DIR = DOCS_DIR / "snapshots"
+USER_AGENT = "Codex-Multi-Agent docs indexer"
+MAX_PAGES = 120
+REQUEST_DELAY_SECONDS = 0.15
+SNIPPET_CHARS = 1200
+
+
+@dataclass
+class PageData:
+    url: str
+    title: str = ""
+    headings: list[dict[str, str]] = field(default_factory=list)
+    links: set[str] = field(default_factory=set)
+    text_parts: list[str] = field(default_factory=list)
+
+
+class CodexDocsParser(HTMLParser):
+    def __init__(self, url: str) -> None:
+        super().__init__(convert_charrefs=True)
+        self.data = PageData(url=url)
+        self._skip_depth = 0
+        self._current_heading: str | None = None
+        self._heading_buffer: list[str] = []
+        self._title_open = False
+        self._title_buffer: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attrs_dict = dict(attrs)
+        if tag in {"script", "style", "svg", "noscript"}:
+            self._skip_depth += 1
+            return
+        if self._skip_depth:
+            return
+        if tag == "title":
+            self._title_open = True
+            self._title_buffer = []
+        if tag in {"h1", "h2", "h3"}:
+            self._current_heading = tag
+            self._heading_buffer = []
+        if tag == "a":
+            href = attrs_dict.get("href")
+            if href:
+                normalized = normalize_url(urljoin(self.data.url, href))
+                if is_codex_doc_url(normalized):
+                    self.data.links.add(normalized)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in {"script", "style", "svg", "noscript"} and self._skip_depth:
+            self._skip_depth -= 1
+            return
+        if self._skip_depth:
+            return
+        if tag == "title" and self._title_open:
+            self._title_open = False
+            self.data.title = clean_text(" ".join(self._title_buffer))
+        if tag in {"h1", "h2", "h3"} and self._current_heading == tag:
+            text = clean_text(" ".join(self._heading_buffer))
+            if text:
+                self.data.headings.append({"level": tag, "text": text})
+            self._current_heading = None
+            self._heading_buffer = []
+
+    def handle_data(self, data: str) -> None:
+        if self._skip_depth:
+            return
+        text = clean_text(data)
+        if not text:
+            return
+        if self._title_open:
+            self._title_buffer.append(text)
+        if self._current_heading:
+            self._heading_buffer.append(text)
+        self.data.text_parts.append(text)
+
+
+def normalize_url(url: str) -> str:
+    url, _fragment = urldefrag(url)
+    parsed = urlparse(url)
+    path = parsed.path.rstrip("/") or "/"
+    return parsed._replace(path=path, query="", fragment="").geturl()
+
+
+def is_codex_doc_url(url: str) -> bool:
+    parsed = urlparse(url)
+    if parsed.netloc != "developers.openai.com":
+        return False
+    return parsed.path.rstrip("/") == "/codex" or parsed.path.startswith("/codex/")
+
+
+def clean_text(value: str) -> str:
+    return re.sub(r"\s+", " ", html.unescape(value)).strip()
+
+
+def slug_for_url(url: str) -> str:
+    parsed = urlparse(url)
+    path = parsed.path.strip("/") or "codex"
+    slug = re.sub(r"[^a-zA-Z0-9]+", "-", path).strip("-").lower()
+    return slug or "codex"
+
+
+def fetch(url: str) -> tuple[str, str]:
+    req = Request(url, headers={"User-Agent": USER_AGENT})
+    with urlopen(req, timeout=20) as response:
+        content_type = response.headers.get("content-type", "")
+        body = response.read().decode("utf-8", errors="replace")
+    return body, content_type
+
+
+def parse_page(url: str, body: str) -> PageData:
+    parser = CodexDocsParser(url)
+    parser.feed(body)
+    parser.close()
+    if not parser.data.title:
+        h1 = next((h["text"] for h in parser.data.headings if h["level"] == "h1"), "")
+        parser.data.title = h1 or url
+    return parser.data
+
+
+def page_summary(parts: Iterable[str]) -> str:
+    joined = clean_text(" ".join(parts))
+    if len(joined) <= SNIPPET_CHARS:
+        return joined
+    return joined[:SNIPPET_CHARS].rsplit(" ", 1)[0] + "..."
+
+
+def write_page_file(page: PageData, html_hash: str, fetched_at: str) -> Path:
+    slug = slug_for_url(page.url)
+    path = PAGES_DIR / f"{slug}.md"
+    headings = "\n".join(
+        f"- `{item['level']}` {item['text']}" for item in page.headings[:80]
+    ) or "- None found"
+    snippet = page_summary(page.text_parts)
+    content = f"""# {page.title}
+
+Source: {page.url}
+Fetched: {fetched_at}
+HTML SHA256: `{html_hash}`
+
+## Headings
+
+{headings}
+
+## Local Snippet
+
+{snippet}
+
+## Notes
+
+- This is a compact local index entry, not a full copy of the source page.
+- Refresh with `scripts/update-openai-codex-docs`.
+- Treat the source URL as authoritative.
+"""
+    path.write_text(content, encoding="utf-8")
+    return path
+
+
+def write_index(records: list[dict[str, object]], fetched_at: str) -> None:
+    grouped: dict[str, list[dict[str, object]]] = {}
+    for record in records:
+        path = urlparse(str(record["url"])).path.strip("/")
+        parts = path.split("/")
+        group = parts[1] if len(parts) > 1 else "overview"
+        grouped.setdefault(group, []).append(record)
+
+    lines = [
+        "# OpenAI Codex Docs Index",
+        "",
+        f"Updated: {fetched_at}",
+        f"Source root: {BASE_URL}",
+        "",
+        "This index tracks official OpenAI Codex documentation pages.",
+        "Each page file stores metadata, headings, and a short snippet only.",
+        "",
+        "## Sections",
+        "",
+    ]
+    for group in sorted(grouped):
+        lines.append(f"### {group}")
+        lines.append("")
+        for record in sorted(grouped[group], key=lambda item: str(item["url"])):
+            title = record.get("title") or record["url"]
+            local = record["local_path"]
+            lines.append(f"- [{title}]({local}) — {record['url']}")
+        lines.append("")
+
+    (DOCS_DIR / "index.md").write_text("\n".join(lines), encoding="utf-8")
+
+
+def write_readme(records: list[dict[str, object]], fetched_at: str) -> None:
+    content = f"""# OpenAI Codex Local Docs
+
+Updated: {fetched_at}
+
+This directory contains a local, updateable index of official OpenAI Codex
+developer documentation.
+
+Source root: {BASE_URL}
+
+## Files
+
+- `index.md` — topic index for the local page entries
+- `sources.json` — machine-readable source metadata
+- `pages/` — compact page entries with URL, headings, checksum, and snippet
+- `snapshots/` — update run metadata
+
+## Update
+
+Run from the repository root:
+
+```bash
+scripts/update-openai-codex-docs
+```
+
+## Policy
+
+The official OpenAI docs remain the source of truth. Local page entries are
+compact indexes, not full copies.
+
+Indexed pages: {len(records)}
+"""
+    (DOCS_DIR / "README.md").write_text(content, encoding="utf-8")
+
+
+def main() -> int:
+    DOCS_DIR.mkdir(parents=True, exist_ok=True)
+    PAGES_DIR.mkdir(parents=True, exist_ok=True)
+    SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    fetched_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    queue = [normalize_url(BASE_URL)]
+    seen: set[str] = set()
+    records: list[dict[str, object]] = []
+    errors: list[dict[str, str]] = []
+
+    while queue and len(seen) < MAX_PAGES:
+        url = queue.pop(0)
+        if url in seen:
+            continue
+        seen.add(url)
+        try:
+            body, content_type = fetch(url)
+            if "text/html" not in content_type:
+                continue
+            html_hash = hashlib.sha256(body.encode("utf-8")).hexdigest()
+            page = parse_page(url, body)
+            local_path = write_page_file(page, html_hash, fetched_at)
+            records.append(
+                {
+                    "url": url,
+                    "title": page.title,
+                    "local_path": str(local_path.relative_to(DOCS_DIR)),
+                    "html_sha256": html_hash,
+                    "fetched_at": fetched_at,
+                    "heading_count": len(page.headings),
+                    "link_count": len(page.links),
+                }
+            )
+            for link in sorted(page.links):
+                if link not in seen and link not in queue:
+                    queue.append(link)
+            time.sleep(REQUEST_DELAY_SECONDS)
+        except (HTTPError, URLError, TimeoutError, UnicodeDecodeError) as exc:
+            errors.append({"url": url, "error": str(exc)})
+
+    records.sort(key=lambda item: str(item["url"]))
+    sources = {
+        "updated_at": fetched_at,
+        "source_root": BASE_URL,
+        "page_count": len(records),
+        "max_pages": MAX_PAGES,
+        "records": records,
+        "errors": errors,
+    }
+    (DOCS_DIR / "sources.json").write_text(
+        json.dumps(sources, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    write_index(records, fetched_at)
+    write_readme(records, fetched_at)
+    snapshot = SNAPSHOTS_DIR / f"run-{fetched_at.replace(':', '').replace('+', 'Z')}.json"
+    snapshot.write_text(json.dumps(sources, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    print(f"Indexed {len(records)} pages from {BASE_URL}")
+    if errors:
+        print(f"Errors: {len(errors)}", file=sys.stderr)
+    return 0 if records else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

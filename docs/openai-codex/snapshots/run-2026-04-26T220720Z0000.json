@@ -1,0 +1,1080 @@
+{
+  "updated_at": "2026-04-26T22:07:20+00:00",
+  "source_root": "https://developers.openai.com/codex",
+  "page_count": 119,
+  "max_pages": 120,
+  "records": [
+    {
+      "url": "https://developers.openai.com/codex",
+      "title": "Codex | OpenAI Developers",
+      "local_path": "pages/codex.md",
+      "html_sha256": "7bfa0d4a8e23b48ee4add33d9a0cc0d5002a6b9a3d108014c47da193744f8caa",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 51,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/agent-approvals-security",
+      "title": "Agent approvals & security – Codex | OpenAI Developers",
+      "local_path": "pages/codex-agent-approvals-security.md",
+      "html_sha256": "07e1bb9fabaac8a22c5cc4d94ceb0601b437388157a6a2649f8e5697d109d874",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 65,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/app",
+      "title": "App – Codex | OpenAI Developers",
+      "local_path": "pages/codex-app.md",
+      "html_sha256": "a3e750ec03c02b24da3b4dbc6d9c3702fc0d83be6cbe29a2710a7e3b0f0d5ad5",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 61,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/app-server",
+      "title": "App Server – Codex | OpenAI Developers",
+      "local_path": "pages/codex-app-server.md",
+      "html_sha256": "7ffec881ecafc9c9ce8c5aefb80e31557ad3ddcf1af9ea14f7a07ec6d60f1e10",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 115,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/app/automations",
+      "title": "Automations – Codex app | OpenAI Developers",
+      "local_path": "pages/codex-app-automations.md",
+      "html_sha256": "11824406651b1224114023308280b704331ac29e149a0ed77ef58ebc3a1d1c4b",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 57,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/app/browser",
+      "title": "In-app browser – Codex app | OpenAI Developers",
+      "local_path": "pages/codex-app-browser.md",
+      "html_sha256": "69f79d66e984a13d1e78e290bbfa995d13aa18d816e3e0dae854fed2f4563569",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 51,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/app/commands",
+      "title": "Commands – Codex app | OpenAI Developers",
+      "local_path": "pages/codex-app-commands.md",
+      "html_sha256": "583a3da6d75ad2684e54728ec86c9797716a13c8575f92b74658a20e76654479",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/app/computer-use",
+      "title": "Computer Use – Codex app | OpenAI Developers",
+      "local_path": "pages/codex-app-computer-use.md",
+      "html_sha256": "d2ec2ec33cf4f0950d81a587c7b4d4737705345ccb49bb094f94d025fd1a5c58",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 52,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/app/features",
+      "title": "Features – Codex app | OpenAI Developers",
+      "local_path": "pages/codex-app-features.md",
+      "html_sha256": "7961eb20ce79de4a52fbe1a6071ff9a9a724ef8a5a62018a41939350e68d157d",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 72,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/app/local-environments",
+      "title": "Local environments – Codex app | OpenAI Developers",
+      "local_path": "pages/codex-app-local-environments.md",
+      "html_sha256": "67e7374dd90fa1bb4f2e88267736aae985af555f7fd23aa27ff3403e5b0a3c18",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 49,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/app/review",
+      "title": "Review – Codex app | OpenAI Developers",
+      "local_path": "pages/codex-app-review.md",
+      "html_sha256": "d33e9fda90c7ec84ee91d128364cd309af27c6082571d2043d832302701bfbf0",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 54,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/app/settings",
+      "title": "Settings – Codex app | OpenAI Developers",
+      "local_path": "pages/codex-app-settings.md",
+      "html_sha256": "09375e5160b1f3d76d8486e36f14dba908aa412bd07313c30827aa492e2f44c6",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 59,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/app/troubleshooting",
+      "title": "Troubleshooting – Codex app | OpenAI Developers",
+      "local_path": "pages/codex-app-troubleshooting.md",
+      "html_sha256": "e6f7116f09c25767a7fef979d0c9f95312dd7af5e81125695c0e218f340b52c8",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 61,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/app/windows",
+      "title": "Windows – Codex app | OpenAI Developers",
+      "local_path": "pages/codex-app-windows.md",
+      "html_sha256": "7c6deb88bc63a384e4831cf37e6bf2af9f1fd060556efc29bfbc581bca3f7ad5",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 62,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/app/worktrees",
+      "title": "Worktrees – Codex app | OpenAI Developers",
+      "local_path": "pages/codex-app-worktrees.md",
+      "html_sha256": "48e274f5fb81e13cb3cc4615745238644779663472b01f4956a6a9da9a01e5b7",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 60,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/auth",
+      "title": "Authentication – Codex | OpenAI Developers",
+      "local_path": "pages/codex-auth.md",
+      "html_sha256": "d80f5b6be763477028cd9639201d531f908766c6ef09589e3a7e8d4fb27c6895",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 61,
+      "link_count": 77
+    },
+    {
+      "url": "https://developers.openai.com/codex/auth/ci-cd-auth",
+      "title": "Maintain Codex account auth in CI/CD (advanced) | OpenAI Developers",
+      "local_path": "pages/codex-auth-ci-cd-auth.md",
+      "html_sha256": "cc3be47cb64a45492e80611dbf59160c26985dbc940fdecf4bdc4ca2b71f1ff9",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 57,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/changelog",
+      "title": "Changelog – Codex | OpenAI Developers",
+      "local_path": "pages/codex-changelog.md",
+      "html_sha256": "474897ed32b0436b44ac84b189595c0ae9248a55d7cbb005db1eae7b47bc64d1",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 198,
+      "link_count": 78
+    },
+    {
+      "url": "https://developers.openai.com/codex/cli",
+      "title": "CLI – Codex | OpenAI Developers",
+      "local_path": "pages/codex-cli.md",
+      "html_sha256": "161f8d16ac066f703dea73bc0a484c1587cd22f818380c48cf1ea9b76779f6e7",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 63,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/cli/features",
+      "title": "Features – Codex CLI | OpenAI Developers",
+      "local_path": "pages/codex-cli-features.md",
+      "html_sha256": "46c08dfe4775d462184441bb6166e5ada6e0c237a65fd4a17d7ef30832c954b4",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 67,
+      "link_count": 77
+    },
+    {
+      "url": "https://developers.openai.com/codex/cli/reference",
+      "title": "Command line options – Codex CLI | OpenAI Developers",
+      "local_path": "pages/codex-cli-reference.md",
+      "html_sha256": "2ca1b11798461ae711ad33f2514fed35d988931db9218aaf92581103caf2d16e",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 71,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/cli/slash-commands",
+      "title": "Slash commands in Codex CLI | OpenAI Developers",
+      "local_path": "pages/codex-cli-slash-commands.md",
+      "html_sha256": "1c57786b1d60b306b66f090a79f9e16bdbb929f35d5026e255d6a897ece2a3ff",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 79,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/cloud",
+      "title": "Web – Codex | OpenAI Developers",
+      "local_path": "pages/codex-cloud.md",
+      "html_sha256": "99a0e3fc673a2c4ca2d97a5d3c16223af4cffaf9f404c9f8fe1fe17302ac3703",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 55,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/cloud/agent-internet",
+      "title": "Agent internet access – Codex web | OpenAI Developers",
+      "local_path": "pages/codex-cloud-agent-internet.md",
+      "html_sha256": "2830b69a8ea896dbe138266d83d58b9d90b4a73492e9c418c63336e77391cd57",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 77
+    },
+    {
+      "url": "https://developers.openai.com/codex/cloud/environments",
+      "title": "Cloud environments – Codex web | OpenAI Developers",
+      "local_path": "pages/codex-cloud-environments.md",
+      "html_sha256": "2a9e813a81cbd64c9d88d79abc49e44ce75c2134f73ce64e95aecfd7d26719f8",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 54,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/cloud/internet-access",
+      "title": "Agent internet access – Codex web | OpenAI Developers",
+      "local_path": "pages/codex-cloud-internet-access.md",
+      "html_sha256": "2830b69a8ea896dbe138266d83d58b9d90b4a73492e9c418c63336e77391cd57",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/concepts/customization",
+      "title": "Customization – Codex | OpenAI Developers",
+      "local_path": "pages/codex-concepts-customization.md",
+      "html_sha256": "f45cfc6008e583f7c20b37c8c3710df6b2b128cdfa6a86fe2e24c6d8bbb200b3",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 54,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/concepts/cyber-safety",
+      "title": "Cyber Safety – Codex | OpenAI Developers",
+      "local_path": "pages/codex-concepts-cyber-safety.md",
+      "html_sha256": "bf5f7838c89230c68f5770550bb76df6b3c6dcf7d29526b68e76e22aa057d816",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 51,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/concepts/sandboxing",
+      "title": "Sandbox – Codex | OpenAI Developers",
+      "local_path": "pages/codex-concepts-sandboxing.md",
+      "html_sha256": "621bab07b495f030572e00df3bf5bfdb28a58607655b2c007bbb998ea6f9be15",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/concepts/subagents",
+      "title": "Subagents – Codex | OpenAI Developers",
+      "local_path": "pages/codex-concepts-subagents.md",
+      "html_sha256": "5cf90033b9a95641cc987bdd05d176287d437812990c35ece7ed6a9b52fd40c8",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/config-advanced",
+      "title": "Advanced Configuration – Codex | OpenAI Developers",
+      "local_path": "pages/codex-config-advanced.md",
+      "html_sha256": "fca48304536599e149dd2ddd6c10bc7f274ad6ecadec8988d96bc3cc3a5e47cd",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 73,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/config-basic",
+      "title": "Config basics – Codex | OpenAI Developers",
+      "local_path": "pages/codex-config-basic.md",
+      "html_sha256": "dcab9d2f3e4f1d461ab94680095881f30772cbeeb5290af76697f1d14c245a3d",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/config-reference",
+      "title": "Configuration Reference – Codex | OpenAI Developers",
+      "local_path": "pages/codex-config-reference.md",
+      "html_sha256": "d2f1adb089ba2ff0bb089b1b0598286bb7393e4e3954fee134933c5766cf2581",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 49,
+      "link_count": 77
+    },
+    {
+      "url": "https://developers.openai.com/codex/config-sample",
+      "title": "Sample Configuration – Codex | OpenAI Developers",
+      "local_path": "pages/codex-config-sample.md",
+      "html_sha256": "81d87ad36c728c20fc9173f83bbcdbbc709998f7e5817319c92cc637c330f803",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 47,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/enterprise/admin-setup",
+      "title": "Admin Setup – Codex | OpenAI Developers",
+      "local_path": "pages/codex-enterprise-admin-setup.md",
+      "html_sha256": "788d670bfd770d4ea8a478617dc06ae8e0a0d22149dec9154052649420e9e445",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 73,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/enterprise/governance",
+      "title": "Governance – Codex | OpenAI Developers",
+      "local_path": "pages/codex-enterprise-governance.md",
+      "html_sha256": "f592bd1f76bdcd6c8fcb3848b603177d4eaa20e048f587838c25258bc56c2bb6",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 62,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/enterprise/managed-configuration",
+      "title": "Managed configuration – Codex | OpenAI Developers",
+      "local_path": "pages/codex-enterprise-managed-configuration.md",
+      "html_sha256": "c064f78c81436441606f102aabb3d39d51cd64d0a325acc4b47d82bac6dc1169",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 64,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/feature-maturity",
+      "title": "Feature Maturity – Codex | OpenAI Developers",
+      "local_path": "pages/codex-feature-maturity.md",
+      "html_sha256": "c74f12d521c7d2ce1fb82743ed981cff5b145bc1187602eb04bda93a848b4b05",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 47,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/github-action",
+      "title": "GitHub Action – Codex | OpenAI Developers",
+      "local_path": "pages/codex-github-action.md",
+      "html_sha256": "b8218cf5d81403214f1d2843a12d593768e616c759cbf727c4f72fee63ad816c",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 54,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/guides/agents-md",
+      "title": "Custom instructions with AGENTS.md – Codex | OpenAI Developers",
+      "local_path": "pages/codex-guides-agents-md.md",
+      "html_sha256": "d358636a7e1dadba66500ae0a84c606b80d512ce8266c2e65d34450887a026bc",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 54,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/guides/agents-sdk",
+      "title": "Use Codex with the Agents SDK | OpenAI Developers",
+      "local_path": "pages/codex-guides-agents-sdk.md",
+      "html_sha256": "0fe102a12b0ad10b1de49f085401afc36850a7e5758c37ce92d3148b3f9f579c",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 54,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/guides/build-ai-native-engineering-team",
+      "title": "Building an AI-Native Engineering Team – Codex | OpenAI Developers",
+      "local_path": "pages/codex-guides-build-ai-native-engineering-team.md",
+      "html_sha256": "861e66f80cd44221415fc6d5d2df6e59f08bde85d650885fc9eefdd75c4cd545",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 79,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/guides/slash-commands",
+      "title": "Slash commands in Codex CLI | OpenAI Developers",
+      "local_path": "pages/codex-guides-slash-commands.md",
+      "html_sha256": "1c57786b1d60b306b66f090a79f9e16bdbb929f35d5026e255d6a897ece2a3ff",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 79,
+      "link_count": 77
+    },
+    {
+      "url": "https://developers.openai.com/codex/hooks",
+      "title": "Hooks – Codex | OpenAI Developers",
+      "local_path": "pages/codex-hooks.md",
+      "html_sha256": "46bdc3d198e4f0dfc6407dde0034f3104d7aaa458a6a0f019685f628a61fd84a",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 61,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/ide",
+      "title": "IDE extension – Codex | OpenAI Developers",
+      "local_path": "pages/codex-ide.md",
+      "html_sha256": "64848f7676aef2db3c6dcecd408fee976b09a839ae6906375ac734e2682a2133",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 64,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/ide/cloud-tasks",
+      "title": "Features – Codex IDE | OpenAI Developers",
+      "local_path": "pages/codex-ide-cloud-tasks.md",
+      "html_sha256": "d4d80c6d48be4b3de7bae019e8b38f5abac3174c573e7f8fd96cc87e76c92fe9",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 57,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/ide/commands",
+      "title": "Commands – Codex IDE | OpenAI Developers",
+      "local_path": "pages/codex-ide-commands.md",
+      "html_sha256": "325b94496ed7a8658991fee4ecc1aa69d6fcbc9cb4f625d18d25bcaa297c8765",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 49,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/ide/features",
+      "title": "Features – Codex IDE | OpenAI Developers",
+      "local_path": "pages/codex-ide-features.md",
+      "html_sha256": "d4d80c6d48be4b3de7bae019e8b38f5abac3174c573e7f8fd96cc87e76c92fe9",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 57,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/ide/settings",
+      "title": "Settings – Codex IDE | OpenAI Developers",
+      "local_path": "pages/codex-ide-settings.md",
+      "html_sha256": "e6ea115403ee5e3d3d20d81ec68dbf501b9a5e883e92089e6c95fc9552858a40",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 49,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/ide/slash-commands",
+      "title": "Slash commands – Codex IDE | OpenAI Developers",
+      "local_path": "pages/codex-ide-slash-commands.md",
+      "html_sha256": "54599225be9eb95b5d05f95ba996a6f1b7669a3d4a5df98dcc85c78fb678582e",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 49,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/integrations/github",
+      "title": "Use Codex in GitHub | OpenAI Developers",
+      "local_path": "pages/codex-integrations-github.md",
+      "html_sha256": "9a0fdc138427c64437617b95f878d62ba83d9df30e70b282d1bcd7edfbd2b7dc",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 52,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/integrations/linear",
+      "title": "Use Codex in Linear | OpenAI Developers",
+      "local_path": "pages/codex-integrations-linear.md",
+      "html_sha256": "3bd54ce233523f0b42f64f60d7db4ec70c0cf7b13ace9e647687bc10c2c08a51",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 58,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/integrations/slack",
+      "title": "Use Codex in Slack | OpenAI Developers",
+      "local_path": "pages/codex-integrations-slack.md",
+      "html_sha256": "601e4f1b50dec2772f0a24e9a16454e0dc74cb743c7feb26d36af4a88fe3521d",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/learn/best-practices",
+      "title": "Best practices – Codex | OpenAI Developers",
+      "local_path": "pages/codex-learn-best-practices.md",
+      "html_sha256": "a27323289c856d07d7ac546519cec73e98b79cf29bcb6df79e731d2e33f1f835",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 57,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/local-config",
+      "title": "Config basics – Codex | OpenAI Developers",
+      "local_path": "pages/codex-local-config.md",
+      "html_sha256": "dcab9d2f3e4f1d461ab94680095881f30772cbeeb5290af76697f1d14c245a3d",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/mcp",
+      "title": "Model Context Protocol – Codex | OpenAI Developers",
+      "local_path": "pages/codex-mcp.md",
+      "html_sha256": "b4eddf302c6b12e62edf973ab134517237e236cbe28869cb68f4509e6d570eb4",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 52,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/memories",
+      "title": "Memories – Codex | OpenAI Developers",
+      "local_path": "pages/codex-memories.md",
+      "html_sha256": "07d79c79e8e192f36d197e9480b92cabff41113d23fb5169361930d3ff7c00eb",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/memories/chronicle",
+      "title": "Chronicle – Codex | OpenAI Developers",
+      "local_path": "pages/codex-memories-chronicle.md",
+      "html_sha256": "069592bcf7792424b658b3febdc900b96e01bbf9caf32cf1859047433fd1fded",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 61,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/models",
+      "title": "Models – Codex | OpenAI Developers",
+      "local_path": "pages/codex-models.md",
+      "html_sha256": "071ffe3fe9dd7151b5968789aef355c23b763dfb28451ffa4b7558eb90f480c8",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 54,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/noninteractive",
+      "title": "Non-interactive mode – Codex | OpenAI Developers",
+      "local_path": "pages/codex-noninteractive.md",
+      "html_sha256": "34fbe202707385a94d65507f6ec01015431bcdcb16b692d75de0f5b95929eb1e",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 65,
+      "link_count": 77
+    },
+    {
+      "url": "https://developers.openai.com/codex/open-source",
+      "title": "Open Source – Codex | OpenAI Developers",
+      "local_path": "pages/codex-open-source.md",
+      "html_sha256": "e0ce85865a7e7e7b92b1406387d631191166033f77d32f7304fddc25c5083075",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 49,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/plugins",
+      "title": "Plugins – Codex | OpenAI Developers",
+      "local_path": "pages/codex-plugins.md",
+      "html_sha256": "c4d30cede913ae9f88a996f874067916ce4e4a95fcdcf6745bac095e331c4259",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 55,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/plugins/build",
+      "title": "Build plugins – Codex | OpenAI Developers",
+      "local_path": "pages/codex-plugins-build.md",
+      "html_sha256": "21cfe3e950a0b07d0693018e218d73567c0477377020a845c0a09925ca2639be",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 59,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/pricing",
+      "title": "Pricing – Codex | OpenAI Developers",
+      "local_path": "pages/codex-pricing.md",
+      "html_sha256": "4eb8f7c5498f7f266b088e6ff27436196df750828bc8a5554003b3d1dd1af56c",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 65,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/prompting",
+      "title": "Prompting – Codex | OpenAI Developers",
+      "local_path": "pages/codex-prompting.md",
+      "html_sha256": "2cd677c58dc8f01c13294b1cc17af8750bbcfb465aca074beba618817b8dc1be",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 50,
+      "link_count": 77
+    },
+    {
+      "url": "https://developers.openai.com/codex/quickstart",
+      "title": "Quickstart – Codex | OpenAI Developers",
+      "local_path": "pages/codex-quickstart.md",
+      "html_sha256": "9a3177061cc4eb54bb9f3331f9e363540fc7ee9116563067e15fca7d41b6d5cb",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 48,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/remote-connections",
+      "title": "Remote connections – Codex | OpenAI Developers",
+      "local_path": "pages/codex-remote-connections.md",
+      "html_sha256": "cf83db7ab8cc7ff08ffc5e32ec96f1d23507f0106b09ad45d8696025829ed031",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 50,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/rules",
+      "title": "Rules – Codex | OpenAI Developers",
+      "local_path": "pages/codex-rules.md",
+      "html_sha256": "8fb9939b91bed807c5b3e1ba3bb32d05dfff55627e738fab5240d2235af45bd7",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 54,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/sdk",
+      "title": "SDK – Codex | OpenAI Developers",
+      "local_path": "pages/codex-sdk.md",
+      "html_sha256": "0844f96353387a37ccc298b5e43890ad69efbb7579c3c4fce689142ce3b53e42",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/security",
+      "title": "Security – Codex | OpenAI Developers",
+      "local_path": "pages/codex-security.md",
+      "html_sha256": "e880daa52f03c545fef29177bd7e2d5d6c78113a7ad2ec705cd64fc4562f05b7",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 50,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/security/faq",
+      "title": "FAQ – Codex Security | OpenAI Developers",
+      "local_path": "pages/codex-security-faq.md",
+      "html_sha256": "6e2977b779a0157c20a92ce825ba6064c0d0c7e0eca19723124b2c795556a21b",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 72,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/security/setup",
+      "title": "Setup – Codex Security | OpenAI Developers",
+      "local_path": "pages/codex-security-setup.md",
+      "html_sha256": "8ebf3b5c37c19edb94ac187c2553ce86064905e1269e8f659faf8aa5b7c37e1d",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/security/threat-model",
+      "title": "Improving the threat model – Codex Security | OpenAI Developers",
+      "local_path": "pages/codex-security-threat-model.md",
+      "html_sha256": "17bac176803ad73013b5065fa910f5a4b9a9050bdf78567090bc2d2d7acd40bf",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 51,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/skills",
+      "title": "Agent Skills – Codex | OpenAI Developers",
+      "local_path": "pages/codex-skills.md",
+      "html_sha256": "50c063daa4fb2dae205b9abeac8a5f26bd24e620c459b7549d2786f7c382ffa5",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 55,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/speed",
+      "title": "Speed – Codex | OpenAI Developers",
+      "local_path": "pages/codex-speed.md",
+      "html_sha256": "aa6aee08226b5d95c0eea87e84b3d88c6dba4d25b02c33655d68dcf76bb118b2",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 49,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/subagents",
+      "title": "Subagents – Codex | OpenAI Developers",
+      "local_path": "pages/codex-subagents.md",
+      "html_sha256": "a7bea539d5a99c7c186d615f699b7bbf0d649b39ade3f2ea104632f55f150348",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 57,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases",
+      "title": "Codex use cases",
+      "local_path": "pages/codex-use-cases.md",
+      "html_sha256": "7158e1fdfd8efb62614b779a528899586b23bf018de6aff973811a235ecea81e",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 99,
+      "link_count": 117
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/agent-friendly-clis",
+      "title": "Create a CLI Codex can use | Codex use cases",
+      "local_path": "pages/codex-use-cases-agent-friendly-clis.md",
+      "html_sha256": "4e874d96803828fcd043e58bc105770880e0128f941799e26fc5a09b535209cd",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 57,
+      "link_count": 81
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/analyze-data-export",
+      "title": "Query tabular data | Codex use cases",
+      "local_path": "pages/codex-use-cases-analyze-data-export.md",
+      "html_sha256": "e3401b53da52b60d2dde1adafd7faa4afabc8015a95876b50f17a8edbf97775b",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 52,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/api-integration-migrations",
+      "title": "Upgrade your API integration | Codex use cases",
+      "local_path": "pages/codex-use-cases-api-integration-migrations.md",
+      "html_sha256": "25935584589b3267b65b0a8445c7557bebdaf292ee8e348d6a95a12672e5e5b6",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/automation-bug-triage",
+      "title": "Automate bug triage | Codex use cases",
+      "local_path": "pages/codex-use-cases-automation-bug-triage.md",
+      "html_sha256": "b23a1580ad4b81652a0e59c8aeb745c3ddc0a225386a044435041447cff6247c",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 56,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/browser-games",
+      "title": "Create browser-based games | Codex use cases",
+      "local_path": "pages/codex-use-cases-browser-games.md",
+      "html_sha256": "5987a6bdac6080a8967ae12d3460ebb0bf54cbf46f9868046570e6231af656af",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 56,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/chatgpt-apps",
+      "title": "Bring your app to ChatGPT | Codex use cases",
+      "local_path": "pages/codex-use-cases-chatgpt-apps.md",
+      "html_sha256": "472ad25485a2e0b3712f77ef918af6e020fe4c234735e6d63e971eeb3b01ee58",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 58,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/clean-messy-data",
+      "title": "Clean and prepare messy data | Codex use cases",
+      "local_path": "pages/codex-use-cases-clean-messy-data.md",
+      "html_sha256": "f89bf5ed17c05215c308808ff8246acf66b9f5c1e8376279fd3a44a7a6c3279c",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 52,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/code-migrations",
+      "title": "Run code migrations | Codex use cases",
+      "local_path": "pages/codex-use-cases-code-migrations.md",
+      "html_sha256": "312d6d2644521a43194bfd90371bd423a537a8401ec27083c6e6406cb1c9abec",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/codebase-onboarding",
+      "title": "Understand large codebases | Codex use cases",
+      "local_path": "pages/codex-use-cases-codebase-onboarding.md",
+      "html_sha256": "6bf3711534ae352c6b97f1b6320ef1b025130c6b538014f66fd384dae9061ddb",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 52,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/collections",
+      "title": "Use case collections",
+      "local_path": "pages/codex-use-cases-collections.md",
+      "html_sha256": "e2dcb6884516d69c0deffbb12f19f0ef5fb3a4e7e82227a35969f05fb1a4a6ee",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 57,
+      "link_count": 81
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/collections/game-development",
+      "title": "Game development – Codex | OpenAI Developers",
+      "local_path": "pages/codex-use-cases-collections-game-development.md",
+      "html_sha256": "561acee87a3635e11a9df4f77fc49c706ea5027f196818caf51336d04b8899a3",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 62,
+      "link_count": 81
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/collections/native-development",
+      "title": "Native development – Codex | OpenAI Developers",
+      "local_path": "pages/codex-use-cases-collections-native-development.md",
+      "html_sha256": "26d6d2f905004e24b7eb1088f496fc9dcf239559641a76dc1cff63d5105e5c4a",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 64,
+      "link_count": 84
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/collections/production-systems",
+      "title": "Production systems – Codex | OpenAI Developers",
+      "local_path": "pages/codex-use-cases-collections-production-systems.md",
+      "html_sha256": "cab18579d8308311b362811d7e4f99cc83e700e8a765c4cec5c0f582c749db36",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 66,
+      "link_count": 85
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/collections/productivity-and-collaboration",
+      "title": "Productivity and collaboration – Codex | OpenAI Developers",
+      "local_path": "pages/codex-use-cases-collections-productivity-and-collaboration.md",
+      "html_sha256": "1930ad97efe36dc721b75a029ad73fc4585257bd69ac205872258ea915e1cf8d",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 68,
+      "link_count": 87
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/collections/web-development",
+      "title": "Web development – Codex | OpenAI Developers",
+      "local_path": "pages/codex-use-cases-collections-web-development.md",
+      "html_sha256": "0d07a64cdd570863606f66183efa2a6556c401ae99b25f10ae39bec8955f78c3",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 63,
+      "link_count": 82
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/complete-tasks-from-messages",
+      "title": "Complete tasks from messages | Codex use cases",
+      "local_path": "pages/codex-use-cases-complete-tasks-from-messages.md",
+      "html_sha256": "07b62e4b646412bae986ce650370df085f3444c2977268dc731c74bc05815470",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 57,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/datasets-and-reports",
+      "title": "Analyze datasets and ship reports | Codex use cases",
+      "local_path": "pages/codex-use-cases-datasets-and-reports.md",
+      "html_sha256": "d127d98667408af02f700f27d77976042867595bafa009d313625516b0fb02d8",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 63,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/deploy-app-or-website",
+      "title": "Deploy an app or website | Codex use cases",
+      "local_path": "pages/codex-use-cases-deploy-app-or-website.md",
+      "html_sha256": "80b686c1a5fcf40774b8b4a40e4e5c8219caf6b6181ad6eb195d9fbb9bc5c703",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/feedback-synthesis",
+      "title": "Turn feedback into actions | Codex use cases",
+      "local_path": "pages/codex-use-cases-feedback-synthesis.md",
+      "html_sha256": "69fcb50aa1fd81b751cdb255255a656420a88101ff254b8900bbfd28704b9493",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 53,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/figma-designs-to-code",
+      "title": "Turn Figma designs into code | Codex use cases",
+      "local_path": "pages/codex-use-cases-figma-designs-to-code.md",
+      "html_sha256": "1af69e4721c705297138bbf19071976282d8df3c2e6b940b192919eb2161d167",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 58,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/frontend-designs",
+      "title": "Build responsive front-end designs | Codex use cases",
+      "local_path": "pages/codex-use-cases-frontend-designs.md",
+      "html_sha256": "f7358cda7cb884ecca6f46d6a5cc8840f08a584749c78d59b971091d2701d508",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 57,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/generate-slide-decks",
+      "title": "Generate slide decks | Codex use cases",
+      "local_path": "pages/codex-use-cases-generate-slide-decks.md",
+      "html_sha256": "2700196b49368ecfdfd9c96e573ade32efade452a27750eef4c7b0d2456e390f",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 60,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/github-code-reviews",
+      "title": "Review pull requests faster | Codex use cases",
+      "local_path": "pages/codex-use-cases-github-code-reviews.md",
+      "html_sha256": "ffbceb4210b1f135041eec6fefcf5ff4b76cca4b6a165b92c12b96112e317640",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 52,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/ios-app-intents",
+      "title": "Add iOS app intents | Codex use cases",
+      "local_path": "pages/codex-use-cases-ios-app-intents.md",
+      "html_sha256": "202a3aebf4299c4a7649df2fde73a5fd3e460b0fbff29c4d42d3b513274a172f",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 60,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/ios-liquid-glass",
+      "title": "Adopt liquid glass | Codex use cases",
+      "local_path": "pages/codex-use-cases-ios-liquid-glass.md",
+      "html_sha256": "507abd1ae4926d64ffa54f24bd6a28f5a42afdcf795afcc07e154fc672a52b82",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 59,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/ios-simulator-bug-debugging",
+      "title": "Debug in iOS simulator | Codex use cases",
+      "local_path": "pages/codex-use-cases-ios-simulator-bug-debugging.md",
+      "html_sha256": "6b270cbfc62e35c366db1fdfe971c3fcacc6151093cc090ca57602828f68ed22",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 58,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/ios-swiftui-view-refactor",
+      "title": "Refactor SwiftUI screens | Codex use cases",
+      "local_path": "pages/codex-use-cases-ios-swiftui-view-refactor.md",
+      "html_sha256": "f1c0302a069a7d31b22771c922de8480ca8884dff29a6be94ad8dbbc495a3ee6",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 58,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/iterate-on-difficult-problems",
+      "title": "Iterate on difficult problems | Codex use cases",
+      "local_path": "pages/codex-use-cases-iterate-on-difficult-problems.md",
+      "html_sha256": "ce956e60bd2d948e2552785476c359b932366b8aee17d0d8e39a3f8c04ec8b16",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 55,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/learn-a-new-concept",
+      "title": "Learn a new concept | Codex use cases",
+      "local_path": "pages/codex-use-cases-learn-a-new-concept.md",
+      "html_sha256": "ed5de4df6846edce3679dc572bccceff12ace8ba8885f054cc7ffe4750f6cde1",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 60,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/macos-sidebar-detail-inspector",
+      "title": "Build a Mac app shell | Codex use cases",
+      "local_path": "pages/codex-use-cases-macos-sidebar-detail-inspector.md",
+      "html_sha256": "a88dd2ea87a7d8f6586449b7cd0c9d568de32df4ebc9430abe2fb59b68ae9d31",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 60,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/macos-telemetry-logs",
+      "title": "Add Mac telemetry | Codex use cases",
+      "local_path": "pages/codex-use-cases-macos-telemetry-logs.md",
+      "html_sha256": "f6388fc6168bf4779acbb8b5da1cddb68dbf622160cda0eab0e32cb33ae3479d",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 60,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/make-granular-ui-changes",
+      "title": "Make granular UI changes | Codex use cases",
+      "local_path": "pages/codex-use-cases-make-granular-ui-changes.md",
+      "html_sha256": "47c3339ed3f39c789e520dc69bb426043606644ea7f88ef012396ce7b748fd3b",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 55,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/manage-your-inbox",
+      "title": "Manage your inbox | Codex use cases",
+      "local_path": "pages/codex-use-cases-manage-your-inbox.md",
+      "html_sha256": "a0ad5aa40e393ed0248274800834edf5427c180d3350c6c824f4a8fa4065e8a0",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 54,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/native-ios-apps",
+      "title": "Build for iOS | Codex use cases",
+      "local_path": "pages/codex-use-cases-native-ios-apps.md",
+      "html_sha256": "bc596169c4e86aa7092a5a15de5830abd037ad532e9b326afdcc0ea7618f0829",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 60,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/native-macos-apps",
+      "title": "Build for macOS | Codex use cases",
+      "local_path": "pages/codex-use-cases-native-macos-apps.md",
+      "html_sha256": "cb07f399094398fd0e56cc842bc4b945dec2295d91e2ee6ee016a8fa73e5646c",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 61,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/new-hire-onboarding",
+      "title": "Coordinate new-hire onboarding | Codex use cases",
+      "local_path": "pages/codex-use-cases-new-hire-onboarding.md",
+      "html_sha256": "2b436d4c2778c9b204992ea658baa15b0c156e32e51f6803ce07295bf0461c86",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 57,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/proactive-teammate",
+      "title": "Set up a teammate | Codex use cases",
+      "local_path": "pages/codex-use-cases-proactive-teammate.md",
+      "html_sha256": "6b77e96619d31b7e70ec00888a3b61707ed85ebd8dbcc909da10e62e1cbd0e4a",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 56,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/qa-your-app-with-computer-use",
+      "title": "QA your app with Computer Use | Codex use cases",
+      "local_path": "pages/codex-use-cases-qa-your-app-with-computer-use.md",
+      "html_sha256": "296bb175ff708f634fe981109ac015e4e6b7319c2512c79fa516b642dbb1dbad",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 57,
+      "link_count": 80
+    },
+    {
+      "url": "https://developers.openai.com/codex/use-cases/refactor-your-codebase",
+      "title": "Refactor your codebase | Codex use cases",
+      "local_path": "pages/codex-use-cases-refactor-your-codebase.md",
+      "html_sha256": "fe6e7336fd6907b3872def6e3ae1d3cb7d1ffd874954c0f4e81f4e3837eedd57",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 54,
+      "link_count": 81
+    },
+    {
+      "url": "https://developers.openai.com/codex/videos",
+      "title": "Videos – Codex | OpenAI Developers",
+      "local_path": "pages/codex-videos.md",
+      "html_sha256": "5cdcc61cccca046917373fd6c35e8dbde5cd8dff47900ede7a60148c150d2bc4",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 47,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/windows",
+      "title": "Windows – Codex | OpenAI Developers",
+      "local_path": "pages/codex-windows.md",
+      "html_sha256": "b37f6c36094ac3de3801757b875d794e6d1ff66580ac063af64f1b34149b95a5",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 56,
+      "link_count": 76
+    },
+    {
+      "url": "https://developers.openai.com/codex/workflows",
+      "title": "Workflows – Codex | OpenAI Developers",
+      "local_path": "pages/codex-workflows.md",
+      "html_sha256": "dd30d85d88757d130cec947f150bb0e366deb720364e7cfcf277c3655456b7de",
+      "fetched_at": "2026-04-26T22:07:20+00:00",
+      "heading_count": 71,
+      "link_count": 76
+    }
+  ],
+  "errors": []
+}

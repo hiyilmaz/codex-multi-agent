@@ -1,0 +1,32 @@
+# Codex configuration example
+# Version: 2.0
+# Updated: 2026-04-26
+#
+# Use as a starting point for ~/.codex/config.toml or, only when needed,
+# <project>/.codex/config.toml.
+
+[ecc]
+# Base ECC is the vendor/base reusable layer.
+root = "~/Codex-ECC"
+load_policy = "on_demand"
+
+[user_global]
+# User-specific reusable overrides/extensions live in CODEX_HOME.
+root = "~/.codex"
+rules_path = "~/.codex/rules"
+skills_path = "~/.codex/skills"
+agents_path = "~/.codex/agents"
+
+[skills]
+# Project AGENTS.md should declare active skills; reusable skill bodies should
+# live in ~/.codex/skills or $ECC_ROOT/skills.
+load_policy = "on_demand"
+
+[agents]
+# Project AGENTS.md should declare active agent roles; reusable role definitions
+# should live in ~/.codex/agents or $ECC_ROOT/agents.
+load_policy = "on_demand"
+
+[evidence]
+# Match this with EVIDENCE_PATH in AGENTS.md when the project needs reports.
+default_path = "docs/reports"

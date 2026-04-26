@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: codex-ecc-update [--ecc-root <path>] [--codex-home <path>]
+
+Updates the base ECC root when it is a git repository and reports global Codex
+file status. This command does not rewrite project files or user custom content.
+EOF
+}
+
+ECC_ROOT="$HOME/Codex-ECC"
+CODEX_HOME="$HOME/.codex"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --ecc-root)
+      ECC_ROOT="$2"
+      shift 2
+      ;;
+    --codex-home)
+      CODEX_HOME="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -d "$ECC_ROOT/.git" ]]; then
+  git -C "$ECC_ROOT" pull --ff-only
+else
+  echo "ECC_ROOT is not a git repository: $ECC_ROOT"
+  echo "No base ECC update performed."
+fi
+
+if [[ -e "$CODEX_HOME/AGENTS.md" ]]; then
+  echo "Found: $CODEX_HOME/AGENTS.md"
+else
+  echo "Missing: $CODEX_HOME/AGENTS.md"
+fi
+
+if [[ -e "$CODEX_HOME/config.toml" ]]; then
+  echo "Found: $CODEX_HOME/config.toml"
+else
+  echo "Missing: $CODEX_HOME/config.toml"
+fi
+
+echo "User-global custom content is left unchanged:"
+echo "  $CODEX_HOME/rules/"
+echo "  $CODEX_HOME/skills/"
+echo "  $CODEX_HOME/agents/"
