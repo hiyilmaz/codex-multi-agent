@@ -1,7 +1,7 @@
 # Codex — Project Instructions
 
-**Version:** 2.0
-**Updated:** 2026-04-26
+**Version:** 2.1
+**Updated:** 2026-05-22
 
 ---
 
@@ -12,15 +12,13 @@
 
 ```text
 PROJECT_NAME:        Codex Template V2
-PROJECT_SUMMARY:     Codex-native project instruction template and helper scripts for initializing project AGENTS.md files, Codex config, prompts, reusable ECC structure, and a local index of official OpenAI Codex docs.
+PROJECT_SUMMARY:     Codex-native project instruction template and helper scripts for initializing project AGENTS.md files, Codex config, prompts, user-global skill/agent registry structure, and a local index of official OpenAI Codex docs.
 
 STACK_BACKEND:       Python docs indexer / Bash scripts / Markdown templates / TOML config examples
 STACK_FRONTEND:      Documentation and CLI template project
 
 CHANGELOG_PATH:      docs/CHANGELOG.md
 EVIDENCE_PATH:       docs/reports/
-
-ECC_ROOT:            $ECC_ROOT
 
 ACTIVE_RULE_SETS:
   - python: scripting, documentation-indexing, testing
@@ -39,10 +37,11 @@ ACTIVE_AGENT_ROLES:
   - security-reviewer
 
 DOMAIN_RULES:
-  - Project AGENTS.md files declare project deltas only; do not inline reusable ECC rule, skill, or agent bodies.
+  - Project AGENTS.md files declare project deltas only; do not inline reusable rule, skill, or agent bodies.
   - Helper scripts must preserve existing global or project Codex files unless the documented confirmation or force flag is used.
   - Keep Codex config examples valid for Codex config.toml schema; do not add custom reserved runtime metadata tables.
   - Local OpenAI Codex docs entries are compact indexes only; official OpenAI docs remain authoritative.
+  - External runtime/vendor layers are not part of the active resolution model.
 ```
 
 ---
@@ -65,7 +64,7 @@ This project file defines only:
 
 - project identity
 - stack and evidence paths
-- active ECC declarations
+- active reusable declarations
 - project-specific domain rules
 - local exceptions explicitly required for this project
 
@@ -73,13 +72,12 @@ Reusable rules, skills, and agents must stay outside this file.
 
 ---
 
-## ECC Resolution
+## Reusable Resolution
 
 Declared rules, skills, and agents resolve in this order:
 
 ```text
 ~/.codex/ overrides
-  -> ECC_ROOT base content
   -> unavailable/report
 ```
 
@@ -88,12 +86,7 @@ Expected user-global locations:
 - `~/.codex/rules/`
 - `~/.codex/skills/`
 - `~/.codex/agents/`
-
-Expected base ECC locations:
-
-- `$ECC_ROOT/rules/`
-- `$ECC_ROOT/skills/`
-- `$ECC_ROOT/agents/`
+- `~/.codex/registry/`
 
 Load only the minimum relevant files for the current task.
 

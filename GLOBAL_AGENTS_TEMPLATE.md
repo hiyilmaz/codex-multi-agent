@@ -1,7 +1,7 @@
 # Codex — Global Instructions
 
-**Version:** 2.0
-**Updated:** 2026-04-26
+**Version:** 2.1
+**Updated:** 2026-05-22
 
 ---
 
@@ -10,18 +10,12 @@
 This file defines global Codex behavior for all projects unless a project
 `AGENTS.md` provides a narrower local delta.
 
-Reusable ECC content is not stored in this file. This file declares how Codex
-should use the ECC layers.
+Reusable skill and agent bodies are not stored in this file. This file declares
+the active user-global Codex surface and the rules that every project inherits.
 
 ---
 
-## ECC Layers
-
-Base ECC root:
-
-```text
-ECC_ROOT: ~/Codex-ECC
-```
+## Codex Runtime Surface
 
 User-global Codex root:
 
@@ -29,12 +23,10 @@ User-global Codex root:
 CODEX_HOME: ~/.codex
 ```
 
-Layer ownership:
+Runtime ownership:
 
-- `ECC_ROOT` owns base reusable ECC rules, skills, agents, templates, scripts,
-  and lifecycle docs.
 - `CODEX_HOME` owns user-specific reusable rules, skills, agents, active global
-  instructions, and runtime config.
+  instructions, registry indexes, and runtime config.
 - Project `AGENTS.md` owns only project identity, active declarations, domain
   constraints, and local deltas.
 
@@ -43,11 +35,18 @@ Resolution priority:
 ```text
 project declaration
   -> user-global override in ~/.codex/
-  -> base ECC content in ECC_ROOT
   -> unavailable/report
 ```
 
 Do not copy reusable rule, skill, or agent bodies into project `AGENTS.md`.
+
+Active reusable assets and governance indexes live under:
+
+- `~/.codex/agents/`
+- `~/.codex/skills/`
+- `~/.codex/registry/`
+
+There is no external runtime layer.
 
 ---
 
@@ -215,6 +214,26 @@ Apply Codex-native workflows:
 - Should not silently implement unrelated changes
 - High-risk findings should be surfaced before further edits
 
+### Lightweight Orchestrator Compatibility
+
+The lightweight orchestrator protocol is a review-lens policy. It may be used to
+ask for extra subagent opinions when a concrete risk exists, but it must not
+replace, reorder, or weaken the mandatory orchestration chain.
+
+Detailed policy lives in `~/.codex/registry/ORCHESTRATION.md`.
+
+### Skill/Agent Self-Improvement
+
+Reusable skills and agents may be created and activated automatically only by
+the `skill-agent-governor`.
+
+The governor owns duplicate checks, scope checks, conflict checks, registry
+updates, and audit-log entries.
+
+The governor must not edit `~/.codex/AGENTS.md`, `~/.codex/config.toml`, the
+mandatory orchestration chain, approval rules, destructive-operation rules,
+auth/security policy, or model/runtime defaults without explicit user approval.
+
 ---
 
 ## Allowed Autonomy (No Approval Needed)
@@ -244,22 +263,14 @@ Issues found: STOP, report, await decision.
 
 ---
 
-## Reusable ECC Content
+## Reusable Skill And Agent Content
 
 User-specific reusable content:
 
 - `~/.codex/rules/`
 - `~/.codex/skills/`
 - `~/.codex/agents/`
-
-Base ECC content:
-
-- `$ECC_ROOT/rules/`
-- `$ECC_ROOT/skills/`
-- `$ECC_ROOT/agents/`
-- `$ECC_ROOT/templates/`
-- `$ECC_ROOT/bin/`
-- `$ECC_ROOT/docs/`
+- `~/.codex/registry/`
 
 Loading rules:
 
@@ -268,6 +279,8 @@ Loading rules:
 - Load only the minimum relevant files for the current task.
 - If a declared item cannot be found, report it before doing work that depends
   on it.
+- If a missing reusable skill or agent is needed, route creation through
+  `skill-agent-governor`.
 
 ---
 

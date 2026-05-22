@@ -6,7 +6,7 @@ usage() {
 Usage: codex-project-init <project-path>
 
 Archives existing project-local Codex files and resets the project to the
-standard Codex/ECC structure.
+standard Codex structure.
 
 Behavior:
   - asks for confirmation before writing
@@ -95,7 +95,7 @@ echo "Created: $PROJECT_PATH/.codex/config.toml"
 echo "Created: $PROJECT_PATH/.codex/prompts/fill-project-configuration.md"
 
 if [[ ! -e "$HOME/.codex/AGENTS.md" ]]; then
-  echo "Warning: ~/.codex/AGENTS.md is missing. Run codex-ecc-install first." >&2
+  echo "Warning: ~/.codex/AGENTS.md is missing. Create the user-global Codex surface first." >&2
 fi
 
 echo "Next: run the prompt in $PROJECT_PATH/.codex/prompts/fill-project-configuration.md to fill AGENTS.md Project Configuration."

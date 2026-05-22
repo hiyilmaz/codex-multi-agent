@@ -1,7 +1,7 @@
 # Codex Template V2
 
-**Version:** 2.4
-**Updated:** 2026-04-27
+**Version:** 2.5
+**Updated:** 2026-05-22
 
 ---
 
@@ -23,23 +23,23 @@ It is self-contained and does not depend on another agent runtime.
 | `USAGE_GUIDE.md` | How to apply the template to new or existing projects |
 | `CODEX_CONFIG_EXAMPLE.toml` | Optional project `.codex/config.toml` example |
 | `PROJECT_CONFIG_PROMPT.md` | Prompt copied into projects after init |
-| `ECC_MANAGEMENT.md` | Global ECC install/update model |
+| `REGISTRY_MANAGEMENT.md` | User-global skill/agent registry model |
 | `docs/openai-codex/` | Local updateable index of official OpenAI Codex docs |
-| `bin/` | Init and ECC management helper scripts |
+| `bin/` | Project init helper scripts |
 
 ---
 
-## ECC Model
+## Runtime Model
 
-Base ECC content lives under `ECC_ROOT`, which must be a git clone of
-`https://github.com/affaan-m/everything-claude-code`. User-specific reusable
-overrides live under `~/.codex/`. Project `AGENTS.md` declares what is active
-but does not store reusable bodies.
+The active reusable runtime surface lives under `~/.codex/`. Project
+`AGENTS.md` files declare what is active but do not store reusable bodies.
 
 Reusable content locations:
 
-- Base ECC: `$ECC_ROOT/rules`, `$ECC_ROOT/skills`, `$ECC_ROOT/agents`
-- User-global: `~/.codex/rules`, `~/.codex/skills`, `~/.codex/agents`
+- User-global rules: `~/.codex/rules`
+- User-global skills: `~/.codex/skills`
+- User-global agents: `~/.codex/agents`
+- User-global registry: `~/.codex/registry`
 
 Reusable bodies should not be copied into project `AGENTS.md`.
 
@@ -47,25 +47,7 @@ Reusable bodies should not be copied into project `AGENTS.md`.
 
 ## Quick Start
 
-Clone the base ECC repo once:
-
-```bash
-git clone https://github.com/affaan-m/everything-claude-code ~/Codex-ECC
-```
-
-Install the global Codex surface:
-
-```bash
-bin/codex-ecc-install
-```
-
-Update the base ECC repo later:
-
-```bash
-bin/codex-ecc-update
-```
-
-Then initialize a project:
+Initialize a project:
 
 ```bash
 bin/codex-project-init /path/to/project

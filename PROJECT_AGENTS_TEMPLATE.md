@@ -1,7 +1,7 @@
 # Codex — Project Instructions
 
-**Version:** 2.0
-**Updated:** 2026-04-26
+**Version:** 2.1
+**Updated:** 2026-05-22
 
 ---
 
@@ -19,8 +19,6 @@ STACK_FRONTEND:      [e.g. Next.js / TypeScript / shadcn/ui]
 
 CHANGELOG_PATH:      [e.g. docs/CHANGELOG.md]
 EVIDENCE_PATH:       [e.g. docs/reports/]
-
-ECC_ROOT:            $ECC_ROOT
 
 ACTIVE_RULE_SETS:
   - [e.g. python: coding-style, security, testing, patterns]
@@ -63,7 +61,7 @@ This project file defines only:
 
 - project identity
 - stack and evidence paths
-- active ECC declarations
+- active reusable declarations
 - project-specific domain rules
 - local exceptions explicitly required for this project
 
@@ -71,13 +69,12 @@ Reusable rules, skills, and agents must stay outside this file.
 
 ---
 
-## ECC Resolution
+## Reusable Resolution
 
 Declared rules, skills, and agents resolve in this order:
 
 ```text
 ~/.codex/ overrides
-  -> ECC_ROOT base content
   -> unavailable/report
 ```
 
@@ -86,12 +83,7 @@ Expected user-global locations:
 - `~/.codex/rules/`
 - `~/.codex/skills/`
 - `~/.codex/agents/`
-
-Expected base ECC locations:
-
-- `$ECC_ROOT/rules/`
-- `$ECC_ROOT/skills/`
-- `$ECC_ROOT/agents/`
+- `~/.codex/registry/`
 
 Load only the minimum relevant files for the current task.
 
