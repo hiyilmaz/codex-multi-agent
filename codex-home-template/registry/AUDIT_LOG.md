@@ -9,3 +9,4 @@ indexes.
   orchestration policy, and controlled self-improvement governance.
 - [INFRA] Added active core orchestration agents: `planner`, `tdd-guide`,
   `code-reviewer`, and `security-reviewer`.
+- [INFRA] Added default status messages and YOLO-mode boundary policy.

@@ -11,7 +11,7 @@ runtime surface can be installed quickly on another machine.
 find codex-home-template -maxdepth 3 -type f | sort
 bash -n bin/codex-user-install
 python3 -c 'import pathlib,tomli; files=[pathlib.Path("codex-home-template/config.toml")]+list(pathlib.Path("codex-home-template/agents").glob("*.toml")); [tomli.loads(p.read_text()) for p in files]; print("parsed", len(files), "template toml files")'
-rg -n "/Users/iyilmaz|sessions|cache|logs|hooks.state|trusted_hash|projects\." codex-home-template -S
+rg -n "<absolute-user-path>|sessions|cache|logs|hooks.state|trusted_hash|projects\." codex-home-template -S
 bin/codex-user-install --codex-home /private/tmp/codex-home-install-test-20260522
 ```
 
@@ -32,4 +32,3 @@ bin/codex-user-install --codex-home /private/tmp/codex-home-install-test-2026052
 - `codex-home-template/agents/`
 - `codex-home-template/skills/`
 - `codex-home-template/registry/`
-

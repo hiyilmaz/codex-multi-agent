@@ -2,6 +2,8 @@
 
 ## 2026-05-22
 
+- [FEAT] Added interactive setup with status-message defaults and YOLO-mode
+  preference guarded by mandatory destructive-operation approvals.
 - [DOCS] Added a Turkish setup guide covering fresh user-global installation
   and project-local initialization.
 - [INFRA] Added `codex-home-template/` and `bin/codex-user-install` for

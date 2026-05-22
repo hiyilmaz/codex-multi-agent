@@ -85,3 +85,21 @@ high:
   - registry or skill/agent governance
 ```
 
+## YOLO Mode Boundary
+
+YOLO mode may reduce interruptions for low-risk work, but it must never bypass
+approval for destructive or high-risk changes.
+
+Approval is always required for:
+
+- `DROP`
+- `DELETE *`
+- `TRUNCATE`
+- `rm -rf`
+- `git reset --hard`
+- `git push --force`
+- adding dependencies
+- changing API contracts
+- DB schema changes
+- auth/security code changes
+

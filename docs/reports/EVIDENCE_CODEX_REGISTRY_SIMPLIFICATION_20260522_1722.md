@@ -11,15 +11,15 @@ and add automatic skill/agent governance.
 ```bash
 git status --short
 rg -n "ECC|ECC_ROOT|Codex-ECC|everything-claude-code|codex-ecc" \
-  /Users/iyilmaz/.codex/AGENTS.md \
-  /Users/iyilmaz/.codex/config.toml \
-  /Users/iyilmaz/.codex/registry \
+  ~/.codex/AGENTS.md \
+  ~/.codex/config.toml \
+  ~/.codex/registry \
   AGENTS.md GLOBAL_AGENTS_TEMPLATE.md PROJECT_AGENTS_TEMPLATE.md \
   README.md USAGE_GUIDE.md REGISTRY_MANAGEMENT.md \
   CODEX_CONFIG_EXAMPLE.toml PROJECT_CONFIG_PROMPT.md \
   docs/CHANGELOG.md bin scripts -S
 bash -n bin/codex-project-init
-python3 -c 'import pathlib,tomli; files=[pathlib.Path("/Users/iyilmaz/.codex/config.toml")]+list(pathlib.Path("/Users/iyilmaz/.codex/agents").glob("*.toml")); [tomli.loads(p.read_text()) for p in files]; print("parsed", len(files), "toml files")'
+python3 -c 'import pathlib,tomli; files=[pathlib.Path.home()/".codex/config.toml"]+list((pathlib.Path.home()/".codex/agents").glob("*.toml")); [tomli.loads(p.read_text()) for p in files]; print("parsed", len(files), "toml files")'
 printf 'y\n' | bin/codex-project-init /private/tmp/codex-template-smoke-20260522
 rg -n "ECC|ECC_ROOT|Codex-ECC|everything-claude-code|codex-ecc" /private/tmp/codex-template-smoke-20260522 -S
 ```
@@ -36,9 +36,8 @@ rg -n "ECC|ECC_ROOT|Codex-ECC|everything-claude-code|codex-ecc" /private/tmp/cod
 
 ## Files
 
-- Updated user-global policy: `/Users/iyilmaz/.codex/AGENTS.md`
-- Updated user-global config comments: `/Users/iyilmaz/.codex/config.toml`
-- Added user-global registry: `/Users/iyilmaz/.codex/registry/`
-- Added core orchestration agents and governor under `/Users/iyilmaz/.codex/agents/`
+- Updated user-global policy: `~/.codex/AGENTS.md`
+- Updated user-global config comments: `~/.codex/config.toml`
+- Added user-global registry: `~/.codex/registry/`
+- Added core orchestration agents and governor under `~/.codex/agents/`
 - Updated project templates and docs in this repository.
-

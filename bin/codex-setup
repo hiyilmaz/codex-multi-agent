@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: codex-setup [--codex-home <path>]
+
+Runs an interactive setup for the Codex user-global surface and optional
+project initialization.
+EOF
+}
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+CODEX_HOME="$HOME/.codex"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --codex-home)
+      CODEX_HOME="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+ask_yes_no() {
+  local prompt="$1"
+  local default_answer="$2"
+  local answer
+  local suffix
+
+  if [[ "$default_answer" == "y" ]]; then
+    suffix="[Y/n]"
+  else
+    suffix="[y/N]"
+  fi
+
+  while true; do
+    printf "%s %s " "$prompt" "$suffix" >&2
+    read -r answer
+    answer="${answer:-$default_answer}"
+    case "$answer" in
+      y|Y|yes|YES) return 0 ;;
+      n|N|no|NO) return 1 ;;
+      *) echo "Lütfen y veya n girin." >&2 ;;
+    esac
+  done
+}
+
+ask_value() {
+  local prompt="$1"
+  local default_value="$2"
+  local answer
+
+  printf "%s [%s] " "$prompt" "$default_value" >&2
+  read -r answer
+  printf "%s" "${answer:-$default_value}"
+}
+
+write_status_messages() {
+  local target="$1"
+  local error_msg="$2"
+  local permission_msg="$3"
+  local completed_msg="$4"
+  local decision_msg="$5"
+
+  mkdir -p "$(dirname "$target")"
+  cat > "$target" <<EOF
+# Status Messages
+
+**Status:** Active
+
+| State | Message |
+|---|---|
+| error | $error_msg |
+| permission_required | $permission_msg |
+| completed | $completed_msg |
+| decision_required | $decision_msg |
+| blocked | İlerleyemiyorum, kararını bekliyorum. |
+EOF
+}
+
+write_setup_preferences() {
+  local target="$1"
+  local yolo_mode="$2"
+
+  mkdir -p "$(dirname "$target")"
+  cat > "$target" <<EOF
+# Setup Preferences
+
+**Status:** Active
+
+## YOLO Mode
+
+\`\`\`text
+YOLO_MODE: $yolo_mode
+\`\`\`
+
+YOLO mode may allow lower-risk automation to proceed with fewer interruptions.
+
+YOLO mode must not bypass approval for:
+
+- \`DROP\`
+- \`DELETE *\`
+- \`TRUNCATE\`
+- \`rm -rf\`
+- \`git reset --hard\`
+- \`git push --force\`
+- adding dependencies
+- changing API contracts
+- DB schema changes
+- auth/security code changes
+
+If any of these are needed: stop, report, and wait for user approval.
+EOF
+}
+
+echo "Codex setup"
+echo "-----------"
+
+CODEX_HOME="$(ask_value "Codex home dizini" "$CODEX_HOME")"
+echo
+
+if ask_yes_no "Kullanıcı-global Codex template kurulsun mu?" "y"; then
+  FORCE_FLAG=()
+  if ask_yes_no "Mevcut template-managed dosyalar ezilsin mi?" "n"; then
+    FORCE_FLAG=(--force)
+  fi
+  "$TEMPLATE_DIR/bin/codex-user-install" --codex-home "$CODEX_HOME" "${FORCE_FLAG[@]}"
+fi
+
+echo
+if ask_yes_no "YOLO modu etkinleştirilsin mi?" "n"; then
+  YOLO_MODE="enabled"
+else
+  YOLO_MODE="disabled"
+fi
+
+echo
+echo "Durum mesajları için varsayılanlar kullanılacak. Enter ile kabul edebilir veya değiştirebilirsin."
+ERROR_MSG="$(ask_value "Hata mesajı" "Hata oluştu, seni bekliyorum.")"
+echo
+PERMISSION_MSG="$(ask_value "İzin mesajı" "Devam etmek için izin vermelisin.")"
+echo
+COMPLETED_MSG="$(ask_value "Tamamlandı mesajı" "Görev tamamlandı, yeni talimatını bekliyorum.")"
+echo
+DECISION_MSG="$(ask_value "Karar mesajı" "Karar gerekiyor, seni bekliyorum.")"
+echo
+
+write_status_messages "$CODEX_HOME/registry/STATUS_MESSAGES.md" "$ERROR_MSG" "$PERMISSION_MSG" "$COMPLETED_MSG" "$DECISION_MSG"
+write_setup_preferences "$CODEX_HOME/registry/SETUP_PREFERENCES.md" "$YOLO_MODE"
+
+echo "Yazıldı: $CODEX_HOME/registry/STATUS_MESSAGES.md"
+echo "Yazıldı: $CODEX_HOME/registry/SETUP_PREFERENCES.md"
+
+echo
+if ask_yes_no "Bir proje içine Codex yapısı kurulsun mu?" "n"; then
+  PROJECT_PATH="$(ask_value "Proje dizini" "/path/to/project")"
+  echo
+  echo "Proje kurulumu başlatılıyor. Komut kendi onayını ayrıca soracaktır."
+  "$TEMPLATE_DIR/bin/codex-project-init" "$PROJECT_PATH"
+fi
+
+echo
+echo "Kurulum tamamlandı."

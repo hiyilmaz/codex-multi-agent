@@ -40,6 +40,25 @@ Install the portable user-global template:
 bin/codex-user-install
 ```
 
+For guided installation, use the interactive setup:
+
+```bash
+bin/codex-setup
+```
+
+The setup wizard asks for:
+
+- target Codex home path, defaulting to `~/.codex`
+- whether to install the portable user-global template
+- whether to overwrite existing template-managed files
+- whether to enable YOLO mode
+- default status messages for error, permission, completed, and decision states
+- whether to initialize a project after the user-global setup
+
+YOLO mode may reduce interruptions for low-risk work, but it never bypasses
+approval for destructive operations, dependency changes, API contract changes,
+DB schema changes, or auth/security code changes.
+
 Use `--force` only when you intentionally want to overwrite template-managed
 files:
 
@@ -180,9 +199,11 @@ that item.
 ## Summary
 
 ```text
+Run codex-setup for guided installation
+        ↓
+or install ~/.codex with codex-user-install
+        ↓
 Run codex-project-init and confirm reset
-        ↑
-Install ~/.codex with codex-user-install first when needed
         ↓
 Run generated Project Configuration prompt
         ↓

@@ -63,11 +63,14 @@ bin/codex-user-install
 ~/.codex/registry/AGENTS_INDEX.md
 ~/.codex/registry/SKILLS_INDEX.md
 ~/.codex/registry/ORCHESTRATION.md
+~/.codex/registry/STATUS_MESSAGES.md
+~/.codex/registry/SETUP_PREFERENCES.md
 ~/.codex/registry/AUDIT_LOG.md
 ```
 
 The registry indexes active reusable agents and skills. It also documents
-orchestration policy, reasoning-effort policy, and controlled self-improvement.
+orchestration policy, reasoning-effort policy, status messages, setup
+preferences, and controlled self-improvement.
 
 ---
 
@@ -90,6 +93,14 @@ The governor must not edit protected core policy:
 - model/runtime defaults
 
 Protected policy changes require explicit user approval.
+
+## YOLO Boundary
+
+YOLO preferences are stored in `~/.codex/registry/SETUP_PREFERENCES.md`.
+
+YOLO mode may reduce interruptions for low-risk work, but it does not bypass
+approval for destructive operations, dependency changes, API contract changes,
+DB schema changes, or auth/security code changes.
 
 ---
 

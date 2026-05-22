@@ -55,6 +55,12 @@ Install or refresh the user-global Codex surface:
 bin/codex-user-install
 ```
 
+Run the interactive setup:
+
+```bash
+bin/codex-setup
+```
+
 Initialize a project:
 
 ```bash

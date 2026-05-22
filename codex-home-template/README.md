@@ -23,6 +23,8 @@ Included:
 - `skills/`
 - `registry/`
 
+Setup preferences and status messages live under `registry/`.
+
 Excluded:
 
 - sessions
@@ -32,4 +34,3 @@ Excluded:
 - hook state
 - plugin caches
 - machine-local project trust entries
-

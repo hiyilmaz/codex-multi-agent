@@ -26,8 +26,23 @@ Aktif yapı basittir:
 Önce bu repo bilgisayarda olmalı:
 
 ```bash
-cd /Users/iyilmaz/WebStorm/Codex-Multi-Agent
+cd /path/to/Codex-Multi-Agent
 ```
+
+En kolay yöntem kurulum sihirbazını çalıştırmaktır:
+
+```bash
+bin/codex-setup
+```
+
+Sihirbaz şunları sorar:
+
+- `~/.codex` hedef dizini
+- kullanıcı-global template kurulumu
+- mevcut dosyaların ezilip ezilmeyeceği
+- YOLO modu
+- hata, izin, tamamlandı ve karar bekleme mesajları
+- istenirse proje içine Codex yapısı kurulumu
 
 Kullanıcı-global Codex ortamını kur:
 
@@ -77,7 +92,7 @@ Bu kadar. Runtime yine `~/.codex` altında çalışır; repo içindeki
 Yeni veya mevcut bir projeye Codex proje yapısını eklemek için:
 
 ```bash
-cd /Users/iyilmaz/WebStorm/Codex-Multi-Agent
+cd /path/to/Codex-Multi-Agent
 bin/codex-project-init /path/to/project
 ```
 
@@ -139,6 +154,12 @@ Yeni skill veya agent gerektiğinde `skill-agent-governor` sorumludur.
 
 ## 7. Kısa Komut Özeti
 
+Soru-cevap kurulum sihirbazını çalıştır:
+
+```bash
+bin/codex-setup
+```
+
 Kullanıcı ortamı kur:
 
 ```bash
@@ -157,3 +178,18 @@ Proje içine Codex yapısı kur:
 bin/codex-project-init /path/to/project
 ```
 
+## 8. YOLO Modu
+
+Kurulum sihirbazı YOLO modunu sorar.
+
+YOLO açık olsa bile şu işlemler her zaman kullanıcı onayı ister:
+
+```text
+DROP, DELETE *, TRUNCATE, rm -rf, git reset --hard, git push --force
+dependency ekleme
+API contract değişikliği
+DB schema değişikliği
+auth/security kodu değişikliği
+```
+
+Yani YOLO modu destructive veya yüksek riskli işlemlerde onayı kaldırmaz.
