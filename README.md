@@ -24,8 +24,10 @@ It is self-contained and does not depend on another agent runtime.
 | `CODEX_CONFIG_EXAMPLE.toml` | Optional project `.codex/config.toml` example |
 | `PROJECT_CONFIG_PROMPT.md` | Prompt copied into projects after init |
 | `REGISTRY_MANAGEMENT.md` | User-global skill/agent registry model |
+| `codex-home-template/` | Portable `~/.codex` template for another machine |
+| `TURKCE_KURULUM_REHBERI.md` | Turkish quick setup guide |
 | `docs/openai-codex/` | Local updateable index of official OpenAI Codex docs |
-| `bin/` | Project init helper scripts |
+| `bin/` | User-global and project init helper scripts |
 
 ---
 
@@ -46,6 +48,12 @@ Reusable bodies should not be copied into project `AGENTS.md`.
 ---
 
 ## Quick Start
+
+Install or refresh the user-global Codex surface:
+
+```bash
+bin/codex-user-install
+```
 
 Initialize a project:
 

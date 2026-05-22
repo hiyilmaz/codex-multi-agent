@@ -1,0 +1,20 @@
+model = "gpt-5.5"
+model_reasoning_effort = "high"
+approvals_reviewer = "user"
+
+[tui]
+status_line = ["model-with-reasoning", "current-dir", "context-used", "task-progress"]
+
+[features]
+memories = true
+
+# Portable Codex home template.
+# Project trust entries, hook hashes, sessions, logs, caches, memories, and
+# machine-local paths should be added on the target machine, not stored here.
+#
+# CODEX_HOME=~/.codex
+# USER_RULES=~/.codex/rules
+# USER_SKILLS=~/.codex/skills
+# USER_AGENTS=~/.codex/agents
+# USER_REGISTRY=~/.codex/registry
+

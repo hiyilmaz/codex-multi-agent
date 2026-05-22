@@ -34,6 +34,19 @@ The active runtime surface is:
 Reusable bodies live under `~/.codex`; project `AGENTS.md` files only declare
 project-specific deltas.
 
+Install the portable user-global template:
+
+```bash
+bin/codex-user-install
+```
+
+Use `--force` only when you intentionally want to overwrite template-managed
+files:
+
+```bash
+bin/codex-user-install --force
+```
+
 ---
 
 ## New Project
@@ -168,6 +181,8 @@ that item.
 
 ```text
 Run codex-project-init and confirm reset
+        ↑
+Install ~/.codex with codex-user-install first when needed
         ↓
 Run generated Project Configuration prompt
         ↓

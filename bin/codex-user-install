@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: codex-user-install [--codex-home <path>] [--force]
+
+Installs the portable Codex user-global template into ~/.codex.
+
+Behavior:
+  - creates ~/.codex, agents, skills, rules, and registry directories
+  - installs AGENTS.md and config.toml if missing
+  - installs template agents, skills, and registry files
+  - does not overwrite existing files unless --force is provided
+EOF
+}
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+SOURCE_DIR="$TEMPLATE_DIR/codex-home-template"
+CODEX_HOME="$HOME/.codex"
+FORCE="false"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --codex-home)
+      CODEX_HOME="$2"
+      shift 2
+      ;;
+    --force)
+      FORCE="true"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+if [[ ! -d "$SOURCE_DIR" ]]; then
+  echo "FAILED: missing template directory: $SOURCE_DIR" >&2
+  exit 1
+fi
+
+install_file() {
+  local source_path="$1"
+  local target_path="$2"
+
+  if [[ -e "$target_path" && "$FORCE" != "true" ]]; then
+    echo "Skipped existing: $target_path"
+    return
+  fi
+
+  mkdir -p "$(dirname "$target_path")"
+  cp "$source_path" "$target_path"
+  echo "Installed: $target_path"
+}
+
+install_tree_files() {
+  local source_root="$1"
+  local target_root="$2"
+
+  if [[ ! -d "$source_root" ]]; then
+    return
+  fi
+
+  while IFS= read -r source_path; do
+    local rel_path="${source_path#$source_root/}"
+    install_file "$source_path" "$target_root/$rel_path"
+  done < <(find "$source_root" -type f | sort)
+}
+
+mkdir -p "$CODEX_HOME/agents" "$CODEX_HOME/skills" "$CODEX_HOME/rules" "$CODEX_HOME/registry"
+
+install_file "$SOURCE_DIR/AGENTS.md" "$CODEX_HOME/AGENTS.md"
+install_file "$SOURCE_DIR/config.toml" "$CODEX_HOME/config.toml"
+install_tree_files "$SOURCE_DIR/agents" "$CODEX_HOME/agents"
+install_tree_files "$SOURCE_DIR/skills" "$CODEX_HOME/skills"
+install_tree_files "$SOURCE_DIR/registry" "$CODEX_HOME/registry"
+
+echo "Codex home installed at: $CODEX_HOME"
+

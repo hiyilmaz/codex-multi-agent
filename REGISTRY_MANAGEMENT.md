@@ -38,6 +38,23 @@ Project:
   .codex/archive/           # init backups
 ```
 
+Portable template:
+
+```text
+codex-home-template/
+  AGENTS.md
+  config.toml
+  agents/
+  skills/
+  registry/
+```
+
+Install the portable template with:
+
+```bash
+bin/codex-user-install
+```
+
 ---
 
 ## Registry Files

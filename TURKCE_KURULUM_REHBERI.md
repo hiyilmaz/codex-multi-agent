@@ -1,0 +1,159 @@
+# Türkçe Kurulum Rehberi
+
+Bu rehber iki kullanım içindir:
+
+1. Yeni bir bilgisayarda Codex kullanıcı ortamını sıfırdan kurmak.
+2. Bir proje içine Codex proje dosyalarını eklemek.
+
+Aktif yapı basittir:
+
+```text
+~/.codex/
+  AGENTS.md
+  config.toml
+  agents/
+  skills/
+  registry/
+
+<project>/
+  AGENTS.md
+  .codex/config.toml
+  .codex/prompts/fill-project-configuration.md
+```
+
+## 1. Sıfırdan Kurulum
+
+Önce bu repo bilgisayarda olmalı:
+
+```bash
+cd /Users/iyilmaz/WebStorm/Codex-Multi-Agent
+```
+
+Kullanıcı-global Codex ortamını kur:
+
+```bash
+bin/codex-user-install
+```
+
+Bu komut şunları hazırlar:
+
+```text
+~/.codex/AGENTS.md
+~/.codex/config.toml
+~/.codex/agents/
+~/.codex/skills/
+~/.codex/registry/
+~/.codex/rules/
+```
+
+Varsayılan olarak mevcut dosyaları ezmez.
+
+Mevcut dosyaları bilinçli olarak template ile değiştirmek istersen:
+
+```bash
+bin/codex-user-install --force
+```
+
+## 2. Başka Bilgisayarda Kurulum
+
+Yeni bilgisayarda bu repo aynı şekilde alınır:
+
+```bash
+git clone <repo-url> Codex-Multi-Agent
+cd Codex-Multi-Agent
+```
+
+Sonra:
+
+```bash
+bin/codex-user-install
+```
+
+Bu kadar. Runtime yine `~/.codex` altında çalışır; repo içindeki
+`codex-home-template/` sadece taşınabilir kurulum kaynağıdır.
+
+## 3. Yeni Proje İçine Kurulum
+
+Yeni veya mevcut bir projeye Codex proje yapısını eklemek için:
+
+```bash
+cd /Users/iyilmaz/WebStorm/Codex-Multi-Agent
+bin/codex-project-init /path/to/project
+```
+
+Komut onay ister. Onaydan sonra şunları oluşturur:
+
+```text
+<project>/AGENTS.md
+<project>/.codex/config.toml
+<project>/.codex/prompts/fill-project-configuration.md
+```
+
+Eğer projede eski Codex dosyaları varsa, bunları şuraya arşivler:
+
+```text
+<project>/.codex/archive/init-YYYYMMDD_HHMMSS/
+```
+
+## 4. Proje AGENTS.md Doldurma
+
+Kurulumdan sonra şu dosyadaki prompt çalıştırılır:
+
+```text
+<project>/.codex/prompts/fill-project-configuration.md
+```
+
+Bu prompt projenin `AGENTS.md` dosyasındaki sadece `Project Configuration`
+bloğunu doldurur.
+
+## 5. Mevcut Projeyi Hızlı Kontrol
+
+Projede eski dış katman referansı kalmış mı kontrol et:
+
+```bash
+cd /path/to/project
+rg -n "ECC|ECC_ROOT|Codex-ECC|everything-claude-code|codex-ecc" AGENTS.md .codex README.md docs bin scripts
+```
+
+Sonuç çıkmıyorsa proje yeni sade modele uyumludur.
+
+## 6. Günlük Kullanım Mantığı
+
+Günlük çalışma kaynağı:
+
+```text
+~/.codex/AGENTS.md
+~/.codex/agents/
+~/.codex/skills/
+~/.codex/registry/
+project/AGENTS.md
+```
+
+Zorunlu orchestration zinciri korunur:
+
+```text
+planner -> tdd-guide -> code-reviewer -> security-reviewer
+```
+
+Yeni skill veya agent gerektiğinde `skill-agent-governor` sorumludur.
+
+## 7. Kısa Komut Özeti
+
+Kullanıcı ortamı kur:
+
+```bash
+bin/codex-user-install
+```
+
+Kullanıcı ortamını zorla yenile:
+
+```bash
+bin/codex-user-install --force
+```
+
+Proje içine Codex yapısı kur:
+
+```bash
+bin/codex-project-init /path/to/project
+```
+
