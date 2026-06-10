@@ -1,0 +1,9 @@
+agent-home/sessions/
+agent-home/archived_sessions/
+agent-home/logs/
+agent-home/cache/
+agent-home/caches/
+agent-home/history.jsonl
+agent-home/auth.json
+agent-home/*.sqlite
+agent-home/*.db

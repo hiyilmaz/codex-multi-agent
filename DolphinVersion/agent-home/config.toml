@@ -1,0 +1,10 @@
+model_id = "cognitivecomputations_dolphin-mistral-24b-venice-edition"
+model_api_base_url = "https://lm.backstage8.com/v1/"
+agent_home = "DolphinVersion/agent-home"
+
+[runtime]
+launcher = "DolphinVersion/bin/dolphin"
+starts_tool = false
+
+[tui]
+status_line = ["model", "current-dir", "context-used", "task-progress"]

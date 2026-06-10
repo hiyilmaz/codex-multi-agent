@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-06-10
+
+- [DOCS] Added global assistant conduct guidance to the Codex home instruction
+  templates.
+
 ## 2026-05-22
 
 - [FEAT] Added interactive setup with status-message defaults and YOLO-mode

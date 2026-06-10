@@ -1,0 +1,65 @@
+# DolphinVersion Project Instructions
+
+**Version:** 1.1
+**Updated:** 2026-06-10
+
+---
+
+## Project Configuration
+
+```text
+PROJECT_NAME:        DolphinVersion
+PROJECT_SUMMARY:     Isolated agent runtime variant for cognitivecomputations_dolphin-mistral-24b-venice-edition through a remote LM-compatible endpoint.
+
+STACK_BACKEND:       Bash environment wrapper / TOML model settings / Markdown instructions
+STACK_FRONTEND:      Documentation only
+
+CHANGELOG_PATH:      DolphinVersion/docs/CHANGELOG.md
+EVIDENCE_PATH:       DolphinVersion/docs/reports/
+
+ACTIVE_RULE_SETS:
+  - shell: scripting, safety
+  - markdown: documentation
+  - toml: configuration
+
+ACTIVE_SKILLS:
+  - none
+
+ACTIVE_AGENT_ROLES:
+  - planner
+  - tdd-guide
+  - code-reviewer
+  - security-reviewer
+
+DOMAIN_RULES:
+  - Keep all Dolphin runtime state under DolphinVersion/.
+  - Do not use any user-global agent home from this variant.
+  - Do not modify the repository root runtime files while working on this variant unless the user explicitly asks.
+  - The launcher must only prepare environment variables; it must not start an agent CLI.
+  - Use AGENT_HOME for the local runtime root.
+  - Use MODEL_API_BASE_URL for the remote LM-compatible API endpoint.
+  - Use MODEL_ID for the selected model identifier.
+```
+
+---
+
+## Runtime Boundary
+
+This project uses a local agent home:
+
+```text
+AGENT_HOME: DolphinVersion/agent-home
+```
+
+Prepare the shell environment with:
+
+```bash
+source DolphinVersion/bin/dolphin
+```
+
+The launcher is intentionally neutral. It exports environment variables and
+does not start the final agent tool.
+
+---
+
+# EOF
