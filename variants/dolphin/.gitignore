@@ -1,0 +1,9 @@
+home/sessions/
+home/archived_sessions/
+home/logs/
+home/cache/
+home/caches/
+home/history.jsonl
+home/auth.json
+home/*.sqlite
+home/*.db

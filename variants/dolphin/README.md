@@ -13,17 +13,25 @@ cognitivecomputations_dolphin-mistral-24b-venice-edition
 ```
 
 This directory is intentionally separate from the repository root setup and
-from any user-global agent home.
+can be installed as a runtime variant through the root installer.
 
 ## Layout
 
 ```text
-DolphinVersion/
+variants/dolphin/
   AGENTS.md
   bin/dolphin
-  agent-home/
+  home/
   docs/CHANGELOG.md
   docs/reports/
+```
+
+## Install Variant
+
+Install the DolphinVersion runtime home into the selected Codex home:
+
+```bash
+bin/codex-user-install --variant dolphin
 ```
 
 ## Endpoint Check
@@ -45,19 +53,19 @@ cognitivecomputations_dolphin-mistral-24b-venice-edition
 To apply the environment to the current shell:
 
 ```bash
-source DolphinVersion/bin/dolphin
+source variants/dolphin/bin/dolphin
 ```
 
 To print the export commands without modifying the current shell:
 
 ```bash
-DolphinVersion/bin/dolphin
+variants/dolphin/bin/dolphin
 ```
 
 The launcher prepares:
 
 ```text
-AGENT_HOME=<repo>/DolphinVersion/agent-home
+AGENT_HOME=<repo>/variants/dolphin/home
 MODEL_API_BASE_URL=https://lm.backstage8.com/v1/
 MODEL_ID=cognitivecomputations_dolphin-mistral-24b-venice-edition
 ```

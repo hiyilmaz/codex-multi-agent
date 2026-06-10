@@ -2,6 +2,8 @@
 
 ## 2026-06-10
 
+- [INFRA] Move installable runtime templates under `variants/` with `codex`
+  and `dolphin` variant selection.
 - [DOCS] Added global assistant conduct guidance to the Codex home instruction
   templates.
 
@@ -11,7 +13,7 @@
   preference guarded by mandatory destructive-operation approvals.
 - [DOCS] Added a Turkish setup guide covering fresh user-global installation
   and project-local initialization.
-- [INFRA] Added `codex-home-template/` and `bin/codex-user-install` for
-  portable installation of the user-global Codex runtime surface.
+- [INFRA] Added the portable template installer for the user-global Codex
+  runtime surface.
 - [INFRA] Removed the external runtime layer from the active Codex model and
   documented the simplified `~/.codex` skill/agent registry structure.

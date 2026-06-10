@@ -3,23 +3,97 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: codex-user-install [--codex-home <path>] [--force]
+Usage: codex-user-install [--codex-home <path>] [--variant <id>] [--force]
+       codex-user-install --list-variants
 
-Installs the portable Codex user-global template into ~/.codex.
+Installs a portable user-global runtime template into ~/.codex.
 
 Behavior:
   - creates ~/.codex, agents, skills, rules, and registry directories
   - installs AGENTS.md and config.toml if missing
   - installs template agents, skills, and registry files
   - does not overwrite existing files unless --force is provided
+  - asks for a variant when --variant is not provided and stdin is interactive
 EOF
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-SOURCE_DIR="$TEMPLATE_DIR/codex-home-template"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+VARIANTS_CONFIG="$REPO_ROOT/variants/config.toml"
 CODEX_HOME="$HOME/.codex"
 FORCE="false"
+VARIANT_ID=""
+
+default_variant() {
+  awk -F= '
+    $1 ~ /^[[:space:]]*default_variant[[:space:]]*$/ {
+      value=$2
+      gsub(/[[:space:]"]/, "", value)
+      print value
+      exit
+    }
+  ' "$VARIANTS_CONFIG"
+}
+
+variant_rows() {
+  awk '
+    /^\[\[variants\]\]/ {
+      if (id != "") print id "\t" name "\t" home
+      id=""; name=""; home=""
+      next
+    }
+    /^[[:space:]]*id[[:space:]]*=/ {
+      value=$0; sub(/^[^=]*=/, "", value); gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value); id=value
+    }
+    /^[[:space:]]*name[[:space:]]*=/ {
+      value=$0; sub(/^[^=]*=/, "", value); gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value); name=value
+    }
+    /^[[:space:]]*home[[:space:]]*=/ {
+      value=$0; sub(/^[^=]*=/, "", value); gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value); home=value
+    }
+    END {
+      if (id != "") print id "\t" name "\t" home
+    }
+  ' "$VARIANTS_CONFIG"
+}
+
+list_variants() {
+  variant_rows | while IFS=$'\t' read -r id name home; do
+    printf "%s\t%s\t%s\n" "$id" "$name" "$home"
+  done
+}
+
+variant_home() {
+  local requested_id="$1"
+  variant_rows | awk -F '\t' -v requested_id="$requested_id" '$1 == requested_id { print $3; found=1 } END { exit(found ? 0 : 1) }'
+}
+
+select_variant() {
+  local default_id="$1"
+  local answer
+
+  if [[ -n "$VARIANT_ID" ]]; then
+    printf "%s" "$VARIANT_ID"
+    return
+  fi
+
+  if [[ ! -t 0 ]]; then
+    printf "%s" "$default_id"
+    return
+  fi
+
+  echo "Kurulum versiyonu seç:" >&2
+  list_variants | while IFS=$'\t' read -r id name home; do
+    if [[ "$id" == "$default_id" ]]; then
+      printf "  - %s: %s (default) [%s]\n" "$id" "$name" "$home" >&2
+    else
+      printf "  - %s: %s [%s]\n" "$id" "$name" "$home" >&2
+    fi
+  done
+  printf "Variant [%s] " "$default_id" >&2
+  read -r answer
+  printf "%s" "${answer:-$default_id}"
+}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -27,9 +101,17 @@ while [[ $# -gt 0 ]]; do
       CODEX_HOME="$2"
       shift 2
       ;;
+    --variant)
+      VARIANT_ID="$2"
+      shift 2
+      ;;
     --force)
       FORCE="true"
       shift
+      ;;
+    --list-variants)
+      list_variants
+      exit 0
       ;;
     -h|--help)
       usage
@@ -43,6 +125,27 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ ! -f "$VARIANTS_CONFIG" ]]; then
+  echo "FAILED: missing variants config: $VARIANTS_CONFIG" >&2
+  exit 1
+fi
+
+DEFAULT_VARIANT="$(default_variant)"
+if [[ -z "$DEFAULT_VARIANT" ]]; then
+  echo "FAILED: missing default_variant in $VARIANTS_CONFIG" >&2
+  exit 1
+fi
+
+VARIANT_ID="$(select_variant "$DEFAULT_VARIANT")"
+SOURCE_RELATIVE="$(variant_home "$VARIANT_ID" || true)"
+if [[ -z "$SOURCE_RELATIVE" ]]; then
+  echo "FAILED: unknown variant: $VARIANT_ID" >&2
+  echo "Available variants:" >&2
+  list_variants >&2
+  exit 1
+fi
+
+SOURCE_DIR="$REPO_ROOT/$SOURCE_RELATIVE"
 if [[ ! -d "$SOURCE_DIR" ]]; then
   echo "FAILED: missing template directory: $SOURCE_DIR" >&2
   exit 1
@@ -84,5 +187,5 @@ install_tree_files "$SOURCE_DIR/agents" "$CODEX_HOME/agents"
 install_tree_files "$SOURCE_DIR/skills" "$CODEX_HOME/skills"
 install_tree_files "$SOURCE_DIR/registry" "$CODEX_HOME/registry"
 
+echo "Variant installed: $VARIANT_ID"
 echo "Codex home installed at: $CODEX_HOME"
-

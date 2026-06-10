@@ -38,21 +38,21 @@ Project:
   .codex/archive/           # init backups
 ```
 
-Portable template:
+Portable runtime variants:
 
 ```text
-codex-home-template/
-  AGENTS.md
+variants/
   config.toml
-  agents/
-  skills/
-  registry/
+  codex/home/
+  dolphin/home/
 ```
 
-Install the portable template with:
+Install the default variant or choose one explicitly:
 
 ```bash
 bin/codex-user-install
+bin/codex-user-install --variant codex
+bin/codex-user-install --variant dolphin
 ```
 
 ---

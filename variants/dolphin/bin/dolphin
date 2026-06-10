@@ -15,11 +15,11 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "$script_path")" && pwd)"
 DOLPHIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-REPO_ROOT="$(cd "$DOLPHIN_ROOT/.." && pwd)"
+REPO_ROOT="$(cd "$DOLPHIN_ROOT/../.." && pwd)"
 
-default_agent_home="$DOLPHIN_ROOT/agent-home"
+default_agent_home="$DOLPHIN_ROOT/home"
 if [[ "$PWD" == "$REPO_ROOT" ]]; then
-  default_agent_home="DolphinVersion/agent-home"
+  default_agent_home="variants/dolphin/home"
 fi
 
 export AGENT_HOME="${AGENT_HOME:-$default_agent_home}"

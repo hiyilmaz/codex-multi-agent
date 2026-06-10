@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: codex-setup [--codex-home <path>]
+Usage: codex-setup [--codex-home <path>] [--variant <id>]
 
 Runs an interactive setup for the Codex user-global surface and optional
 project initialization.
@@ -13,11 +13,16 @@ EOF
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 CODEX_HOME="$HOME/.codex"
+VARIANT_ID=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --codex-home)
       CODEX_HOME="$2"
+      shift 2
+      ;;
+    --variant)
+      VARIANT_ID="$2"
       shift 2
       ;;
     -h|--help)
@@ -132,10 +137,14 @@ echo
 
 if ask_yes_no "Kullanıcı-global Codex template kurulsun mu?" "y"; then
   FORCE_FLAG=()
+  VARIANT_FLAG=()
+  if [[ -n "$VARIANT_ID" ]]; then
+    VARIANT_FLAG=(--variant "$VARIANT_ID")
+  fi
   if ask_yes_no "Mevcut template-managed dosyalar ezilsin mi?" "n"; then
     FORCE_FLAG=(--force)
   fi
-  "$TEMPLATE_DIR/bin/codex-user-install" --codex-home "$CODEX_HOME" "${FORCE_FLAG[@]}"
+  "$TEMPLATE_DIR/bin/codex-user-install" --codex-home "$CODEX_HOME" "${VARIANT_FLAG[@]}" "${FORCE_FLAG[@]}"
 fi
 
 echo

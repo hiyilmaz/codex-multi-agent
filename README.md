@@ -24,7 +24,7 @@ It is self-contained and does not depend on another agent runtime.
 | `CODEX_CONFIG_EXAMPLE.toml` | Optional project `.codex/config.toml` example |
 | `PROJECT_CONFIG_PROMPT.md` | Prompt copied into projects after init |
 | `REGISTRY_MANAGEMENT.md` | User-global skill/agent registry model |
-| `codex-home-template/` | Portable `~/.codex` template for another machine |
+| `variants/` | Installable runtime variants and default variant config |
 | `TURKCE_KURULUM_REHBERI.md` | Turkish quick setup guide |
 | `docs/openai-codex/` | Local updateable index of official OpenAI Codex docs |
 | `bin/` | User-global and project init helper scripts |
@@ -45,6 +45,12 @@ Reusable content locations:
 
 Reusable bodies should not be copied into project `AGENTS.md`.
 
+Installable runtime variants live under `variants/`:
+
+- `variants/codex/home/` — Default Codex runtime template
+- `variants/dolphin/home/` — DolphinVersion runtime template
+- `variants/config.toml` — default variant selection
+
 ---
 
 ## Quick Start
@@ -53,6 +59,13 @@ Install or refresh the user-global Codex surface:
 
 ```bash
 bin/codex-user-install
+```
+
+Install a specific variant:
+
+```bash
+bin/codex-user-install --variant codex
+bin/codex-user-install --variant dolphin
 ```
 
 Run the interactive setup:

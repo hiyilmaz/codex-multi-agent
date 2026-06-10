@@ -40,6 +40,14 @@ Install the portable user-global template:
 bin/codex-user-install
 ```
 
+The installer uses `variants/config.toml` for the default variant and can
+install a specific runtime variant:
+
+```bash
+bin/codex-user-install --variant codex
+bin/codex-user-install --variant dolphin
+```
+
 For guided installation, use the interactive setup:
 
 ```bash
@@ -50,6 +58,7 @@ The setup wizard asks for:
 
 - target Codex home path, defaulting to `~/.codex`
 - whether to install the portable user-global template
+- which runtime variant to install when no `--variant` option is provided
 - whether to overwrite existing template-managed files
 - whether to enable YOLO mode
 - default status messages for error, permission, completed, and decision states
@@ -201,7 +210,7 @@ that item.
 ```text
 Run codex-setup for guided installation
         ↓
-or install ~/.codex with codex-user-install
+or install ~/.codex with codex-user-install [--variant codex|dolphin]
         ↓
 Run codex-project-init and confirm reset
         ↓

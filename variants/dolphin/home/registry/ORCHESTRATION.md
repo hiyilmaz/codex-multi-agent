@@ -1,11 +1,11 @@
 # Orchestration Registry
 
 **Status:** Active
-**Owner:** `DolphinVersion/agent-home/AGENTS.md`
+**Owner:** `variants/dolphin/home/AGENTS.md`
 
 ---
 
-`DolphinVersion/agent-home/AGENTS.md` remains the source of truth for this
+`variants/dolphin/home/AGENTS.md` remains the source of truth for this
 isolated runtime policy.
 
 ## Mandatory Chain
@@ -58,8 +58,8 @@ Once orchestration is used:
 No orchestrated stage may silently:
 
 - edit user-global runtime files
-- edit `DolphinVersion/agent-home/AGENTS.md`
-- edit `DolphinVersion/agent-home/config.toml`
+- edit `variants/dolphin/home/AGENTS.md`
+- edit `variants/dolphin/home/config.toml`
 - weaken destructive-operation approval rules
 - weaken auth/security policy
 - change model/runtime defaults
@@ -68,4 +68,4 @@ High-risk findings must be surfaced before further edits.
 
 ## Runtime Settings
 
-Default runtime settings live in `DolphinVersion/agent-home/config.toml`.
+Default runtime settings live in `variants/dolphin/home/config.toml`.

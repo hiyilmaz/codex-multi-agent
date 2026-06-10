@@ -14,8 +14,8 @@ PROJECT_SUMMARY:     Isolated agent runtime variant for cognitivecomputations_do
 STACK_BACKEND:       Bash environment wrapper / TOML model settings / Markdown instructions
 STACK_FRONTEND:      Documentation only
 
-CHANGELOG_PATH:      DolphinVersion/docs/CHANGELOG.md
-EVIDENCE_PATH:       DolphinVersion/docs/reports/
+CHANGELOG_PATH:      variants/dolphin/docs/CHANGELOG.md
+EVIDENCE_PATH:       variants/dolphin/docs/reports/
 
 ACTIVE_RULE_SETS:
   - shell: scripting, safety
@@ -32,7 +32,7 @@ ACTIVE_AGENT_ROLES:
   - security-reviewer
 
 DOMAIN_RULES:
-  - Keep all Dolphin runtime state under DolphinVersion/.
+  - Keep all Dolphin runtime state under variants/dolphin/.
   - Do not use any user-global agent home from this variant.
   - Do not modify the repository root runtime files while working on this variant unless the user explicitly asks.
   - The launcher must only prepare environment variables; it must not start an agent CLI.
@@ -48,13 +48,13 @@ DOMAIN_RULES:
 This project uses a local agent home:
 
 ```text
-AGENT_HOME: DolphinVersion/agent-home
+AGENT_HOME: variants/dolphin/home
 ```
 
 Prepare the shell environment with:
 
 ```bash
-source DolphinVersion/bin/dolphin
+source variants/dolphin/bin/dolphin
 ```
 
 The launcher is intentionally neutral. It exports environment variables and

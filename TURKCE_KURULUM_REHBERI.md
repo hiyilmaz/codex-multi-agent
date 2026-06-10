@@ -8,6 +8,11 @@ Bu rehber iki kullanım içindir:
 Aktif yapı basittir:
 
 ```text
+variants/
+  config.toml
+  codex/home/
+  dolphin/home/
+
 ~/.codex/
   AGENTS.md
   config.toml
@@ -39,6 +44,7 @@ Sihirbaz şunları sorar:
 
 - `~/.codex` hedef dizini
 - kullanıcı-global template kurulumu
+- kurulacak runtime versiyonu
 - mevcut dosyaların ezilip ezilmeyeceği
 - YOLO modu
 - hata, izin, tamamlandı ve karar bekleme mesajları
@@ -48,6 +54,13 @@ Kullanıcı-global Codex ortamını kur:
 
 ```bash
 bin/codex-user-install
+```
+
+Belirli bir versiyonu kur:
+
+```bash
+bin/codex-user-install --variant codex
+bin/codex-user-install --variant dolphin
 ```
 
 Bu komut şunları hazırlar:
@@ -85,7 +98,8 @@ bin/codex-user-install
 ```
 
 Bu kadar. Runtime yine `~/.codex` altında çalışır; repo içindeki
-`codex-home-template/` sadece taşınabilir kurulum kaynağıdır.
+`variants/` dizini sadece taşınabilir kurulum kaynaklarını ve varsayılan
+versiyon config dosyasını taşır.
 
 ## 3. Yeni Proje İçine Kurulum
 
@@ -164,6 +178,13 @@ Kullanıcı ortamı kur:
 
 ```bash
 bin/codex-user-install
+```
+
+Kullanıcı ortamını belirli versiyonla kur:
+
+```bash
+bin/codex-user-install --variant codex
+bin/codex-user-install --variant dolphin
 ```
 
 Kullanıcı ortamını zorla yenile:

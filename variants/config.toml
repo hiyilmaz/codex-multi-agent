@@ -1,0 +1,14 @@
+# Variant selection for user-global runtime installation.
+
+default_variant = "codex"
+
+[[variants]]
+id = "codex"
+name = "Default Codex"
+home = "variants/codex/home"
+
+[[variants]]
+id = "dolphin"
+name = "DolphinVersion"
+home = "variants/dolphin/home"
+launcher = "variants/dolphin/bin/dolphin"

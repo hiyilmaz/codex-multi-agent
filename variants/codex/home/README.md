@@ -1,18 +1,18 @@
-# Codex Home Template
+# Codex Runtime Variant
 
-This directory is a portable template for the active user-global Codex runtime
-surface.
+This directory is the default portable template for the active user-global
+Codex runtime surface.
 
 Install it with:
 
 ```bash
-bin/codex-user-install
+bin/codex-user-install --variant codex
 ```
 
 or to overwrite existing template-managed files:
 
 ```bash
-bin/codex-user-install --force
+bin/codex-user-install --variant codex --force
 ```
 
 Included:

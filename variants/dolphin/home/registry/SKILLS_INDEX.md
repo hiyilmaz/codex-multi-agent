@@ -1,7 +1,7 @@
 # Skill Index
 
 **Status:** Active
-**Runtime Surface:** `DolphinVersion/agent-home/skills/`
+**Runtime Surface:** `variants/dolphin/home/skills/`
 
 This index tracks reusable skills that are active in the isolated
 DolphinVersion runtime surface.

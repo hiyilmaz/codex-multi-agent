@@ -1,9 +1,9 @@
 model_id = "cognitivecomputations_dolphin-mistral-24b-venice-edition"
 model_api_base_url = "https://lm.backstage8.com/v1/"
-agent_home = "DolphinVersion/agent-home"
+agent_home = "variants/dolphin/home"
 
 [runtime]
-launcher = "DolphinVersion/bin/dolphin"
+launcher = "variants/dolphin/bin/dolphin"
 starts_tool = false
 
 [tui]
