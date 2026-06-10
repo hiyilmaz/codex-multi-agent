@@ -12,8 +12,8 @@ Endpoint:
 https://lm.backstage8.com/v1/
 ```
 
-It can be used in place through the Dolphin launcher or copied into a selected
-Codex home with:
+It can be used in place through the source Dolphin launcher or installed as an
+LLM runtime with:
 
 ```bash
 bin/codex-user-install --variant dolphin
@@ -25,10 +25,16 @@ Prepare the environment from the repository root:
 source variants/dolphin/bin/dolphin
 ```
 
+After installation, use:
+
+```bash
+source ~/.llm-runtimes/dolphin/bin/llm-dolphin
+```
+
 The wrapper exports:
 
 ```text
-AGENT_HOME=<repo>/variants/dolphin/home
+AGENT_HOME=<runtime-home>
 MODEL_API_BASE_URL=https://lm.backstage8.com/v1/
 MODEL_ID=cognitivecomputations_dolphin-mistral-24b-venice-edition
 ```

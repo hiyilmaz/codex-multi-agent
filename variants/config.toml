@@ -6,9 +6,12 @@ default_variant = "codex"
 id = "codex"
 name = "Default Codex"
 home = "variants/codex/home"
+default_home = "~/.codex"
 
 [[variants]]
 id = "dolphin"
 name = "DolphinVersion"
 home = "variants/dolphin/home"
+default_home = "~/.llm-runtimes/dolphin"
 launcher = "variants/dolphin/bin/dolphin"
+launcher_name = "llm-dolphin"

@@ -55,7 +55,7 @@ Installable runtime variants live under `variants/`:
 
 ## Quick Start
 
-Install or refresh the user-global Codex surface:
+Install or refresh the default Codex runtime:
 
 ```bash
 bin/codex-user-install
@@ -66,6 +66,20 @@ Install a specific variant:
 ```bash
 bin/codex-user-install --variant codex
 bin/codex-user-install --variant dolphin
+```
+
+The installer rewrites installed template paths to the selected target
+`--runtime-home`.
+
+Default targets:
+
+- `codex` -> `$HOME/.codex`
+- `dolphin` -> `$HOME/.llm-runtimes/dolphin`
+
+The Dolphin launcher is installed as:
+
+```text
+<runtime-home>/bin/llm-dolphin
 ```
 
 Run the interactive setup:

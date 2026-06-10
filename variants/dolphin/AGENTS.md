@@ -33,7 +33,7 @@ ACTIVE_AGENT_ROLES:
 
 DOMAIN_RULES:
   - Keep all Dolphin runtime state under variants/dolphin/.
-  - Do not use any user-global agent home from this variant.
+  - Do not depend on a repository-local launcher after installation.
   - Do not modify the repository root runtime files while working on this variant unless the user explicitly asks.
   - The launcher must only prepare environment variables; it must not start an agent CLI.
   - Use AGENT_HOME for the local runtime root.
@@ -54,7 +54,7 @@ AGENT_HOME: variants/dolphin/home
 Prepare the shell environment with:
 
 ```bash
-source variants/dolphin/bin/dolphin
+source ~/.llm-runtimes/dolphin/bin/llm-dolphin
 ```
 
 The launcher is intentionally neutral. It exports environment variables and

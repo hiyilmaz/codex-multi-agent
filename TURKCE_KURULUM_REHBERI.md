@@ -42,7 +42,7 @@ bin/codex-setup
 
 Sihirbaz şunları sorar:
 
-- `~/.codex` hedef dizini
+- runtime hedef dizini
 - kullanıcı-global template kurulumu
 - kurulacak runtime versiyonu
 - mevcut dosyaların ezilip ezilmeyeceği
@@ -61,6 +61,22 @@ Belirli bir versiyonu kur:
 ```bash
 bin/codex-user-install --variant codex
 bin/codex-user-install --variant dolphin
+```
+
+Kurulum sırasında template içindeki kaynak pathler hedef `--runtime-home`
+dizinine göre yazılır.
+
+Varsayılan hedefler:
+
+```text
+codex   -> $HOME/.codex
+dolphin -> $HOME/.llm-runtimes/dolphin
+```
+
+Dolphin launcher kurulumdan sonra şurada olur:
+
+```text
+<runtime-home>/bin/llm-dolphin
 ```
 
 Bu komut şunları hazırlar:
@@ -97,7 +113,8 @@ Sonra:
 bin/codex-user-install
 ```
 
-Bu kadar. Runtime yine `~/.codex` altında çalışır; repo içindeki
+Bu kadar. `codex` runtime `~/.codex` altında çalışır. `dolphin` runtime
+varsayılan olarak `~/.llm-runtimes/dolphin` altında çalışır. Repo içindeki
 `variants/` dizini sadece taşınabilir kurulum kaynaklarını ve varsayılan
 versiyon config dosyasını taşır.
 

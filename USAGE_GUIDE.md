@@ -48,6 +48,20 @@ bin/codex-user-install --variant codex
 bin/codex-user-install --variant dolphin
 ```
 
+Template paths are rewritten during installation so installed configs and
+registry docs point at the selected `--runtime-home`.
+
+Default runtime homes:
+
+- `codex`: `$HOME/.codex`
+- `dolphin`: `$HOME/.llm-runtimes/dolphin`
+
+For Dolphin, the launcher is installed inside the runtime home:
+
+```text
+<runtime-home>/bin/llm-dolphin
+```
+
 For guided installation, use the interactive setup:
 
 ```bash
@@ -56,7 +70,7 @@ bin/codex-setup
 
 The setup wizard asks for:
 
-- target Codex home path, defaulting to `~/.codex`
+- runtime home path, defaulting to the selected variant default
 - whether to install the portable user-global template
 - which runtime variant to install when no `--variant` option is provided
 - whether to overwrite existing template-managed files
@@ -210,7 +224,7 @@ that item.
 ```text
 Run codex-setup for guided installation
         ↓
-or install ~/.codex with codex-user-install [--variant codex|dolphin]
+or install a runtime with codex-user-install [--variant codex|dolphin]
         ↓
 Run codex-project-init and confirm reset
         ↓

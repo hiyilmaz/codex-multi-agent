@@ -3,22 +3,24 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: codex-setup [--codex-home <path>] [--variant <id>]
+Usage: codex-setup [--runtime-home <path>] [--variant <id>]
+       codex-setup [--codex-home <path>] [--variant <id>]
 
-Runs an interactive setup for the Codex user-global surface and optional
-project initialization.
+Runs an interactive setup for the selected runtime variant and optional project
+initialization.
 EOF
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-CODEX_HOME="$HOME/.codex"
+VARIANTS_CONFIG="$TEMPLATE_DIR/variants/config.toml"
+RUNTIME_HOME=""
 VARIANT_ID=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --codex-home)
-      CODEX_HOME="$2"
+    --runtime-home|--codex-home)
+      RUNTIME_HOME="$2"
       shift 2
       ;;
     --variant)
@@ -69,6 +71,58 @@ ask_value() {
   printf "%s [%s] " "$prompt" "$default_value" >&2
   read -r answer
   printf "%s" "${answer:-$default_value}"
+}
+
+default_variant() {
+  awk -F= '
+    $1 ~ /^[[:space:]]*default_variant[[:space:]]*$/ {
+      value=$2
+      gsub(/[[:space:]"]/, "", value)
+      print value
+      exit
+    }
+  ' "$VARIANTS_CONFIG"
+}
+
+variant_default_home() {
+  local requested_id="$1"
+  awk -v requested_id="$requested_id" '
+    /^\[\[variants\]\]/ {
+      if (active && default_home != "") {
+        print default_home
+        found=1
+        exit
+      }
+      active=0
+      default_home=""
+      next
+    }
+    /^[[:space:]]*id[[:space:]]*=/ {
+      value=$0
+      sub(/^[^=]*=/, "", value)
+      gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value)
+      active=(value == requested_id)
+      next
+    }
+    active && /^[[:space:]]*default_home[[:space:]]*=/ {
+      value=$0
+      sub(/^[^=]*=/, "", value)
+      gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value)
+      default_home=value
+    }
+    END {
+      if (active && default_home != "" && !found) print default_home
+    }
+  ' "$VARIANTS_CONFIG"
+}
+
+expand_home_path() {
+  local path="$1"
+  case "$path" in
+    "~") printf "%s" "$HOME" ;;
+    "~/"*) printf "%s/%s" "$HOME" "${path#\~/}" ;;
+    *) printf "%s" "$path" ;;
+  esac
 }
 
 write_status_messages() {
@@ -132,19 +186,24 @@ EOF
 echo "Codex setup"
 echo "-----------"
 
-CODEX_HOME="$(ask_value "Codex home dizini" "$CODEX_HOME")"
+if [[ -z "$VARIANT_ID" ]]; then
+  VARIANT_ID="$(ask_value "Runtime versiyonu" "$(default_variant)")"
+fi
+
+DEFAULT_RUNTIME_HOME="$(variant_default_home "$VARIANT_ID")"
+RUNTIME_HOME="$(ask_value "Runtime home dizini" "${RUNTIME_HOME:-$DEFAULT_RUNTIME_HOME}")"
+RUNTIME_HOME="$(expand_home_path "$RUNTIME_HOME")"
 echo
 
-if ask_yes_no "Kullanıcı-global Codex template kurulsun mu?" "y"; then
+if ask_yes_no "Runtime template kurulsun mu?" "y"; then
   FORCE_FLAG=()
   VARIANT_FLAG=()
-  if [[ -n "$VARIANT_ID" ]]; then
-    VARIANT_FLAG=(--variant "$VARIANT_ID")
-  fi
+  VARIANT_FLAG=(--variant "$VARIANT_ID")
+  RUNTIME_HOME_FLAG=(--runtime-home "$RUNTIME_HOME")
   if ask_yes_no "Mevcut template-managed dosyalar ezilsin mi?" "n"; then
     FORCE_FLAG=(--force)
   fi
-  "$TEMPLATE_DIR/bin/codex-user-install" --codex-home "$CODEX_HOME" "${VARIANT_FLAG[@]}" "${FORCE_FLAG[@]}"
+  "$TEMPLATE_DIR/bin/codex-user-install" "${RUNTIME_HOME_FLAG[@]}" "${VARIANT_FLAG[@]}" "${FORCE_FLAG[@]}"
 fi
 
 echo
@@ -165,11 +224,11 @@ echo
 DECISION_MSG="$(ask_value "Karar mesajı" "Karar gerekiyor, seni bekliyorum.")"
 echo
 
-write_status_messages "$CODEX_HOME/registry/STATUS_MESSAGES.md" "$ERROR_MSG" "$PERMISSION_MSG" "$COMPLETED_MSG" "$DECISION_MSG"
-write_setup_preferences "$CODEX_HOME/registry/SETUP_PREFERENCES.md" "$YOLO_MODE"
+write_status_messages "$RUNTIME_HOME/registry/STATUS_MESSAGES.md" "$ERROR_MSG" "$PERMISSION_MSG" "$COMPLETED_MSG" "$DECISION_MSG"
+write_setup_preferences "$RUNTIME_HOME/registry/SETUP_PREFERENCES.md" "$YOLO_MODE"
 
-echo "Yazıldı: $CODEX_HOME/registry/STATUS_MESSAGES.md"
-echo "Yazıldı: $CODEX_HOME/registry/SETUP_PREFERENCES.md"
+echo "Yazıldı: $RUNTIME_HOME/registry/STATUS_MESSAGES.md"
+echo "Yazıldı: $RUNTIME_HOME/registry/SETUP_PREFERENCES.md"
 
 echo
 if ask_yes_no "Bir proje içine Codex yapısı kurulsun mu?" "n"; then

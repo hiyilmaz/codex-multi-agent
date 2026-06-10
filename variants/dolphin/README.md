@@ -28,10 +28,22 @@ variants/dolphin/
 
 ## Install Variant
 
-Install the DolphinVersion runtime home into the selected Codex home:
+Install the DolphinVersion runtime home:
 
 ```bash
 bin/codex-user-install --variant dolphin
+```
+
+Default target:
+
+```text
+$HOME/.llm-runtimes/dolphin
+```
+
+Installed launcher:
+
+```text
+$HOME/.llm-runtimes/dolphin/bin/llm-dolphin
 ```
 
 ## Endpoint Check
@@ -50,22 +62,22 @@ cognitivecomputations_dolphin-mistral-24b-venice-edition
 
 ## Prepare Environment
 
-To apply the environment to the current shell:
+To apply the installed environment to the current shell:
 
 ```bash
-source variants/dolphin/bin/dolphin
+source ~/.llm-runtimes/dolphin/bin/llm-dolphin
 ```
 
 To print the export commands without modifying the current shell:
 
 ```bash
-variants/dolphin/bin/dolphin
+~/.llm-runtimes/dolphin/bin/llm-dolphin
 ```
 
 The launcher prepares:
 
 ```text
-AGENT_HOME=<repo>/variants/dolphin/home
+AGENT_HOME=$HOME/.llm-runtimes/dolphin
 MODEL_API_BASE_URL=https://lm.backstage8.com/v1/
 MODEL_ID=cognitivecomputations_dolphin-mistral-24b-venice-edition
 ```
