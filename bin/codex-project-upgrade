@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: codex-project-upgrade [--dry-run] [--force] <project-path>
+
+Upgrades an existing project AGENTS.md without resetting the project.
+
+Behavior:
+  - requires an existing <project>/AGENTS.md
+  - edits only the Project Configuration fenced text block
+  - adds orchestration-gate to ACTIVE_SKILLS when missing
+  - adds ORCHESTRATION_MODE: ask-approval when missing
+  - archives the previous AGENTS.md under <project>/.codex/archive/upgrade-YYYYMMDD_HHMMSS
+  - asks for confirmation before writing unless --force is provided
+  - supports --dry-run to show the diff without writing
+EOF
+}
+
+DRY_RUN="false"
+FORCE="false"
+PROJECT_PATH=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run)
+      DRY_RUN="true"
+      shift
+      ;;
+    --force)
+      FORCE="true"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    -*)
+      echo "Unknown option: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)
+      if [[ -n "$PROJECT_PATH" ]]; then
+        echo "FAILED: multiple project paths provided" >&2
+        usage
+        exit 1
+      fi
+      PROJECT_PATH="$1"
+      shift
+      ;;
+  esac
+done
+
+if [[ -z "$PROJECT_PATH" ]]; then
+  usage
+  exit 1
+fi
+
+if [[ ! -d "$PROJECT_PATH" ]]; then
+  echo "FAILED: project directory does not exist: $PROJECT_PATH" >&2
+  exit 1
+fi
+
+PROJECT_PATH="$(cd "$PROJECT_PATH" && pwd)"
+AGENTS_FILE="$PROJECT_PATH/AGENTS.md"
+
+if [[ ! -f "$AGENTS_FILE" ]]; then
+  echo "FAILED: missing project AGENTS.md: $AGENTS_FILE" >&2
+  echo "Run codex-project-init first if this project has not been initialized." >&2
+  exit 1
+fi
+
+TMP_FILE="$(mktemp)"
+trap 'rm -f "$TMP_FILE"' EXIT
+
+python3 - "$AGENTS_FILE" "$TMP_FILE" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+source = Path(sys.argv[1])
+target = Path(sys.argv[2])
+text = source.read_text()
+
+header_match = re.search(r"(?m)^## Project Configuration\s*$", text)
+if not header_match:
+    print("FAILED: missing ## Project Configuration section", file=sys.stderr)
+    sys.exit(2)
+
+fence_start = re.search(r"```text\n", text[header_match.end():])
+if not fence_start:
+    print("FAILED: missing Project Configuration text fence", file=sys.stderr)
+    sys.exit(2)
+
+body_start = header_match.end() + fence_start.end()
+fence_end = text.find("\n```", body_start)
+if fence_end == -1:
+    print("FAILED: missing Project Configuration closing fence", file=sys.stderr)
+    sys.exit(2)
+
+body = text[body_start:fence_end]
+lines = body.splitlines()
+
+def is_field(line: str) -> bool:
+    return bool(re.match(r"^[A-Z0-9_]+:", line))
+
+def find_line(label: str) -> int:
+    for index, line in enumerate(lines):
+        if line.strip() == label:
+            return index
+    return -1
+
+def block_end(start_index: int) -> int:
+    index = start_index + 1
+    while index < len(lines):
+        if is_field(lines[index]):
+            break
+        index += 1
+    return index
+
+changed = False
+
+skills_index = find_line("ACTIVE_SKILLS:")
+if skills_index == -1:
+    print("FAILED: missing ACTIVE_SKILLS in Project Configuration", file=sys.stderr)
+    sys.exit(2)
+
+skills_end = block_end(skills_index)
+skills_block = "\n".join(lines[skills_index:skills_end])
+if not re.search(r"(?m)^\s*-\s+orchestration-gate\s*$", skills_block):
+    lines.insert(skills_index + 1, "  - orchestration-gate")
+    changed = True
+
+if not any(line.startswith("ORCHESTRATION_MODE:") for line in lines):
+    roles_index = find_line("ACTIVE_AGENT_ROLES:")
+    if roles_index != -1:
+        insert_at = block_end(roles_index)
+    else:
+        domain_index = find_line("DOMAIN_RULES:")
+        if domain_index == -1:
+            print("FAILED: missing ACTIVE_AGENT_ROLES and DOMAIN_RULES in Project Configuration", file=sys.stderr)
+            sys.exit(2)
+        insert_at = domain_index
+
+    if insert_at > 0 and lines[insert_at - 1] != "":
+        lines.insert(insert_at, "")
+        insert_at += 1
+    lines.insert(insert_at, "ORCHESTRATION_MODE: ask-approval")
+    if insert_at + 1 < len(lines) and lines[insert_at + 1] != "":
+        lines.insert(insert_at + 1, "")
+    changed = True
+
+new_body = "\n".join(lines)
+if body.endswith("\n"):
+    new_body += "\n"
+
+if changed:
+    new_text = text[:body_start] + new_body + text[fence_end:]
+else:
+    new_text = text
+
+target.write_text(new_text)
+PY
+
+if cmp -s "$AGENTS_FILE" "$TMP_FILE"; then
+  echo "Already up to date: $AGENTS_FILE"
+  exit 0
+fi
+
+echo "Project upgrade target: $PROJECT_PATH"
+echo
+echo "Planned AGENTS.md changes:"
+diff -u "$AGENTS_FILE" "$TMP_FILE" || true
+echo
+
+if [[ "$DRY_RUN" == "true" ]]; then
+  echo "Dry run only. No files changed."
+  exit 0
+fi
+
+if [[ "$FORCE" != "true" ]]; then
+  printf "Apply this upgrade? [y/N] "
+  read -r answer
+  case "$answer" in
+    y|Y|yes|YES)
+      ;;
+    *)
+      echo "Cancelled."
+      exit 0
+      ;;
+  esac
+fi
+
+TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+ARCHIVE_DIR="$PROJECT_PATH/.codex/archive/upgrade-$TIMESTAMP"
+mkdir -p "$ARCHIVE_DIR"
+cp "$AGENTS_FILE" "$ARCHIVE_DIR/AGENTS.md"
+cp "$TMP_FILE" "$AGENTS_FILE"
+
+echo "Archived: $ARCHIVE_DIR/AGENTS.md"
+echo "Updated: $AGENTS_FILE"

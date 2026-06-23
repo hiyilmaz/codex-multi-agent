@@ -118,6 +118,14 @@ That prompt tells the AI to inspect the project and fill only the
 `AGENTS.md` `Project Configuration` block. If required values are ambiguous, it
 must ask the user before editing instead of writing placeholders.
 
+Upgrade an already initialized project without resetting its `AGENTS.md`:
+
+```bash
+bin/codex-project-upgrade /path/to/project
+```
+
+Use `--dry-run` to preview the `AGENTS.md` changes first.
+
 ## Local Codex Docs
 
 Refresh the local OpenAI Codex documentation index:

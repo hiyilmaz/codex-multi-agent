@@ -198,6 +198,20 @@ Start a new session or refresh the current one so Codex reads the project
 
 ## Existing Project
 
+For a project that already has `AGENTS.md`, prefer the upgrade command:
+
+```bash
+bin/codex-project-upgrade --dry-run /path/to/project
+bin/codex-project-upgrade /path/to/project
+```
+
+This preserves the existing file, archives the previous version under
+`.codex/archive/upgrade-YYYYMMDD_HHMMSS/`, and adds the current baseline
+orchestration fields when they are missing.
+
+Use reset init only when you intentionally want to archive and recreate the
+project Codex structure:
+
 1. Read the existing project instruction files if you need to preserve project
    metadata.
 2. Run `bin/codex-project-init /path/to/project`.
@@ -236,7 +250,9 @@ Run codex-setup for guided installation
         ↓
 or install a runtime with codex-user-install [--variant codex|dolphin]
         ↓
-Run codex-project-init and confirm reset
+For existing projects, run codex-project-upgrade
+        ↓
+For new/reset projects, run codex-project-init and confirm reset
         ↓
 Run generated Project Configuration prompt
         ↓

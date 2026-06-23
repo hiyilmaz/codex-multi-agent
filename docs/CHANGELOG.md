@@ -2,6 +2,8 @@
 
 ## 2026-06-24
 
+- [FEAT] Added `codex-project-upgrade` to update initialized project
+  `AGENTS.md` files without resetting them.
 - [INFRA] Added project-level `ORCHESTRATION_MODE` and the
   `orchestration-gate` decision skill across runtime variants.
 

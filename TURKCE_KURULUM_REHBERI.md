@@ -141,6 +141,20 @@ Eğer projede eski Codex dosyaları varsa, bunları şuraya arşivler:
 <project>/.codex/archive/init-YYYYMMDD_HHMMSS/
 ```
 
+Zaten init edilmiş projeyi resetlemeden güncellemek için:
+
+```bash
+bin/codex-project-upgrade --dry-run /path/to/project
+bin/codex-project-upgrade /path/to/project
+```
+
+Bu komut mevcut `AGENTS.md` dosyasını koruyarak yalnızca eksik güncel baseline
+alanlarını ekler ve eski dosyayı şuraya arşivler:
+
+```text
+<project>/.codex/archive/upgrade-YYYYMMDD_HHMMSS/
+```
+
 ## 4. Proje AGENTS.md Doldurma
 
 Kurulumdan sonra şu dosyadaki prompt çalıştırılır:
@@ -229,6 +243,12 @@ Proje içine Codex yapısı kur:
 
 ```bash
 bin/codex-project-init /path/to/project
+```
+
+Init edilmiş projeyi güncelle:
+
+```bash
+bin/codex-project-upgrade /path/to/project
 ```
 
 ## 8. YOLO Modu
