@@ -11,6 +11,7 @@ runtime surface.
 | Name | Path | Scope | Status |
 |---|---|---|---|
 | crypto-strategy-discovery | `~/.codex/skills/crypto-strategy-discovery/SKILL.md` | Discover and evaluate signal-strategy candidates from realized crypto data. | active |
+| orchestration-gate | `~/.codex/skills/orchestration-gate/SKILL.md` | Decide whether a task should skip orchestration, ask for approval, or run the mandatory chain. | active |
 | formproxy-implementation-planner | `~/.codex/skills/formproxy-implementation-planner/SKILL.md` | Plan bounded FormProxy implementation work. | active |
 | formproxy-security-review | `~/.codex/skills/formproxy-security-review/SKILL.md` | Review FormProxy changes against security and abuse-protection rules. | active |
 | formproxy-verification-loop | `~/.codex/skills/formproxy-verification-loop/SKILL.md` | Run focused FormProxy verification and report evidence. | active |
@@ -31,4 +32,3 @@ When a task needs a skill not listed here:
 
 No skill may weaken `~/.codex/AGENTS.md`, the mandatory orchestration chain,
 approval rules, or security/destructive-operation rules.
-

@@ -146,6 +146,7 @@ ACTIVE_RULE_SETS:
   - web: patterns, performance, security
 
 ACTIVE_SKILLS:
+  - orchestration-gate
   - tdd-workflow
   - openai-docs
 
@@ -154,6 +155,8 @@ ACTIVE_AGENT_ROLES:
   - tdd-guide
   - code-reviewer
   - security-reviewer
+
+ORCHESTRATION_MODE: ask-approval
 
 DOMAIN_RULES:
   - Every payment request must use an idempotency key
@@ -165,8 +168,15 @@ values should be resolved by asking the user before editing.
 
 ### Step 4 — Declare reusable content, do not inline it
 
-Use `ACTIVE_RULE_SETS`, `ACTIVE_SKILLS`, and `ACTIVE_AGENT_ROLES` to declare
-what this project uses.
+Use `ACTIVE_RULE_SETS`, `ACTIVE_SKILLS`, `ACTIVE_AGENT_ROLES`, and
+`ORCHESTRATION_MODE` to declare what this project uses.
+
+Valid orchestration modes:
+
+- `skip`: do not use orchestration by default.
+- `ask-approval`: ask before running the mandatory chain for non-trivial work.
+- `run-chain`: run the mandatory chain for non-trivial work when explicitly
+  authorized by the project or user and active tool policy permits it.
 
 Reusable bodies should live in one of these locations:
 

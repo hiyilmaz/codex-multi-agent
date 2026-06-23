@@ -26,6 +26,7 @@ ACTIVE_RULE_SETS:
   - [e.g. web: patterns, performance, security]
 
 ACTIVE_SKILLS:
+  - orchestration-gate
   - tdd-workflow
   - openai-docs
 
@@ -34,6 +35,8 @@ ACTIVE_AGENT_ROLES:
   - tdd-guide
   - code-reviewer
   - security-reviewer
+
+ORCHESTRATION_MODE: ask-approval
 
 DOMAIN_RULES:
   - [Project-specific rule 1]

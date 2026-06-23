@@ -23,6 +23,15 @@ Included:
 - `skills/`
 - `registry/`
 
+The template includes `orchestration-gate` for project-level
+`ORCHESTRATION_MODE` decisions:
+
+```text
+skip | ask-approval | run-chain
+```
+
+It must not bypass active tool or approval policy.
+
 Setup preferences and status messages live under `registry/`.
 
 Excluded:

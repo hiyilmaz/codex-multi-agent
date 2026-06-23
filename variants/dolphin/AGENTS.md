@@ -23,13 +23,15 @@ ACTIVE_RULE_SETS:
   - toml: configuration
 
 ACTIVE_SKILLS:
-  - none
+  - orchestration-gate
 
 ACTIVE_AGENT_ROLES:
   - planner
   - tdd-guide
   - code-reviewer
   - security-reviewer
+
+ORCHESTRATION_MODE: ask-approval
 
 DOMAIN_RULES:
   - Keep all Dolphin runtime state under variants/dolphin/.

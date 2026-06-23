@@ -10,12 +10,33 @@ isolated runtime policy.
 
 ## Mandatory Chain
 
-For non-trivial implementation, bugfix, refactor, security, or test-driven work
-that uses orchestration:
+Project `AGENTS.md` files may declare:
+
+```text
+ORCHESTRATION_MODE: skip | ask-approval | run-chain
+```
+
+Use `orchestration-gate` to classify non-trivial work before deciding whether
+to skip orchestration, ask for approval, or run the chain.
+
+Mode behavior:
+
+- `skip`: skip orchestration unless the user explicitly requests it.
+- `ask-approval`: ask before starting the chain for non-trivial work.
+- `run-chain`: run the chain for non-trivial work when project configuration or
+  user wording explicitly authorizes orchestration and active tool policy
+  permits it. If tool policy requires explicit user approval, ask first.
+
+When orchestration is explicitly requested or approved, preserve this chain:
 
 ```text
 planner -> tdd-guide -> code-reviewer -> security-reviewer
 ```
+
+`ACTIVE_AGENT_ROLES` declares available roles only. It does not start agents by
+itself.
+
+`ORCHESTRATION_MODE` must not bypass higher-priority tool or approval policy.
 
 ## Stage Responsibilities
 

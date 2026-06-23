@@ -45,6 +45,16 @@ Reusable content locations:
 
 Reusable bodies should not be copied into project `AGENTS.md`.
 
+Project orchestration behavior is declared with:
+
+```text
+ORCHESTRATION_MODE: skip | ask-approval | run-chain
+```
+
+The default project template uses `ask-approval`. The `orchestration-gate`
+skill decides whether a task should skip orchestration, ask for approval, or
+run the mandatory chain. It must not bypass active tool or approval policy.
+
 Installable runtime variants live under `variants/`:
 
 - `variants/codex/home/` — Default Codex runtime template

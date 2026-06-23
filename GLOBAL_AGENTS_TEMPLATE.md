@@ -204,8 +204,29 @@ Break into phases when:
 
 ### Mandatory Orchestration Protocol
 
-For any non-trivial implementation, bugfix, refactor, security, or test-driven
-work that uses orchestration, the workflow MUST follow this exact chain:
+Project `AGENTS.md` files may declare orchestration behavior in their
+`Project Configuration` block:
+
+```text
+ORCHESTRATION_MODE: skip | ask-approval | run-chain
+```
+
+Mode meanings:
+
+- `skip`: do not use orchestration by default; explicit user requests may still
+  start it.
+- `ask-approval`: for non-trivial implementation, bugfix, refactor, security,
+  or test-driven work, use `orchestration-gate` to decide whether to ask before
+  starting the chain.
+- `run-chain`: for non-trivial work, start the chain when the user or project
+  configuration has explicitly authorized orchestration and active tool policy
+  permits it. If tool policy requires explicit user approval, ask first.
+
+`ACTIVE_AGENT_ROLES` is only a declaration of available roles. It does not start
+agents by itself.
+
+When orchestration is explicitly requested or approved, the workflow MUST follow
+this exact chain:
 
 ```text
 planner -> tdd-guide -> code-reviewer -> security-reviewer
@@ -213,14 +234,19 @@ planner -> tdd-guide -> code-reviewer -> security-reviewer
 
 Rules:
 
-- Do not skip any stage once orchestration is used.
+- Use `orchestration-gate` before non-trivial work when the project declares an
+  orchestration mode.
+- Never use `ORCHESTRATION_MODE` to bypass higher-priority tool or approval
+  policy.
+- Do not skip any stage once orchestration is approved or explicitly requested.
 - Do not reorder the stages.
 - Do not insert extra stages before, between, or after these stages.
 - Do not move to closure until both `code-reviewer` and `security-reviewer`
   have completed review.
 - If the task is too small to justify orchestration, proceed without
   orchestration. Once orchestration is used, the chain above is mandatory.
-- Use subagents only when they materially help the chain. Prefer subagents for
+- Use subagents only when the user explicitly requests or approves subagent,
+  delegation, parallel-agent, or orchestration work. Prefer subagents for
   read-heavy discovery, tests, review, and security passes; avoid parallel
   write-heavy edits over the same files.
 

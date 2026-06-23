@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-06-24
+
+- [INFRA] Added project-level `ORCHESTRATION_MODE` and the
+  `orchestration-gate` decision skill across runtime variants.
+
 ## 2026-06-11
 
 - [FIX] Install Dolphin launcher into the selected runtime home as

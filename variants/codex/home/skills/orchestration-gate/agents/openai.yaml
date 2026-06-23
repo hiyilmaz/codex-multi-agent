@@ -1,0 +1,4 @@
+interface:
+  display_name: "Orchestration Gate"
+  short_description: "Decide orchestration mode"
+  default_prompt: "Use $orchestration-gate to decide whether this task should skip orchestration, ask for approval, or run the mandatory chain."

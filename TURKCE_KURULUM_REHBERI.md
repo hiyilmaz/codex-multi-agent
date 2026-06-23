@@ -181,6 +181,21 @@ Zorunlu orchestration zinciri korunur:
 planner -> tdd-guide -> code-reviewer -> security-reviewer
 ```
 
+Proje `AGENTS.md` içinde orchestration davranışı şu alanla belirlenir:
+
+```text
+ORCHESTRATION_MODE: ask-approval
+```
+
+Geçerli değerler:
+
+- `skip`: varsayılan olarak orchestration kullanılmaz.
+- `ask-approval`: ciddi işlerde zincir başlatılmadan önce onay istenir.
+- `run-chain`: proje veya kullanıcı açıkça yetki verdiyse ciddi işlerde zincir
+  başlatılır; aktif tool politikası ayrıca onay istiyorsa önce onay alınır.
+
+`orchestration-gate` skill'i bu kararın verilmesi için kullanılır.
+
 Yeni skill veya agent gerektiğinde `skill-agent-governor` sorumludur.
 
 ## 7. Kısa Komut Özeti

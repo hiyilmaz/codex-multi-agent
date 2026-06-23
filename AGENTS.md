@@ -27,6 +27,7 @@ ACTIVE_RULE_SETS:
   - toml: configuration
 
 ACTIVE_SKILLS:
+  - orchestration-gate
   - tdd-workflow
   - openai-docs
 
@@ -35,6 +36,8 @@ ACTIVE_AGENT_ROLES:
   - tdd-guide
   - code-reviewer
   - security-reviewer
+
+ORCHESTRATION_MODE: ask-approval
 
 DOMAIN_RULES:
   - Project AGENTS.md files declare project deltas only; do not inline reusable rule, skill, or agent bodies.

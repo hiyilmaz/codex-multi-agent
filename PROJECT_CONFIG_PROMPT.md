@@ -23,14 +23,18 @@ Rules:
   "Not configured", "None", "Not found", or bracket placeholders.
 - If a required value cannot be determined confidently, stop and ask the user
   the smallest necessary question before editing `AGENTS.md`.
-- Determine concrete `ACTIVE_RULE_SETS`, `ACTIVE_SKILLS`, and
-  `ACTIVE_AGENT_ROLES` from the project stack and available user-global assets
-  under `~/.codex`. If the choice is ambiguous, ask the user before editing.
+- Determine concrete `ACTIVE_RULE_SETS`, `ACTIVE_SKILLS`,
+  `ACTIVE_AGENT_ROLES`, and `ORCHESTRATION_MODE` from the project stack and
+  available user-global assets under `~/.codex`. If the choice is ambiguous,
+  ask the user before editing.
 - For non-trivial implementation, bugfix, refactor, security, or test-driven
   work, `ACTIVE_AGENT_ROLES` must include:
   `planner`, `tdd-guide`, `code-reviewer`, `security-reviewer`.
 - For projects using the mandatory orchestration chain, `ACTIVE_SKILLS` must
-  include `tdd-workflow`.
+  include `orchestration-gate` and `tdd-workflow`.
+- `ORCHESTRATION_MODE` must be one of `skip`, `ask-approval`, or `run-chain`.
+  Use `ask-approval` unless the project or user explicitly requires another
+  mode.
 - For this Codex adapter project and OpenAI/Codex documentation work,
   `ACTIVE_SKILLS` must include `openai-docs`.
 - Do not remove baseline skills or agent roles that are present in
@@ -62,6 +66,7 @@ EVIDENCE_PATH:
 ACTIVE_RULE_SETS:
 ACTIVE_SKILLS:
 ACTIVE_AGENT_ROLES:
+ORCHESTRATION_MODE:
 DOMAIN_RULES:
 ```
 

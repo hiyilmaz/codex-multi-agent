@@ -10,7 +10,7 @@ DolphinVersion runtime surface.
 
 | Name | Path | Scope | Status |
 |---|---|---|---|
-| _none_ | _n/a_ | No reusable skills are active by default in the isolated DolphinVersion runtime. | inactive |
+| orchestration-gate | `variants/dolphin/home/skills/orchestration-gate/SKILL.md` | Decide whether a task should skip orchestration, ask for approval, or run the mandatory chain. | active |
 
 Default user-global skills are not duplicated in this runtime.
 
