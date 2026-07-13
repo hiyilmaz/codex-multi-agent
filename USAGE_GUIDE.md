@@ -205,12 +205,24 @@ For a project that already has `AGENTS.md`, prefer the upgrade command:
 
 ```bash
 bin/codex-project-upgrade --dry-run /path/to/project
-bin/codex-project-upgrade /path/to/project
+bin/codex-project-upgrade --apply /path/to/project
 ```
 
-This preserves the existing file, archives the previous version under
-`.codex/archive/upgrade-YYYYMMDD_HHMMSS/`, and adds the current baseline
-orchestration fields when they are missing.
+Project initialization records template ownership in
+`.codex/template-state.json`. Upgrade then:
+
+- preserves project-specific `AGENTS.md` values and list additions
+- adds only missing baseline fields
+- updates template-managed prompt/config files only when their recorded hash
+  proves they are unchanged
+- preserves locally modified or legacy files, shows a non-applied comparison,
+  and marks them project-owned after approval
+- archives every changed file under
+  `.codex/archive/upgrade-YYYYMMDD_HHMMSS/`
+
+Dry-run is the default and never writes files. Use `--apply` after reviewing the
+plan. `--apply --force` skips only the confirmation prompt; it never overwrites
+customized files.
 
 Use reset init only when you intentionally want to archive and recreate the
 project Codex structure:

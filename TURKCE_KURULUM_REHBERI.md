@@ -145,11 +145,17 @@ Zaten init edilmiş projeyi resetlemeden güncellemek için:
 
 ```bash
 bin/codex-project-upgrade --dry-run /path/to/project
-bin/codex-project-upgrade /path/to/project
+bin/codex-project-upgrade --apply /path/to/project
 ```
 
-Bu komut mevcut `AGENTS.md` dosyasını koruyarak yalnızca eksik güncel baseline
-alanlarını ekler ve eski dosyayı şuraya arşivler:
+Init sırasında template sürümü, variant ve managed dosya hash'leri
+`.codex/template-state.json` içine kaydedilir. Upgrade mevcut `AGENTS.md`
+değerlerini ve projeye özel eklemeleri korur; yalnızca eksik baseline alanlarını
+ekler. Hash'i değişmiş prompt/config dosyalarının üzerine yazmaz ve bunları
+project-owned olarak işaretler.
+
+Dry-run varsayılandır ve hiçbir dosya yazmaz. `--apply` yalnızca incelenen planı
+uygular. Değiştirilecek mevcut dosyalar şuraya arşivlenir:
 
 ```text
 <project>/.codex/archive/upgrade-YYYYMMDD_HHMMSS/
@@ -251,7 +257,8 @@ bin/codex-project-init /path/to/project
 Init edilmiş projeyi güncelle:
 
 ```bash
-bin/codex-project-upgrade /path/to/project
+bin/codex-project-upgrade --dry-run /path/to/project
+bin/codex-project-upgrade --apply /path/to/project
 ```
 
 ## 8. YOLO Modu

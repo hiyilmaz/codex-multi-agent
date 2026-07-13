@@ -1,214 +1,438 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env python3
+"""Safely migrate initialized Codex projects without overwriting local work."""
 
-usage() {
-  cat <<'EOF'
-Usage: codex-project-upgrade [--dry-run] [--force] <project-path>
+from __future__ import annotations
 
-Upgrades an existing project AGENTS.md without resetting the project.
-
-Behavior:
-  - requires an existing <project>/AGENTS.md
-  - edits only the Project Configuration fenced text block
-  - adds orchestration-gate and tdd-workflow to ACTIVE_SKILLS when missing
-  - adds ORCHESTRATION_MODE: ask-approval when missing
-  - archives the previous AGENTS.md under <project>/.codex/archive/upgrade-YYYYMMDD_HHMMSS
-  - asks for confirmation before writing unless --force is provided
-  - supports --dry-run to show the diff without writing
-EOF
-}
-
-DRY_RUN="false"
-FORCE="false"
-PROJECT_PATH=""
-
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --dry-run)
-      DRY_RUN="true"
-      shift
-      ;;
-    --force)
-      FORCE="true"
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    -*)
-      echo "Unknown option: $1" >&2
-      usage
-      exit 1
-      ;;
-    *)
-      if [[ -n "$PROJECT_PATH" ]]; then
-        echo "FAILED: multiple project paths provided" >&2
-        usage
-        exit 1
-      fi
-      PROJECT_PATH="$1"
-      shift
-      ;;
-  esac
-done
-
-if [[ -z "$PROJECT_PATH" ]]; then
-  usage
-  exit 1
-fi
-
-if [[ ! -d "$PROJECT_PATH" ]]; then
-  echo "FAILED: project directory does not exist: $PROJECT_PATH" >&2
-  exit 1
-fi
-
-PROJECT_PATH="$(cd "$PROJECT_PATH" && pwd)"
-AGENTS_FILE="$PROJECT_PATH/AGENTS.md"
-
-if [[ ! -f "$AGENTS_FILE" ]]; then
-  echo "FAILED: missing project AGENTS.md: $AGENTS_FILE" >&2
-  echo "Run codex-project-init first if this project has not been initialized." >&2
-  exit 1
-fi
-
-TMP_FILE="$(mktemp)"
-trap 'rm -f "$TMP_FILE"' EXIT
-
-python3 - "$AGENTS_FILE" "$TMP_FILE" <<'PY'
+import argparse
+import difflib
+import hashlib
+import json
+import os
 import re
+import shutil
 import sys
+import tempfile
+from datetime import datetime
 from pathlib import Path
 
-source = Path(sys.argv[1])
-target = Path(sys.argv[2])
-text = source.read_text()
 
-header_match = re.search(r"(?m)^## Project Configuration\s*$", text)
-if not header_match:
-    print("FAILED: missing ## Project Configuration section", file=sys.stderr)
-    sys.exit(2)
+SCHEMA_VERSION = 1
+MANIFEST_PATH = Path(".codex/template-state.json")
+MANAGED_TEMPLATES = {
+    Path(".codex/config.toml"): Path("CODEX_CONFIG_EXAMPLE.toml"),
+    Path(".codex/prompts/fill-project-configuration.md"): Path(
+        "PROJECT_CONFIG_PROMPT.md"
+    ),
+}
 
-fence_start = re.search(r"```text\n", text[header_match.end():])
-if not fence_start:
-    print("FAILED: missing Project Configuration text fence", file=sys.stderr)
-    sys.exit(2)
 
-body_start = header_match.end() + fence_start.end()
-fence_end = text.find("\n```", body_start)
-if fence_end == -1:
-    print("FAILED: missing Project Configuration closing fence", file=sys.stderr)
-    sys.exit(2)
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Safely upgrade an initialized Codex project."
+    )
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true", help="Preview only (default).")
+    mode.add_argument("--apply", action="store_true", help="Apply the previewed upgrade.")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Skip apply confirmation; customized files are still preserved.",
+    )
+    parser.add_argument("--variant", help="Runtime variant recorded in template state.")
+    parser.add_argument(
+        "--record-initial-state",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument("project_path")
+    args = parser.parse_args()
+    if args.force and not args.apply:
+        parser.error("--force requires --apply")
+    if args.record_initial_state and (args.apply or args.dry_run or args.force):
+        parser.error("--record-initial-state cannot be combined with upgrade modes")
+    return args
 
-body = text[body_start:fence_end]
-lines = body.splitlines()
 
-def is_field(line: str) -> bool:
-    return bool(re.match(r"^[A-Z0-9_]+:", line))
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
-def find_line(label: str) -> int:
-    for index, line in enumerate(lines):
-        if line.strip() == label:
-            return index
-    return -1
 
-def block_end(start_index: int) -> int:
-    index = start_index + 1
-    while index < len(lines):
-        if is_field(lines[index]):
-            break
-        index += 1
-    return index
+def atomic_write(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mode = (path.stat().st_mode & 0o777) if path.exists() else 0o644
+    with tempfile.NamedTemporaryFile(
+        "w", encoding="utf-8", dir=path.parent, delete=False
+    ) as handle:
+        handle.write(content)
+        temporary = Path(handle.name)
+    os.chmod(temporary, mode)
+    os.replace(temporary, path)
 
-changed = False
 
-skills_index = find_line("ACTIVE_SKILLS:")
-if skills_index == -1:
-    print("FAILED: missing ACTIVE_SKILLS in Project Configuration", file=sys.stderr)
-    sys.exit(2)
+def template_version(repo_root: Path) -> str:
+    text = (repo_root / "PROJECT_AGENTS_TEMPLATE.md").read_text(encoding="utf-8")
+    match = re.search(r"(?m)^\*\*Version:\*\*\s+([^\s]+)", text)
+    if not match:
+        raise ValueError("PROJECT_AGENTS_TEMPLATE.md has no version")
+    return match.group(1)
 
-skills_end = block_end(skills_index)
-skills_block = "\n".join(lines[skills_index:skills_end])
-if not re.search(r"(?m)^\s*-\s+orchestration-gate\s*$", skills_block):
-    lines.insert(skills_index + 1, "  - orchestration-gate")
-    changed = True
 
-skills_end = block_end(skills_index)
-skills_block = "\n".join(lines[skills_index:skills_end])
-if not re.search(r"(?m)^\s*-\s+tdd-workflow\s*$", skills_block):
-    insert_at = skills_index + 1
-    for index in range(skills_index + 1, skills_end):
-        if re.match(r"^\s*-\s+orchestration-gate\s*$", lines[index]):
-            insert_at = index + 1
-            break
-    lines.insert(insert_at, "  - tdd-workflow")
-    changed = True
+def variant_ids(repo_root: Path) -> list[str]:
+    text = (repo_root / "variants/config.toml").read_text(encoding="utf-8")
+    return re.findall(r'(?m)^id\s*=\s*"([^"]+)"\s*$', text)
 
-if not any(line.startswith("ORCHESTRATION_MODE:") for line in lines):
-    roles_index = find_line("ACTIVE_AGENT_ROLES:")
-    if roles_index != -1:
-        insert_at = block_end(roles_index)
+
+def default_variant(repo_root: Path) -> str:
+    text = (repo_root / "variants/config.toml").read_text(encoding="utf-8")
+    match = re.search(r'(?m)^default_variant\s*=\s*"([^"]+)"\s*$', text)
+    if not match:
+        raise ValueError("variants/config.toml has no default_variant")
+    return match.group(1)
+
+
+def validate_variant(repo_root: Path, variant: str) -> None:
+    if variant not in variant_ids(repo_root):
+        choices = ", ".join(variant_ids(repo_root))
+        raise ValueError(f"unknown variant {variant!r}; expected one of: {choices}")
+
+
+def manifest_text(manifest: dict) -> str:
+    return json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+
+
+def initial_manifest(repo_root: Path, project: Path, variant: str) -> dict:
+    files: dict[str, dict[str, str]] = {"AGENTS.md": {"mode": "merge"}}
+    for relative_path in MANAGED_TEMPLATES:
+        target = project / relative_path
+        if not target.is_file():
+            raise ValueError(f"missing initialized template file: {target}")
+        files[relative_path.as_posix()] = {
+            "mode": "managed",
+            "template_sha256": sha256(target),
+        }
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "template_version": template_version(repo_root),
+        "variant": variant,
+        "files": files,
+    }
+
+
+def load_manifest(path: Path) -> dict | None:
+    if not path.exists():
+        return None
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as error:
+        raise ValueError(f"invalid template state {path}: {error}") from error
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        raise ValueError(
+            f"unsupported template state schema: {manifest.get('schema_version')!r}"
+        )
+    if not isinstance(manifest.get("files"), dict):
+        raise ValueError("template state has no files mapping")
+    return manifest
+
+
+def migrate_agents(text: str) -> str:
+    header_match = re.search(r"(?m)^## Project Configuration\s*$", text)
+    if not header_match:
+        raise ValueError("missing ## Project Configuration section")
+    fence_start = re.search(r"```text\n", text[header_match.end() :])
+    if not fence_start:
+        raise ValueError("missing Project Configuration text fence")
+    body_start = header_match.end() + fence_start.end()
+    fence_end = text.find("\n```", body_start)
+    if fence_end == -1:
+        raise ValueError("missing Project Configuration closing fence")
+
+    body = text[body_start:fence_end]
+    lines = body.splitlines()
+
+    def is_field(line: str) -> bool:
+        return bool(re.match(r"^[A-Z0-9_]+:", line))
+
+    def find_line(label: str) -> int:
+        return next((index for index, line in enumerate(lines) if line.strip() == label), -1)
+
+    def block_end(start_index: int) -> int:
+        index = start_index + 1
+        while index < len(lines) and not is_field(lines[index]):
+            index += 1
+        return index
+
+    skills_index = find_line("ACTIVE_SKILLS:")
+    if skills_index == -1:
+        raise ValueError("missing ACTIVE_SKILLS in Project Configuration")
+
+    for skill in ("orchestration-gate", "tdd-workflow"):
+        skills_end = block_end(skills_index)
+        skills_block = "\n".join(lines[skills_index:skills_end])
+        if re.search(rf"(?m)^\s*-\s+{re.escape(skill)}\s*$", skills_block):
+            continue
+        insert_at = skills_index + 1
+        if skill == "tdd-workflow":
+            for index in range(skills_index + 1, skills_end):
+                if re.match(r"^\s*-\s+orchestration-gate\s*$", lines[index]):
+                    insert_at = index + 1
+                    break
+        lines.insert(insert_at, f"  - {skill}")
+
+    mode_lines = [line for line in lines if line.startswith("ORCHESTRATION_MODE:")]
+    if len(mode_lines) > 1:
+        raise ValueError("multiple ORCHESTRATION_MODE fields in Project Configuration")
+    if mode_lines:
+        mode = mode_lines[0].split(":", 1)[1].strip()
+        if mode not in {"skip", "ask-approval", "run-chain"}:
+            raise ValueError(f"invalid ORCHESTRATION_MODE: {mode!r}")
     else:
-        domain_index = find_line("DOMAIN_RULES:")
-        if domain_index == -1:
-            print("FAILED: missing ACTIVE_AGENT_ROLES and DOMAIN_RULES in Project Configuration", file=sys.stderr)
-            sys.exit(2)
-        insert_at = domain_index
+        roles_index = find_line("ACTIVE_AGENT_ROLES:")
+        if roles_index != -1:
+            insert_at = block_end(roles_index)
+        else:
+            insert_at = find_line("DOMAIN_RULES:")
+            if insert_at == -1:
+                raise ValueError(
+                    "missing ACTIVE_AGENT_ROLES and DOMAIN_RULES in Project Configuration"
+                )
+        if insert_at > 0 and lines[insert_at - 1] != "":
+            lines.insert(insert_at, "")
+            insert_at += 1
+        lines.insert(insert_at, "ORCHESTRATION_MODE: ask-approval")
+        if insert_at + 1 < len(lines) and lines[insert_at + 1] != "":
+            lines.insert(insert_at + 1, "")
 
-    if insert_at > 0 and lines[insert_at - 1] != "":
-        lines.insert(insert_at, "")
-        insert_at += 1
-    lines.insert(insert_at, "ORCHESTRATION_MODE: ask-approval")
-    if insert_at + 1 < len(lines) and lines[insert_at + 1] != "":
-        lines.insert(insert_at + 1, "")
-    changed = True
+    new_body = "\n".join(lines)
+    if body.endswith("\n"):
+        new_body += "\n"
+    return text[:body_start] + new_body + text[fence_end:]
 
-new_body = "\n".join(lines)
-if body.endswith("\n"):
-    new_body += "\n"
 
-if changed:
-    new_text = text[:body_start] + new_body + text[fence_end:]
-else:
-    new_text = text
+def unified_diff(relative_path: str, before: str, after: str) -> str:
+    return "".join(
+        difflib.unified_diff(
+            before.splitlines(keepends=True),
+            after.splitlines(keepends=True),
+            fromfile=f"a/{relative_path}",
+            tofile=f"b/{relative_path}",
+        )
+    )
 
-target.write_text(new_text)
-PY
 
-if cmp -s "$AGENTS_FILE" "$TMP_FILE"; then
-  echo "Already up to date: $AGENTS_FILE"
-  exit 0
-fi
+def build_plan(repo_root: Path, project: Path, requested_variant: str | None) -> dict:
+    manifest_path = project / MANIFEST_PATH
+    previous_manifest = load_manifest(manifest_path)
+    legacy = previous_manifest is None
+    variant = requested_variant or (
+        previous_manifest.get("variant") if previous_manifest else None
+    ) or default_variant(repo_root)
+    validate_variant(repo_root, variant)
 
-echo "Project upgrade target: $PROJECT_PATH"
-echo
-echo "Planned AGENTS.md changes:"
-diff -u "$AGENTS_FILE" "$TMP_FILE" || true
-echo
+    agents_path = project / "AGENTS.md"
+    if not agents_path.is_file():
+        raise ValueError(f"missing project AGENTS.md: {agents_path}")
+    agents_before = agents_path.read_text(encoding="utf-8")
+    agents_after = migrate_agents(agents_before)
 
-if [[ "$DRY_RUN" == "true" ]]; then
-  echo "Dry run only. No files changed."
-  exit 0
-fi
+    files = dict(previous_manifest.get("files", {})) if previous_manifest else {}
+    files["AGENTS.md"] = {"mode": "merge"}
+    managed_plans: list[dict] = []
 
-if [[ "$FORCE" != "true" ]]; then
-  printf "Apply this upgrade? [y/N] "
-  read -r answer
-  case "$answer" in
-    y|Y|yes|YES)
-      ;;
-    *)
-      echo "Cancelled."
-      exit 0
-      ;;
-  esac
-fi
+    for relative_path, source_relative in MANAGED_TEMPLATES.items():
+        key = relative_path.as_posix()
+        target = project / relative_path
+        source = repo_root / source_relative
+        source_hash = sha256(source)
+        entry = files.get(key)
 
-TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
-ARCHIVE_DIR="$PROJECT_PATH/.codex/archive/upgrade-$TIMESTAMP"
-mkdir -p "$ARCHIVE_DIR"
-cp "$AGENTS_FILE" "$ARCHIVE_DIR/AGENTS.md"
-cp "$TMP_FILE" "$AGENTS_FILE"
+        if legacy or not isinstance(entry, dict):
+            status = "PRESERVE_LEGACY" if target.exists() else "PRESERVE_MISSING"
+            files[key] = {"mode": "project"}
+            if target.is_file():
+                files[key]["observed_sha256"] = sha256(target)
+            managed_plans.append(
+                {"path": relative_path, "source": source, "status": status}
+            )
+            continue
 
-echo "Archived: $ARCHIVE_DIR/AGENTS.md"
-echo "Updated: $AGENTS_FILE"
+        if entry.get("mode") != "managed":
+            files[key] = {"mode": "project"}
+            if target.is_file():
+                files[key]["observed_sha256"] = sha256(target)
+            managed_plans.append(
+                {"path": relative_path, "source": source, "status": "PRESERVE_LOCAL"}
+            )
+            continue
+
+        recorded_hash = entry.get("template_sha256")
+        if not target.is_file() or not recorded_hash or sha256(target) != recorded_hash:
+            files[key] = {"mode": "project"}
+            if target.is_file():
+                files[key]["observed_sha256"] = sha256(target)
+            status = "PRESERVE_CUSTOMIZED" if target.exists() else "PRESERVE_MISSING"
+            managed_plans.append(
+                {"path": relative_path, "source": source, "status": status}
+            )
+            continue
+
+        target_hash = sha256(target)
+        status = "UPDATE" if target_hash != source_hash else "UNCHANGED"
+        files[key] = {"mode": "managed", "template_sha256": source_hash}
+        managed_plans.append(
+            {"path": relative_path, "source": source, "status": status}
+        )
+
+    new_manifest = {
+        "schema_version": SCHEMA_VERSION,
+        "template_version": template_version(repo_root),
+        "variant": variant,
+        "files": files,
+    }
+    previous_manifest_text = (
+        manifest_text(previous_manifest) if previous_manifest is not None else None
+    )
+    new_manifest_text = manifest_text(new_manifest)
+    manifest_changed = previous_manifest_text != new_manifest_text
+
+    return {
+        "legacy": legacy,
+        "variant": variant,
+        "agents_path": agents_path,
+        "agents_before": agents_before,
+        "agents_after": agents_after,
+        "managed": managed_plans,
+        "manifest_path": manifest_path,
+        "manifest_before": previous_manifest_text,
+        "manifest_after": new_manifest_text,
+        "manifest_changed": manifest_changed,
+    }
+
+
+def plan_lines(plan: dict) -> list[str]:
+    lines = [
+        f"Project upgrade target: {plan['agents_path'].parent}",
+        f"Variant: {plan['variant']}",
+        f"State: {'legacy-safe bootstrap' if plan['legacy'] else 'managed'}",
+        "",
+    ]
+    agents_changed = plan["agents_before"] != plan["agents_after"]
+    lines.append(f"AGENTS.md: {'MERGE' if agents_changed else 'UNCHANGED'}")
+    if agents_changed:
+        lines.append(unified_diff("AGENTS.md", plan["agents_before"], plan["agents_after"]))
+    for item in plan["managed"]:
+        lines.append(f"{item['path'].as_posix()}: {item['status']}")
+        if item["status"] == "UPDATE":
+            target = plan["agents_path"].parent / item["path"]
+            lines.append(
+                unified_diff(
+                    item["path"].as_posix(),
+                    target.read_text(encoding="utf-8"),
+                    item["source"].read_text(encoding="utf-8"),
+                )
+            )
+        elif item["status"] in {"PRESERVE_CUSTOMIZED", "PRESERVE_LEGACY"}:
+            target = plan["agents_path"].parent / item["path"]
+            if target.is_file():
+                lines.append("Local/template comparison (not applied):")
+                lines.append(
+                    unified_diff(
+                        item["path"].as_posix(),
+                        target.read_text(encoding="utf-8"),
+                        item["source"].read_text(encoding="utf-8"),
+                    )
+                )
+    manifest_status = "CREATE" if plan["manifest_before"] is None else (
+        "UPDATE" if plan["manifest_changed"] else "UNCHANGED"
+    )
+    lines.append(f"{MANIFEST_PATH.as_posix()}: {manifest_status}")
+    return lines
+
+
+def apply_plan(plan: dict, force: bool) -> None:
+    summary = "\n".join(plan_lines(plan)).rstrip() + "\n"
+    print(summary, end="")
+    has_content_change = plan["agents_before"] != plan["agents_after"] or any(
+        item["status"] == "UPDATE" for item in plan["managed"]
+    )
+    if not has_content_change and not plan["manifest_changed"]:
+        print("Already up to date.")
+        return
+    if not force:
+        answer = input("Apply this upgrade? [y/N] ")
+        if answer not in {"y", "Y", "yes", "YES"}:
+            print("Cancelled.")
+            return
+
+    project = plan["agents_path"].parent
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    archive = project / ".codex/archive" / f"upgrade-{timestamp}"
+    archive.mkdir(parents=True, exist_ok=False)
+
+    changed_paths: list[Path] = []
+    if plan["agents_before"] != plan["agents_after"]:
+        changed_paths.append(Path("AGENTS.md"))
+    changed_paths.extend(
+        item["path"] for item in plan["managed"] if item["status"] == "UPDATE"
+    )
+    if plan["manifest_before"] is not None and plan["manifest_changed"]:
+        changed_paths.append(MANIFEST_PATH)
+
+    for relative_path in changed_paths:
+        source = project / relative_path
+        if source.exists():
+            destination = archive / relative_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+
+    atomic_write(
+        archive / "UPGRADE_SUMMARY.md",
+        "# Upgrade Summary\n\n````text\n" + summary + "````\n",
+    )
+
+    if plan["agents_before"] != plan["agents_after"]:
+        atomic_write(plan["agents_path"], plan["agents_after"])
+    for item in plan["managed"]:
+        if item["status"] == "UPDATE":
+            atomic_write(
+                project / item["path"], item["source"].read_text(encoding="utf-8")
+            )
+    if plan["manifest_changed"]:
+        atomic_write(plan["manifest_path"], plan["manifest_after"])
+
+    print(f"Archived changed files: {archive}")
+    print("Upgrade applied.")
+
+
+def main() -> int:
+    args = parse_args()
+    repo_root = Path(__file__).resolve().parent.parent
+    project = Path(args.project_path).expanduser().resolve()
+    try:
+        if not project.is_dir():
+            raise ValueError(f"project directory does not exist: {project}")
+        if args.record_initial_state:
+            variant = args.variant or default_variant(repo_root)
+            validate_variant(repo_root, variant)
+            manifest = initial_manifest(repo_root, project, variant)
+            atomic_write(project / MANIFEST_PATH, manifest_text(manifest))
+            print(f"Created: {project / MANIFEST_PATH}")
+            return 0
+
+        plan = build_plan(repo_root, project, args.variant)
+        if args.apply:
+            apply_plan(plan, args.force)
+        else:
+            print("\n".join(plan_lines(plan)).rstrip())
+            print("Dry run only. No files changed.")
+        return 0
+    except (OSError, ValueError) as error:
+        print(f"FAILED: {error}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

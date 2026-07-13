@@ -2,6 +2,14 @@
 
 ## 2026-07-14
 
+- [FEAT] Added versioned project template state and hash-aware safe migrations
+  for already initialized projects.
+- [FIX] Preserved locally developed project prompts, configs, documentation,
+  domain rules, and custom configuration values during template upgrades.
+- [DOCS] Made project upgrade dry-run-first with explicit `--apply` execution
+  and per-upgrade archives.
+- [TEST] Added regression coverage for fresh, legacy, customized, and unchanged
+  managed project upgrade scenarios.
 - [FEAT] Packaged the existing MIT-licensed ECC `tdd-workflow` skill in the
   Codex and Dolphin runtime variants.
 - [FIX] Updated project initialization and upgrade contracts to require both

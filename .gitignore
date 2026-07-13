@@ -1,1 +1,3 @@
 001.md
+__pycache__/
+*.py[cod]

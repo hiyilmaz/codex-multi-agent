@@ -110,7 +110,8 @@ bin/codex-project-init /path/to/project
 
 The init command asks for confirmation, archives existing project-local Codex
 files, resets the project Codex structure, and creates a fresh project
-`AGENTS.md`.
+`AGENTS.md`. It also records the selected runtime variant, template version,
+and managed-file hashes in `.codex/template-state.json`.
 
 After init, run the generated prompt:
 
@@ -125,10 +126,14 @@ must ask the user before editing instead of writing placeholders.
 Upgrade an already initialized project without resetting its `AGENTS.md`:
 
 ```bash
-bin/codex-project-upgrade /path/to/project
+bin/codex-project-upgrade --dry-run /path/to/project
+bin/codex-project-upgrade --apply /path/to/project
 ```
 
-Use `--dry-run` to preview the `AGENTS.md` changes first.
+Dry-run is the default. Upgrade preserves project-specific values and additions,
+merges only missing baseline fields into `AGENTS.md`, updates unchanged
+template-managed files, and leaves locally modified files untouched. Every
+applied change is archived under `.codex/archive/upgrade-YYYYMMDD_HHMMSS/`.
 
 ## Local Codex Docs
 

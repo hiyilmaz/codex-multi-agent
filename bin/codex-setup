@@ -235,7 +235,7 @@ if ask_yes_no "Bir proje içine Codex yapısı kurulsun mu?" "n"; then
   PROJECT_PATH="$(ask_value "Proje dizini" "/path/to/project")"
   echo
   echo "Proje kurulumu başlatılıyor. Komut kendi onayını ayrıca soracaktır."
-  "$TEMPLATE_DIR/bin/codex-project-init" "$PROJECT_PATH"
+  "$TEMPLATE_DIR/bin/codex-project-init" --variant "$VARIANT_ID" "$PROJECT_PATH"
 fi
 
 echo

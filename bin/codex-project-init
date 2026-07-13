@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: codex-project-init <project-path>
+Usage: codex-project-init [--variant <id>] <project-path>
 
 Archives existing project-local Codex files and resets the project to the
 standard Codex structure.
@@ -14,21 +14,65 @@ Behavior:
   - writes <project>/AGENTS.md from PROJECT_AGENTS_TEMPLATE.md
   - writes <project>/.codex/config.toml from CODEX_CONFIG_EXAMPLE.toml
   - writes <project>/.codex/prompts/fill-project-configuration.md
+  - records template version, runtime variant, and managed-file hashes
   - does not create project-local reusable rules/skills/agents directories
 EOF
 }
 
-if [[ $# -lt 1 ]]; then
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+VARIANT_ID=""
+PROJECT_PATH=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --variant)
+      if [[ $# -lt 2 ]]; then
+        echo "FAILED: --variant requires a value" >&2
+        exit 1
+      fi
+      VARIANT_ID="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    -*)
+      echo "Unknown option: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)
+      if [[ -n "$PROJECT_PATH" ]]; then
+        echo "FAILED: multiple project paths provided" >&2
+        usage
+        exit 1
+      fi
+      PROJECT_PATH="$1"
+      shift
+      ;;
+  esac
+done
+
+if [[ -z "$PROJECT_PATH" ]]; then
   usage
   exit 1
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-PROJECT_PATH="$1"
+if [[ -z "$VARIANT_ID" ]]; then
+  VARIANT_ID="$(awk -F= '
+    $1 ~ /^[[:space:]]*default_variant[[:space:]]*$/ {
+      value=$2
+      gsub(/[[:space:]"]/, "", value)
+      print value
+      exit
+    }
+  ' "$TEMPLATE_DIR/variants/config.toml")"
+fi
 
-if [[ $# -ne 1 ]]; then
-  usage
+if ! "$TEMPLATE_DIR/bin/codex-user-install" --list-variants | awk -F '\t' -v id="$VARIANT_ID" '$1 == id { found=1 } END { exit !found }'; then
+  echo "FAILED: unknown variant: $VARIANT_ID" >&2
   exit 1
 fi
 
@@ -42,6 +86,7 @@ CONFLICTS=(
   "AGENTS.md"
   "AGENTS.codex-template.md"
   ".codex/config.toml"
+  ".codex/template-state.json"
   ".codex/agents"
   ".codex/prompts"
   ".codex/rules"
@@ -89,10 +134,12 @@ mkdir -p "$PROJECT_PATH/.codex/prompts"
 cp "$TEMPLATE_DIR/PROJECT_AGENTS_TEMPLATE.md" "$PROJECT_PATH/AGENTS.md"
 cp "$TEMPLATE_DIR/CODEX_CONFIG_EXAMPLE.toml" "$PROJECT_PATH/.codex/config.toml"
 cp "$TEMPLATE_DIR/PROJECT_CONFIG_PROMPT.md" "$PROJECT_PATH/.codex/prompts/fill-project-configuration.md"
+"$TEMPLATE_DIR/bin/codex-project-upgrade" --record-initial-state --variant "$VARIANT_ID" "$PROJECT_PATH" >/dev/null
 
 echo "Created: $PROJECT_PATH/AGENTS.md"
 echo "Created: $PROJECT_PATH/.codex/config.toml"
 echo "Created: $PROJECT_PATH/.codex/prompts/fill-project-configuration.md"
+echo "Created: $PROJECT_PATH/.codex/template-state.json"
 
 if [[ ! -e "$HOME/.codex/AGENTS.md" ]]; then
   echo "Warning: ~/.codex/AGENTS.md is missing. Create the user-global Codex surface first." >&2
