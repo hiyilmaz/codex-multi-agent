@@ -1,4 +1,0 @@
-interface:
-  display_name: "Crypto Strategy Discovery"
-  short_description: "Discover crypto signal strategies"
-  default_prompt: "Use $crypto-strategy-discovery to plan and report a leakage-safe signal strategy discovery workflow from realized crypto data."

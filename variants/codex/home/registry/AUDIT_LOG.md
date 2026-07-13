@@ -5,6 +5,8 @@ indexes.
 
 ## 2026-07-14
 
+- [FIX] Removed three FormProxy skills and the crypto strategy discovery skill
+  from the generic portable runtime and active skill index.
 - [FEAT] Added the MIT-licensed ECC `tdd-workflow` skill to the portable Codex
   runtime and active skill index.
 - [DOCS] Recorded the upstream ECC source and license attribution.

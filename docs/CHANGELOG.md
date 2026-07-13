@@ -2,6 +2,10 @@
 
 ## 2026-07-14
 
+- [FIX] Removed FormProxy-specific and crypto strategy skills from the generic
+  Codex runtime package and active skill registry.
+- [DOCS] Audited packaged runtime skills and identified FormProxy and crypto
+  strategy content that should not ship in the generic runtime template.
 - [FEAT] Added versioned project template state and hash-aware safe migrations
   for already initialized projects.
 - [FIX] Preserved locally developed project prompts, configs, documentation,
