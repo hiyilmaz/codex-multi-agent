@@ -1,7 +1,7 @@
 # Codex — Project Instructions
 
-**Version:** 2.1
-**Updated:** 2026-05-22
+**Version:** 2.2
+**Updated:** 2026-07-14
 
 ---
 
@@ -28,7 +28,6 @@ ACTIVE_RULE_SETS:
 ACTIVE_SKILLS:
   - orchestration-gate
   - tdd-workflow
-  - openai-docs
 
 ACTIVE_AGENT_ROLES:
   - planner

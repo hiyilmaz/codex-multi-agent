@@ -318,7 +318,7 @@ install_variant_launcher() {
   local target_home="$2"
   local target_launcher_name="$3"
 
-  [[ -n "$source_launcher" ]] || return
+  [[ -n "$source_launcher" ]] || return 0
 
   if [[ -z "$target_launcher_name" ]]; then
     target_launcher_name="$(basename "$source_launcher")"

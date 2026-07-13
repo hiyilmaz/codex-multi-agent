@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-14
+
+- [FEAT] Packaged the existing MIT-licensed ECC `tdd-workflow` skill in the
+  Codex and Dolphin runtime variants.
+- [FIX] Updated project initialization and upgrade contracts to require both
+  `orchestration-gate` and `tdd-workflow` while keeping `openai-docs`
+  project-specific.
+- [FIX] Prevented launcher-free runtime variants from exiting the user installer
+  with a failure status after copying their files.
+- [DOCS] Added ECC source and license attribution for the imported workflow.
+
 ## 2026-06-26
 
 - [DOCS] Added deferred findings log behavior to global Codex instructions.

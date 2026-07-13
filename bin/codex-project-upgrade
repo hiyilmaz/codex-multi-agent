@@ -10,7 +10,7 @@ Upgrades an existing project AGENTS.md without resetting the project.
 Behavior:
   - requires an existing <project>/AGENTS.md
   - edits only the Project Configuration fenced text block
-  - adds orchestration-gate to ACTIVE_SKILLS when missing
+  - adds orchestration-gate and tdd-workflow to ACTIVE_SKILLS when missing
   - adds ORCHESTRATION_MODE: ask-approval when missing
   - archives the previous AGENTS.md under <project>/.codex/archive/upgrade-YYYYMMDD_HHMMSS
   - asks for confirmation before writing unless --force is provided
@@ -131,6 +131,17 @@ skills_end = block_end(skills_index)
 skills_block = "\n".join(lines[skills_index:skills_end])
 if not re.search(r"(?m)^\s*-\s+orchestration-gate\s*$", skills_block):
     lines.insert(skills_index + 1, "  - orchestration-gate")
+    changed = True
+
+skills_end = block_end(skills_index)
+skills_block = "\n".join(lines[skills_index:skills_end])
+if not re.search(r"(?m)^\s*-\s+tdd-workflow\s*$", skills_block):
+    insert_at = skills_index + 1
+    for index in range(skills_index + 1, skills_end):
+        if re.match(r"^\s*-\s+orchestration-gate\s*$", lines[index]):
+            insert_at = index + 1
+            break
+    lines.insert(insert_at, "  - tdd-workflow")
     changed = True
 
 if not any(line.startswith("ORCHESTRATION_MODE:") for line in lines):

@@ -55,6 +55,10 @@ The default project template uses `ask-approval`. The `orchestration-gate`
 skill decides whether a task should skip orchestration, ask for approval, or
 run the mandatory chain. It must not bypass active tool or approval policy.
 
+Every runtime variant packages `tdd-workflow`. The `tdd-guide` agent defines
+the focused test strategy, and the skill enforces the test-first
+RED-GREEN-refactor workflow during implementation.
+
 Installable runtime variants live under `variants/`:
 
 - `variants/codex/home/` — Default Codex runtime template

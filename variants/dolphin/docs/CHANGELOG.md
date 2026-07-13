@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-07-14
+- [FEAT] Package the MIT-licensed ECC `tdd-workflow` skill in the DolphinVersion
+  runtime.
+- [FIX] Keep `tdd-workflow` in the mandatory project skill contract and runtime
+  registry.
+
 ## 2026-06-24
 - [INFRA] Add `orchestration-gate` and project-level `ORCHESTRATION_MODE`
   support to the DolphinVersion runtime template.

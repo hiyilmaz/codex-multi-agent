@@ -32,6 +32,10 @@ skip | ask-approval | run-chain
 
 It must not bypass active tool or approval policy.
 
+The template also includes the ECC `tdd-workflow` skill for mandatory
+test-first feature, bugfix, and refactor work. The `tdd-guide` agent defines
+the focused test strategy; `tdd-workflow` enforces the RED-GREEN-refactor loop.
+
 Setup preferences and status messages live under `registry/`.
 
 Excluded:

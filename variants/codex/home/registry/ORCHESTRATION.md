@@ -36,6 +36,9 @@ When orchestration is explicitly requested or approved, preserve this chain:
 planner -> tdd-guide -> code-reviewer -> security-reviewer
 ```
 
+During the TDD stage, `tdd-guide` defines the focused verification strategy and
+the required `tdd-workflow` skill enforces test-first implementation.
+
 Do not replace, reorder, or weaken this chain.
 
 `ACTIVE_AGENT_ROLES` declares available roles only. It does not start agents by

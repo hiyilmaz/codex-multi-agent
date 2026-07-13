@@ -3,6 +3,12 @@
 Append-only log for changes made to reusable skills, agents, and registry
 indexes.
 
+## 2026-07-14
+
+- [FEAT] Added the MIT-licensed ECC `tdd-workflow` skill to the DolphinVersion
+  runtime and active skill index.
+- [DOCS] Recorded the upstream ECC source and license attribution.
+
 ## 2026-06-24
 
 - [INFRA] Added `orchestration-gate` as the decision skill for

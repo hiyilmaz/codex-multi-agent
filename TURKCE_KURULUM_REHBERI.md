@@ -209,6 +209,9 @@ Geçerli değerler:
   başlatılır; aktif tool politikası ayrıca onay istiyorsa önce onay alınır.
 
 `orchestration-gate` skill'i bu kararın verilmesi için kullanılır.
+`tdd-workflow` her runtime varyantında bulunur ve test-first geliştirme akışını
+uygular. `openai-docs` gibi göreve özel skill'ler yalnızca proje için ilgili ve
+aktif Codex oturumunda mevcut olduklarında eklenir.
 
 Yeni skill veya agent gerektiğinde `skill-agent-governor` sorumludur.
 

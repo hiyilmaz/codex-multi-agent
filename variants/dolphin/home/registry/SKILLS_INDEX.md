@@ -11,6 +11,7 @@ DolphinVersion runtime surface.
 | Name | Path | Scope | Status |
 |---|---|---|---|
 | orchestration-gate | `variants/dolphin/home/skills/orchestration-gate/SKILL.md` | Decide whether a task should skip orchestration, ask for approval, or run the mandatory chain. | active |
+| tdd-workflow | `variants/dolphin/home/skills/tdd-workflow/SKILL.md` | Enforce test-first implementation and coverage verification for features, bug fixes, and refactors. | active |
 
 Default user-global skills are not duplicated in this runtime.
 

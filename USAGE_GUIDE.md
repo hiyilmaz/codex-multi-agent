@@ -148,7 +148,6 @@ ACTIVE_RULE_SETS:
 ACTIVE_SKILLS:
   - orchestration-gate
   - tdd-workflow
-  - openai-docs
 
 ACTIVE_AGENT_ROLES:
   - planner
@@ -162,6 +161,10 @@ DOMAIN_RULES:
   - Every payment request must use an idempotency key
   - Every public API endpoint must enforce rate limiting
 ```
+
+`orchestration-gate` and `tdd-workflow` are baseline skills packaged by every
+runtime variant. Add task-specific skills such as `openai-docs` only when they
+are relevant and available in the active Codex session.
 
 The final block should contain no uncertainty placeholders. Unknown required
 values should be resolved by asking the user before editing.

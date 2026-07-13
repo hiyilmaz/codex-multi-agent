@@ -47,3 +47,7 @@ skip | ask-approval | run-chain
 ```
 
 It must not bypass active tool or approval policy.
+
+The runtime also includes the ECC `tdd-workflow` skill for mandatory test-first
+feature, bugfix, and refactor work. The `tdd-guide` agent defines the focused
+test strategy; `tdd-workflow` enforces the RED-GREEN-refactor loop.

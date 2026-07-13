@@ -12,6 +12,7 @@ runtime surface.
 |---|---|---|---|
 | crypto-strategy-discovery | `~/.codex/skills/crypto-strategy-discovery/SKILL.md` | Discover and evaluate signal-strategy candidates from realized crypto data. | active |
 | orchestration-gate | `~/.codex/skills/orchestration-gate/SKILL.md` | Decide whether a task should skip orchestration, ask for approval, or run the mandatory chain. | active |
+| tdd-workflow | `~/.codex/skills/tdd-workflow/SKILL.md` | Enforce test-first implementation and coverage verification for features, bug fixes, and refactors. | active |
 | formproxy-implementation-planner | `~/.codex/skills/formproxy-implementation-planner/SKILL.md` | Plan bounded FormProxy implementation work. | active |
 | formproxy-security-review | `~/.codex/skills/formproxy-security-review/SKILL.md` | Review FormProxy changes against security and abuse-protection rules. | active |
 | formproxy-verification-loop | `~/.codex/skills/formproxy-verification-loop/SKILL.md` | Run focused FormProxy verification and report evidence. | active |
