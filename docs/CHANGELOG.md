@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-06-26
+
+- [DOCS] Added deferred findings log behavior to global Codex instructions.
+
 ## 2026-06-24
 
 - [FEAT] Added `codex-project-upgrade` to update initialized project

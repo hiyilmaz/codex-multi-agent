@@ -94,44 +94,103 @@ There is no external runtime layer.
 - Do ONLY what is requested. No "improvements", no "also...".
 - When done: report result, STOP, wait for next instruction.
 
-### 4. Destructive Operations = User Approval
+### 4. Deferred Findings Log
+
+While working on the requested task, keep the current scope locked.
+
+If bugs, risks, cleanup needs, missing tests, outdated docs, or follow-up
+improvements are noticed outside the requested task, do not fix them and do not
+expand the task. Record them in:
+
+```text
+docs/DEFERRED_FINDINGS.md
+```
+
+Rules:
+
+- The requested task remains the only active work.
+- Deferred findings are records only; they are not permission to change scope.
+- Do not investigate deferred findings beyond the minimum needed to describe
+  them accurately.
+- Do not stop the main task unless the finding directly blocks the requested
+  task or creates an immediate high-risk security, data-loss, or destructive
+  operation concern.
+- If `docs/DEFERRED_FINDINGS.md` does not exist, create it only when a deferred
+  finding is actually found.
+- Keep pending and completed items separate.
+- Every item must include discovery time in `YYYY-MM-DD HH:MM` format.
+- When an item is fixed, move it from `Pending` to `Completed` and add fixed
+  time in `YYYY-MM-DD HH:MM` format.
+- Do not implement any deferred item unless the user explicitly approves it in
+  a new task.
+
+Document format:
+
+```text
+# Deferred Findings
+
+## Pending
+
+- ID: DF-YYYYMMDD-HHMM-001
+  Type: BUG | RISK | TODO
+  Discovered At: YYYY-MM-DD HH:MM
+  Source Task: [short task summary]
+  Location: [file/path or area]
+  Summary: [short issue]
+  Evidence: [short evidence]
+  Recommended Action: [short next action]
+
+## Completed
+
+- ID: DF-YYYYMMDD-HHMM-001
+  Type: BUG | RISK | TODO
+  Discovered At: YYYY-MM-DD HH:MM
+  Fixed At: YYYY-MM-DD HH:MM
+  Source Task: [short task summary]
+  Location: [file/path or area]
+  Summary: [short issue]
+  Fix Summary: [what was done]
+  Evidence: [test/report/commit reference if available]
+```
+
+### 5. Destructive Operations = User Approval
 
 - `DROP`, `DELETE *`, `TRUNCATE`, `rm -rf`, `git reset --hard`, `git push --force`
 - Adding dependencies, changing API contracts, DB schema changes, auth/security code
 - If needed: STOP, report, wait for approval.
 
-### 5. CHANGELOG (Mandatory)
+### 6. CHANGELOG (Mandatory)
 
 - Location: project `CHANGELOG_PATH`
 - Format: `## YYYY-MM-DD` + `- [TAG] Description`
 - Tags: `[API]`, `[UI]`, `[DB]`, `[FIX]`, `[FEAT]`, `[REFACTOR]`, `[DOCS]`, `[TEST]`, `[INFRA]`
 - Update after EVERY completed task unless the project explicitly disables changelog work.
 
-### 6. File Size
+### 7. File Size
 
 - Target: 200-400 lines
 - Warning: 500+ lines (report and suggest refactor)
 - Hard limit: 800 lines (refuse to add, require refactor first)
 
-### 7. Commit Rules
+### 8. Commit Rules
 
 - NEVER auto-commit. User commits manually.
 - Suggest commit message ONLY at full task closure.
 - Format: `git commit -m "type(scope): description"`
 
-### 8. Domain Rules
+### 9. Domain Rules
 
 Rules defined in project `DOMAIN_RULES` are MANDATORY.
 Apply them to every relevant change without exception.
 
-### 9. Bounded Execution
+### 10. Bounded Execution
 
 - **Max 5 steps** per task without interim report. If exceeded: STOP, report progress, await approval.
 - **Max 3 retries** for the same failing action. If exceeded: STOP, report failure with root cause analysis.
 - Forbidden: infinite loops, polling without limit, `sleep >10s`, `while true`.
 - Each step must have observable output.
 
-### 10. Critical Decision Format
+### 11. Critical Decision Format
 
 When a decision requires user approval, classify risk level:
 
@@ -148,7 +207,7 @@ Awaiting decision.
 - **Medium:** Report and suggest, proceed only if the user explicitly allows autonomy.
 - **Low:** Report in summary, may proceed.
 
-### 11. Confirm Before Execute
+### 12. Confirm Before Execute
 
 For complex tasks (>3 files OR architectural change OR destructive), confirm understanding BEFORE starting:
 
