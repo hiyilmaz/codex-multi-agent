@@ -1,7 +1,20 @@
 # Changelog
 
+## 2026-07-16
+
+- [FIX] Updated all portable Codex custom subagent model overrides to
+  `gpt-5.6-sol`, preventing forced runtime refreshes from restoring `gpt-5.5`.
+- [TEST] Verified Codex and Dolphin agent models, a clean Codex variant install,
+  and the complete project upgrade regression suite.
+- [INFRA] Updated all active user-global custom subagent model overrides to
+  `gpt-5.6-sol` and archived the previous definitions.
+- [DOCS] Recorded the deferred risk that a future forced runtime refresh could
+  restore older subagent model overrides from the Codex variant template.
+
 ## 2026-07-14
 
+- [DOCS] Added a consolidated command reference for runtime installation,
+  project initialization and upgrades, docs refresh, and verification.
 - [FIX] Removed FormProxy-specific and crypto strategy skills from the generic
   Codex runtime package and active skill registry.
 - [DOCS] Audited packaged runtime skills and identified FormProxy and crypto

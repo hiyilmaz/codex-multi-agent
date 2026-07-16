@@ -3,6 +3,11 @@
 Append-only log for changes made to reusable skills, agents, and registry
 indexes.
 
+## 2026-07-16
+
+- [INFRA] Updated all portable Codex custom subagent model overrides to
+  `gpt-5.6-sol` to match the active user-global runtime.
+
 ## 2026-07-14
 
 - [FIX] Removed three FormProxy skills and the crypto strategy discovery skill

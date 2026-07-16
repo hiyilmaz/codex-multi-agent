@@ -21,6 +21,7 @@ It is self-contained and does not depend on another agent runtime.
 | `GLOBAL_AGENTS_TEMPLATE.md` | Copy to `~/.codex/AGENTS.md` |
 | `PROJECT_AGENTS_TEMPLATE.md` | Copy to a project as `AGENTS.md` |
 | `USAGE_GUIDE.md` | How to apply the template to new or existing projects |
+| `COMMAND_REFERENCE.md` | Consolidated runtime, project, and verification commands |
 | `CODEX_CONFIG_EXAMPLE.toml` | Optional project `.codex/config.toml` example |
 | `PROJECT_CONFIG_PROMPT.md` | Prompt copied into projects after init |
 | `REGISTRY_MANAGEMENT.md` | User-global skill/agent registry model |
