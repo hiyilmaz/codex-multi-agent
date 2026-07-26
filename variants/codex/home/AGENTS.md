@@ -309,6 +309,28 @@ Rules:
   read-heavy discovery, tests, review, and security passes; avoid parallel
   write-heavy edits over the same files.
 
+Stage handoff and completion integrity:
+
+- The main agent provides scoped discovery to `planner`; `planner` must not
+  repeat broad discovery without a concrete evidence gap.
+- `planner` returns scope, observable acceptance criteria, affected files,
+  risks, approvals, and prohibited shortcuts.
+- `tdd-guide` converts that handoff into the lightest sufficient
+  acceptance-to-test mapping; it must not repeat implementation planning.
+- The main agent implements after `tdd-guide` and before `code-reviewer`.
+  Implementation is not an extra subagent stage.
+- `code-reviewer` reviews the diff, acceptance criteria, and test integrity;
+  it must not restart planning or broad discovery.
+- `security-reviewer` reviews only changed trust boundaries and returns a short
+  no-impact result when no security-relevant behavior changed.
+- Passing tests alone do not prove completion. Reviewers must reject hardcoded
+  success, weakened assertions, skipped tests, excessive mocks, test-only
+  production branches, swallowed errors, or absent observable behavior.
+- A blocking reviewer finding reopens scoped implementation. Re-run the
+  affected review stages after correction, within the existing retry limit.
+- Each stage returns a concise handoff and stops when its assigned evidence is
+  complete; unrelated improvements follow the Deferred Findings policy.
+
 Apply Codex-native workflows:
 
 | Intent | Preferred Codex Pattern |

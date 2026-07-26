@@ -210,6 +210,24 @@ Rules:
 - Use subagents only when the user explicitly requests or approves subagent,
   delegation, parallel-agent, or orchestration work.
 
+Stage handoff and completion integrity:
+
+- The main agent provides scoped discovery to `planner`; `planner` returns
+  scope, observable acceptance criteria, affected files, risks, approvals, and
+  prohibited shortcuts without repeating broad discovery.
+- `tdd-guide` converts that handoff into the lightest sufficient
+  acceptance-to-test mapping without repeating implementation planning.
+- The main agent implements after `tdd-guide` and before `code-reviewer`.
+- `code-reviewer` reviews the diff, acceptance criteria, and test integrity.
+- `security-reviewer` reviews changed trust boundaries and returns a short
+  no-impact result when no security-relevant behavior changed.
+- Passing tests alone do not prove completion. Reject hardcoded success,
+  weakened assertions, skipped tests, excessive mocks, test-only production
+  branches, swallowed errors, or absent observable behavior.
+- Blocking reviewer findings reopen scoped implementation and the affected
+  review stages within the existing retry limit.
+- Each stage returns a concise handoff and stops when its evidence is complete.
+
 ---
 
 ## Reusable Resolution

@@ -47,6 +47,24 @@ ALWAYS write tests first, then implement code to make tests pass.
 - Browser automation
 - UI interactions
 
+## Test Integrity Guardrails
+
+Passing tests alone are not proof of completion. Tests must demonstrate the
+requested observable behavior and must fail against a dummy implementation.
+
+Never:
+
+- replace behavior with hardcoded success
+- weaken assertions only to make a test pass
+- skip or disable tests that cover the requested behavior
+- add test-only production branches
+- swallow errors and report success
+- mock the target behavior instead of its external dependencies
+
+After tests pass, review the implementation diff and confirm that acceptance
+criteria, negative paths, and observable behavior are independently supported.
+If a test can pass while the requested behavior is absent, the test is invalid.
+
 ## TDD Workflow Steps
 
 ### Step 1: Write User Journeys

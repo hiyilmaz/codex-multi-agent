@@ -3,6 +3,13 @@
 Append-only log for changes made to reusable skills, agents, and registry
 indexes.
 
+## 2026-07-26
+
+- [FIX] Set the four mandatory Codex chain agents to `medium` reasoning and
+  added bounded input, output, no-repeat, and stop contracts.
+- [TEST] Added test-integrity guardrails against hardcoded success, weakened
+  assertions, skipped tests, excessive mocks, and test-only production paths.
+
 ## 2026-07-16
 
 - [INFRA] Updated all portable Codex custom subagent model overrides to

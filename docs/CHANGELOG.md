@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-26
+
+- [INFRA] Added full-project ZIP backups to Git ignore rules.
+- [FIX] Preserved the mandatory four-stage orchestration chain while adding
+  bounded handoffs, no-repeat rules, fast review exits, and false-completion
+  controls.
+- [INFRA] Changed the four mandatory Codex chain agents from `high` to `medium`
+  reasoning and synchronized the validated contract to the active runtime.
+- [TEST] Added orchestration contract coverage and verified 12 tests, 24 agent
+  TOML files, and temporary Codex and Dolphin installations.
+- [DOCS] Reviewed the mandatory orchestration chain, recorded current Codex and
+  community evidence, and added a proposed latency-reduction task list without
+  changing runtime or agent configuration.
+
 ## 2026-07-16
 
 - [FIX] Updated all portable Codex custom subagent model overrides to

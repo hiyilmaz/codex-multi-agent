@@ -60,6 +60,12 @@ Every runtime variant packages `tdd-workflow`. The `tdd-guide` agent defines
 the focused test strategy, and the skill enforces the test-first
 RED-GREEN-refactor workflow during implementation.
 
+The mandatory chain uses bounded handoffs: each agent consumes prior evidence,
+avoids repeated discovery, returns a concise result, and stops. Codex chain
+agents default to `medium` reasoning. Passing tests alone do not prove
+completion; review also checks acceptance criteria, observable behavior, and
+test integrity.
+
 Installable runtime variants live under `variants/`:
 
 - `variants/codex/home/` — Default Codex runtime template

@@ -3,6 +3,13 @@
 Append-only log for changes made to reusable skills, agents, and registry
 indexes.
 
+## 2026-07-26
+
+- [FIX] Added bounded input, output, no-repeat, and stop contracts to the four
+  mandatory orchestration agents.
+- [TEST] Added test-integrity guardrails against hardcoded success, weakened
+  assertions, skipped tests, excessive mocks, and test-only production paths.
+
 ## 2026-07-14
 
 - [FEAT] Added the MIT-licensed ECC `tdd-workflow` skill to the DolphinVersion

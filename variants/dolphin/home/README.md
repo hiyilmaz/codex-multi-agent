@@ -51,3 +51,8 @@ It must not bypass active tool or approval policy.
 The runtime also includes the ECC `tdd-workflow` skill for mandatory test-first
 feature, bugfix, and refactor work. The `tdd-guide` agent defines the focused
 test strategy; `tdd-workflow` enforces the RED-GREEN-refactor loop.
+
+Mandatory chain stages use bounded handoffs. Each stage consumes prior
+evidence, avoids repeated discovery, and returns a concise result. Passing
+tests alone do not prove completion; reviewers also check acceptance criteria,
+observable behavior, and test integrity.
