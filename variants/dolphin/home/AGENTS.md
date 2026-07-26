@@ -164,6 +164,19 @@ The following require explicit user approval:
 - Experiment escalation must not bypass scope, approval, security, destructive
   operation, retry, orchestration, or test-integrity rules.
 
+### 11. Event-Driven Record Archiving
+
+- Use `record-archive` only when a Deferred Finding becomes Completed, an
+  experiment becomes terminal, a new changelog date heading is created, or the
+  user explicitly requests record archiving.
+- Do not check records at every task closure. Do not add a cron job, daemon, or
+  Git hook for this workflow.
+- Run its read-only `check` action first. Use `apply` only when the threshold is
+  reached and the current task owns the managed-file changes.
+- Archive full records; never summarize away, duplicate, or delete record
+  history.
+- Unsupported or malformed formats must fail closed without editing files.
+
 ---
 
 ## Workflow

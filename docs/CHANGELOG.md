@@ -2,6 +2,17 @@
 
 ## 2026-07-27
 
+- [FEAT] EXP-20260727-002: Added event-driven `record-archive` automation for
+  Deferred Findings, experiments, and changelog records.
+- [FIX] EXP-20260727-002: Limited checks to sparse record transitions, retained
+  twenty full changelog dates plus thirty archive links, and preserved complete
+  history in archive files.
+- [FIX] EXP-20260727-002: Added legacy experiment and headerless changelog
+  compatibility with dirty-file, malformed-format, duplicate, and symlink
+  fail-closed protection.
+- [TEST] EXP-20260727-002: Added 16 archive contract tests, reached 87% script
+  coverage, and validated Codex, Dolphin, active runtime, and current
+  `yedekparcasor.com` record formats.
 - [FEAT] EXP-20260727-001: Added the conditional `hypothesis-workflow` skill to
   Codex, Dolphin, and the active local global runtime.
 - [FIX] EXP-20260727-001: Kept routine first-pass work outside the experiment

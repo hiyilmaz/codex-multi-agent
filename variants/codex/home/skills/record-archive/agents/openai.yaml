@@ -1,0 +1,4 @@
+interface:
+  display_name: "Record Archive"
+  short_description: "Archive growing governance records safely"
+  default_prompt: "Use $record-archive to check and compact eligible project records safely."

@@ -1,5 +1,69 @@
 # Improvement Experiments
 
+## EXP-20260727-002 - Event-Driven Record Archiving
+
+Date: 2026-07-27
+Status: ACCEPTED
+
+Problem:
+Deferred findings, experiments, and changelog files grow without bound, but
+checking or compacting them at every task closure would add recurring latency
+and cost.
+
+Evidence:
+The accepted design review found that record files need bounded active context
+without losing history. It also found that a five-date changelog window is too
+small, while keeping fifty full date sections would likely exceed the runtime's
+file-size guidance.
+
+Hypothesis:
+An event-driven `record-archive` skill with deterministic thresholds, dry-run
+checks, atomic fail-closed writes, and format-specific retention rules will
+bound active context without adding work to unrelated task closures.
+
+Solution Attempt:
+Add one reusable skill and script for Deferred Findings, experiments, and
+changelog records. Trigger checks only when a finding becomes completed, an
+experiment becomes terminal, or a new changelog date is created. Keep five
+recent completed findings, five recent terminal experiments, and twenty full
+changelog dates plus a thirty-date archive index.
+
+Test:
+Run contract tests against temporary repositories for below-threshold no-ops,
+threshold rotation, preservation, duplicate and malformed-input rejection,
+dirty-file protection, idempotence, portable installation, and runtime policy
+activation.
+
+Success Criteria:
+- No event-independent or every-task archive check is introduced.
+- Deferred Findings and experiments rotate at ten eligible records and retain
+  five eligible records in the active file.
+- Changelog rotation starts at thirty detailed dates or five hundred lines,
+  retains twenty detailed dates, and exposes up to thirty archive links.
+- Pending findings and non-terminal experiments always remain active.
+- No record is lost, duplicated, or moved to the wrong section.
+- `check` is non-mutating; `apply` is atomic, fail-closed, and idempotent.
+- Codex, Dolphin, and the active local runtime expose the same validated skill.
+
+Result:
+The initial RED run failed on all thirteen missing behavior and packaging
+surfaces. After implementation and two real-format compatibility revisions,
+the focused suite passed 16 tests and the full project suite passed 35 tests.
+Measured statement coverage for the bundled script is 87%. Codex, Dolphin, and
+the active local skill passed `quick_validate.py`, compiled successfully, and
+were checksum-equivalent. A read-only check against `yedekparcasor.com`
+reported Deferred Findings and Changelog below threshold and Experiments ready
+for rotation without changing that project. Dirty files, malformed formats,
+duplicates, unsupported headings, and broken symlinks failed closed.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment changes only record-retention automation. It does not alter the
+mandatory orchestration chain, agent reasoning defaults, or task approval
+rules.
+
 ## EXP-20260727-001 - Conditional Hypothesis Workflow
 
 Date: 2026-07-27

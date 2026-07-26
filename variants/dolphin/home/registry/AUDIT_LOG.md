@@ -5,6 +5,10 @@ indexes.
 
 ## 2026-07-27
 
+- [FEAT] Added `record-archive` for event-driven Deferred Findings,
+  experiment, and changelog compaction.
+- [FIX] Limited archive checks to relevant record transitions and preserved
+  full history with fail-closed validation.
 - [FEAT] Added `hypothesis-workflow` as a conditional escalation skill for
   difficult or uncertain improvements.
 - [FIX] Kept routine first-pass work on the normal workflow and reused existing
