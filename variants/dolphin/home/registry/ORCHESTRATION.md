@@ -83,6 +83,23 @@ Blocking findings reopen scoped implementation and the affected review stages
 within the existing retry limit. Each stage must consume the prior handoff,
 avoid repeated work, and stop when its assigned evidence is complete.
 
+## Conditional Experiment Escalation
+
+`hypothesis-workflow` is available globally but is not a mandatory orchestration
+stage. Activate it only after a failed meaningful attempt, unclear evidence,
+competing hypotheses, a regression or unwanted side effect, a need for measured
+comparison, a core runtime/model/agent governance change, or an explicit user
+request.
+
+Do not activate it for routine first-pass work, typos, formatting, predictable
+maintenance, or a clear deterministic fix with sufficient verification. Do not
+create experiment records before a trigger exists.
+
+When activated, it reads prior experiments, changes one main solution variable
+when practical, preserves test-integrity controls, and records a supported
+decision. It reuses project changelog and evidence paths and does not alter,
+replace, or add stages to the mandatory orchestration chain.
+
 ## Guardrails
 
 Once orchestration is used:

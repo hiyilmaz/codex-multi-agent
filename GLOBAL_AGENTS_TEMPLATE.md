@@ -1,7 +1,7 @@
 # Codex — Global Instructions
 
-**Version:** 2.1
-**Updated:** 2026-05-22
+**Version:** 2.2
+**Updated:** 2026-07-27
 
 ---
 
@@ -190,7 +190,23 @@ Apply them to every relevant change without exception.
 - Forbidden: infinite loops, polling without limit, `sleep >10s`, `while true`.
 - Each step must have observable output.
 
-### 11. Critical Decision Format
+### 11. Conditional Hypothesis Escalation
+
+- The normal task workflow remains the default.
+- Activate `hypothesis-workflow` only after a failed meaningful attempt,
+  unclear evidence, competing hypotheses, a regression or unwanted side
+  effect, a need for measured comparison, a core runtime/model/agent
+  governance change, or an explicit user request.
+- Do not activate it for routine first-pass work, typos, formatting, predictable
+  maintenance, or a clear deterministic fix with sufficient verification.
+- Do not create `governance/` or experiment records until an activation
+  condition exists.
+- The workflow must reuse the project `CHANGELOG_PATH` and `EVIDENCE_PATH`; it
+  must not create a second changelog.
+- Experiment escalation must not bypass scope, approval, security, destructive
+  operation, retry, orchestration, or test-integrity rules.
+
+### 12. Critical Decision Format
 
 When a decision requires user approval, classify risk level:
 
@@ -207,7 +223,7 @@ Awaiting decision.
 - **Medium:** Report and suggest, proceed only if the user explicitly allows autonomy.
 - **Low:** Report in summary, may proceed.
 
-### 12. Confirm Before Execute
+### 13. Confirm Before Execute
 
 For complex tasks (>3 files OR architectural change OR destructive), confirm understanding BEFORE starting:
 

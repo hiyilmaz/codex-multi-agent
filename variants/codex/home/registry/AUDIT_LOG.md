@@ -3,6 +3,13 @@
 Append-only log for changes made to reusable skills, agents, and registry
 indexes.
 
+## 2026-07-27
+
+- [FEAT] Added `hypothesis-workflow` as a conditional escalation skill for
+  difficult or uncertain improvements.
+- [FIX] Kept routine first-pass work on the normal workflow and reused existing
+  project changelog and evidence paths.
+
 ## 2026-07-26
 
 - [FIX] Set the four mandatory Codex chain agents to `medium` reasoning and

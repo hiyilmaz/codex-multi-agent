@@ -4,9 +4,6 @@
 
 ## Pending
 
-- [ ] ORCH-005 — Activate the hypothesis/EXPERIMENT workflow only after a
-  failed attempt, unclear evidence, competing hypotheses, regression, or a
-  need for measured comparison.
 - [ ] ORCH-006 — Benchmark the updated workflow on representative small,
   medium, and high-risk tasks; compare elapsed time, token use, findings, and
   missed regressions before considering any reasoning increase.
@@ -22,6 +19,9 @@
   `planner`, `tdd-guide`, `code-reviewer`, and `security-reviewer`.
 - [x] ORCH-004 — Add independent test-integrity and false-success checks
   without allowing reviewers to restart planning or broad discovery.
+- [x] ORCH-005 — Add `hypothesis-workflow` as a conditional escalation only
+  after a failed attempt, unclear evidence, competing hypotheses, regression,
+  measured comparison, core governance change, or explicit user request.
 
 ## Role Defaults
 

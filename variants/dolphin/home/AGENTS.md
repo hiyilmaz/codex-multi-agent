@@ -1,7 +1,7 @@
 # DolphinVersion Runtime Instructions
 
-**Version:** 1.3
-**Updated:** 2026-06-10
+**Version:** 1.4
+**Updated:** 2026-07-27
 
 ---
 
@@ -147,6 +147,22 @@ The following require explicit user approval:
 - Max 5 steps per task without interim report.
 - Max 3 retries for the same failing action.
 - No infinite loops, unbounded polling, or sleeps longer than 10 seconds.
+
+### 10. Conditional Hypothesis Escalation
+
+- The normal task workflow remains the default.
+- Activate `hypothesis-workflow` only after a failed meaningful attempt,
+  unclear evidence, competing hypotheses, a regression or unwanted side
+  effect, a need for measured comparison, a core runtime/model/agent
+  governance change, or an explicit user request.
+- Do not activate it for routine first-pass work, typos, formatting, predictable
+  maintenance, or a clear deterministic fix with sufficient verification.
+- Do not create `governance/` or experiment records until an activation
+  condition exists.
+- The workflow must reuse the project changelog and evidence paths; it must not
+  create a second changelog.
+- Experiment escalation must not bypass scope, approval, security, destructive
+  operation, retry, orchestration, or test-integrity rules.
 
 ---
 

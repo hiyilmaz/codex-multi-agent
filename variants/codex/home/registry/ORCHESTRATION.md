@@ -122,6 +122,23 @@ It must not automatically:
 Any change to the protected files or core policy above requires explicit user
 approval.
 
+## Conditional Experiment Escalation
+
+`hypothesis-workflow` is available globally but is not a mandatory orchestration
+stage. Activate it only after a failed meaningful attempt, unclear evidence,
+competing hypotheses, a regression or unwanted side effect, a need for measured
+comparison, a core runtime/model/agent governance change, or an explicit user
+request.
+
+Do not activate it for routine first-pass work, typos, formatting, predictable
+maintenance, or a clear deterministic fix with sufficient verification. Do not
+create experiment records before a trigger exists.
+
+When activated, it reads prior experiments, changes one main solution variable
+when practical, preserves test-integrity controls, and records a supported
+decision. It reuses project `CHANGELOG_PATH` and `EVIDENCE_PATH` and does not
+alter, replace, or add stages to the mandatory orchestration chain.
+
 ## Reasoning Effort Policy
 
 Default runtime settings live in `~/.codex/config.toml`.

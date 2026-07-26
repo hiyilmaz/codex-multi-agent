@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-27
+
+- [FEAT] EXP-20260727-001: Added the conditional `hypothesis-workflow` skill to
+  Codex, Dolphin, and the active local global runtime.
+- [FIX] EXP-20260727-001: Kept routine first-pass work outside the experiment
+  flow and reused existing project changelog and evidence paths.
+- [TEST] EXP-20260727-001: Added activation, non-activation, test-integrity,
+  registry, and portable-install contract coverage.
+
 ## 2026-07-26
 
 - [INFRA] Added full-project ZIP backups to Git ignore rules.

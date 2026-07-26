@@ -10,6 +10,7 @@ runtime surface.
 
 | Name | Path | Scope | Status |
 |---|---|---|---|
+| hypothesis-workflow | `~/.codex/skills/hypothesis-workflow/SKILL.md` | Escalate difficult or uncertain improvements into traceable experiments. | active |
 | orchestration-gate | `~/.codex/skills/orchestration-gate/SKILL.md` | Decide whether a task should skip orchestration, ask for approval, or run the mandatory chain. | active |
 | tdd-workflow | `~/.codex/skills/tdd-workflow/SKILL.md` | Enforce test-first implementation and coverage verification for features, bug fixes, and refactors. | active |
 

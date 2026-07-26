@@ -60,6 +60,11 @@ Every runtime variant packages `tdd-workflow`. The `tdd-guide` agent defines
 the focused test strategy, and the skill enforces the test-first
 RED-GREEN-refactor workflow during implementation.
 
+Every runtime variant also packages `hypothesis-workflow`. It remains inactive
+for routine first-pass work and escalates only failed, unclear, competing,
+regressing, measurement-dependent, or explicitly requested improvements into a
+traceable experiment.
+
 The mandatory chain uses bounded handoffs: each agent consumes prior evidence,
 avoids repeated discovery, returns a concise result, and stops. Codex chain
 agents default to `medium` reasoning. Passing tests alone do not prove

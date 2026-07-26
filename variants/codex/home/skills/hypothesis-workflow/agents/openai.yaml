@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hypothesis Workflow"
+  short_description: "Escalate difficult improvements into experiments"
+  default_prompt: "Use $hypothesis-workflow to evaluate this difficult improvement as a traceable experiment."
