@@ -3,6 +3,19 @@
 Append-only log for changes made to reusable skills, agents, and registry
 indexes.
 
+## 2026-08-01
+
+- [FIX] Replaced six Sol/high variants with four Sol/medium model-routing
+  variants and standardized all Codex subagents on medium reasoning.
+- [INFRA] Added friendly identities for active Codex subagents while preserving
+  role-key runtime naming and the mandatory orchestration chain.
+- [FIX] Removed unsupported standalone-agent `display_name` metadata and kept
+  identity aliases in agent instructions and registry documentation.
+- [INFRA] Added Core CMA lazy modules and explicit conditional model/reasoning
+  routing for the managed local Codex runtime.
+- [FIX] Replaced unreliable spawn-time model overrides with six static
+  `*-high` routing variants and defined orchestration decision precedence.
+
 ## 2026-07-27
 
 - [FEAT] Added `record-archive` for event-driven Deferred Findings,

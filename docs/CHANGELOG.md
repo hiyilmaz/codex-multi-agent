@@ -1,5 +1,50 @@
 # Changelog
 
+## 2026-08-04
+
+- [FEAT] EXP-20260804-001: Added the prospective CMA `## Claims` evidence
+  contract required for EV compatibility.
+- [TEST] EXP-20260804-001: Added source, portable-install, and real EV/GLM
+  compatibility coverage while preserving fail-closed validation.
+- [INFRA] EXP-20260804-001: Backed up and synchronized the validated CMA records
+  module to the active local Codex runtime.
+
+## 2026-08-01
+
+- [FIX] EXP-20260801-003: Made global Codex Stop notifications root-only and
+  selected distinct spoken messages for completion, failure, and user waiting.
+- [TEST] EXP-20260801-003: Verified eight silent hook scenarios, subagent
+  suppression, malformed-input safety, executable mode, and config parity.
+- [FIX] EXP-20260801-002: Standardized all Codex subagents on medium reasoning
+  and replaced six high variants with four Sol/medium routing variants.
+- [TEST] EXP-20260801-002: Verified 47 tests, source-active parity, ZIP
+  integrity, no project-local high override, and fresh-session routing.
+- [INFRA] EXP-20260801-001: Activated compact Core CMA and eight trigger-loaded
+  modules in the managed and active local Codex runtime.
+- [FIX] EXP-20260801-001: Removed unsupported `display_name` metadata and added
+  six static Sol/high variants for reliable conditional escalation.
+- [TEST] EXP-20260801-001: Added RED/GREEN contracts and verified the full
+  suite, source-active parity, rollback checksums, and fresh-session routing.
+- [DOCS] Restricted the CMA optimization plans to this repository and the local
+  global Codex directory, and recorded completed, partial, and pending work.
+- [INFRA] Applied the approved CMA subagent model matrix to Codex source and
+  active global agents, keeping mandatory quality roles on Sol.
+- [INFRA] Added friendly identity aliases for Codex subagents while preserving
+  role-key runtime naming and orchestration chain compatibility.
+- [DOCS] Added the CMA Core and Lazy Modules plan with subagent model and
+  reasoning evaluation guidance.
+- [DOCS] Added the CMA subagent model pilot implementation plan with file-level
+  scope, dry-run checks, and rollback criteria.
+
+## 2026-07-28
+
+- [FEAT] EXP-20260728-001: Added a minimal truthful outcome-reporting contract
+  to Codex and Dolphin runtime policies.
+- [TEST] EXP-20260728-001: Added RED/GREEN source and portable-install checks
+  for verified status-to-success mappings.
+- [INFRA] EXP-20260728-001: Activated the validated Codex policy locally with a
+  checksum-verified rollback backup.
+
 ## 2026-07-27
 
 - [FEAT] EXP-20260727-002: Added event-driven `record-archive` automation for
