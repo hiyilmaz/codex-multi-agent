@@ -15,11 +15,48 @@ class OrchestrationContractTests(unittest.TestCase):
     def read(self, relative_path: str) -> str:
         return (REPO_ROOT / relative_path).read_text(encoding="utf-8")
 
+    def assert_truthful_outcome_contract(self, text: str) -> None:
+        normalized = " ".join(text.split())
+        required = (
+            "Truthful Success Reporting",
+            "explicitly reporting the outcome of a task, operation, or test",
+            "Ordinary conversation does not require a status field or JSON response.",
+            "`passed`",
+            "`success=true`",
+            "was actually executed",
+            "real output was captured and reviewed",
+            "all defined success criteria were satisfied",
+            "no critical error, failed assertion, or unmet requirement remains",
+            "concrete, verifiable evidence",
+            "`failed`",
+            "`unverified`",
+            "`not_executed`",
+            "must always use `success=false`",
+            "No evidence means no success.",
+        )
+        for marker in required:
+            self.assertIn(" ".join(marker.split()), normalized)
+
     def test_global_template_and_codex_variant_stay_identical(self) -> None:
         self.assertEqual(
             self.read("GLOBAL_AGENTS_TEMPLATE.md"),
             self.read("variants/codex/home/AGENTS.md"),
         )
+
+    def test_runtime_policies_define_truthful_outcome_contract(self) -> None:
+        paths = (
+            "GLOBAL_AGENTS_TEMPLATE.md",
+            "variants/codex/home/AGENTS.md",
+            "variants/dolphin/home/AGENTS.md",
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                self.assert_truthful_outcome_contract(self.read(path))
+
+    def test_partial_or_hardcoded_contract_is_rejected(self) -> None:
+        partial = "`passed` means `success=true`."
+        with self.assertRaises(AssertionError):
+            self.assert_truthful_outcome_contract(partial)
 
     def test_mandatory_chain_is_preserved_in_runtime_policies(self) -> None:
         paths = (
@@ -145,7 +182,9 @@ class OrchestrationContractTests(unittest.TestCase):
                 )
                 with self.subTest(variant=variant):
                     self.assertEqual(result.returncode, 0, result.stderr)
-                    self.assertIn(CHAIN, (runtime / "AGENTS.md").read_text())
+                    runtime_policy = (runtime / "AGENTS.md").read_text()
+                    self.assertIn(CHAIN, runtime_policy)
+                    self.assert_truthful_outcome_contract(runtime_policy)
                     for role in ROLES:
                         agent = (runtime / "agents" / f"{role}.toml").read_text()
                         self.assertIn("Do not repeat", agent)

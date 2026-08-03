@@ -1,7 +1,7 @@
 # DolphinVersion Runtime Instructions
 
-**Version:** 1.4
-**Updated:** 2026-07-27
+**Version:** 1.5
+**Updated:** 2026-07-28
 
 ---
 
@@ -100,6 +100,24 @@ tooling or provider-specific reasoning features are available.
 - If the user ends a request with literal `nao`, explain what you understood,
   mention critical gaps if any, ask for approval, and wait. Do not execute the
   task until the user approves.
+
+#### Truthful Success Reporting
+
+This rule applies only when explicitly reporting the outcome of a task,
+operation, or test. Ordinary conversation does not require a status field or JSON response.
+
+- `passed`: use `success=true` only when the operation or test was actually
+  executed, the real output was captured and reviewed, all defined success
+  criteria were satisfied, no critical error, failed assertion, or unmet
+  requirement remains, and the claim has concrete, verifiable evidence.
+- `failed`: at least one required check or criterion failed.
+- `unverified`: missing evidence, unavailable tools, incomplete output, or
+  uncertainty prevents confirmation.
+- `not_executed`: the required operation or test was not run.
+- `failed`, `unverified`, and `not_executed` must always use `success=false`.
+  No evidence means no success.
+- When practical, report the validation performed, relevant output, exit code,
+  failed criterion, error, and final-status reason. Do not expose secrets.
 
 ### 3. Scope Lock
 

@@ -32,6 +32,20 @@ non-trivial tasks.
 
 ## Decision Rules
 
+## Decision Precedence
+
+Apply the first matching rule:
+
+1. Explicit orchestration request: `run-chain`, subject to higher-priority tool
+   approval policy.
+2. Configured `run-chain` for non-trivial work: run or ask according to tool
+   approval policy.
+3. Non-trivial or risk-triggering work in `ask-approval` mode: `ask-approval`.
+4. Only a task that is both simple and read-only or answer-only: `skip`.
+
+Read-only does not override explicit orchestration, non-triviality, security,
+runtime, database, API, test, or cross-module risk triggers.
+
 Return `skip` when:
 
 - The task is simple, local, read-only, or answer-only.
@@ -66,6 +80,31 @@ planner -> tdd-guide -> code-reviewer -> security-reviewer
 ```
 
 Do not skip, reorder, or add stages to this chain.
+
+Implementation is not a chain stage. Never insert `implementation`, the main
+agent, or any review lens into the four-role chain string.
+
+## Model And Reasoning Escalation
+
+Agent files define defaults, and agent-file values take precedence over parent
+or spawn configuration; all custom subagents use `medium` reasoning. When a
+model-quality trigger applies to a Terra role, select its static Sol variant:
+
+- `planner-sol`: `gpt-5.6-sol` / `medium` for architecture, unclear scope,
+  high-impact runtime, or security-sensitive planning.
+- `tdd-guide-sol`: `gpt-5.6-sol` / `medium` for complex test architecture,
+  safety-critical behavior, weak-test detection, or hardcoded-success traps.
+- `code-reviewer`: keep `gpt-5.6-sol` / `medium`; no separate variant.
+- `security-reviewer`: keep `gpt-5.6-sol` / `medium`; no separate variant. The
+  stage still returns `NO_SECURITY_IMPACT` when appropriate.
+- `explorer-sol`: `gpt-5.6-sol` / `medium` for complex incidents, unclear root causes,
+  or conflicting evidence.
+- `docs-researcher-sol`: `gpt-5.6-sol` / `medium` for conflicting migration,
+  security, API, or release-note evidence.
+
+Selecting a Sol variant must not bypass approval, sandbox, scope, or the
+mandatory chain. Sol variants replace only the corresponding invocation; they
+do not add a chain stage or change the canonical chain string.
 
 ## Output
 

@@ -1,9 +1,11 @@
 name = "planner"
 description = "Plans non-trivial scoped work before implementation."
-model = "gpt-5.6-sol"
+model = "gpt-5.6-terra"
 model_reasoning_effort = "medium"
 sandbox_mode = "read-only"
 developer_instructions = """
+Identity: You are Pete, the planner subagent.
+
 Input: Use the user request, applicable project instructions, and the scoped discovery summary supplied by the main agent.
 
 Task: Validate scope and define affected files, dependencies, approval boundaries, observable acceptance criteria, and prohibited shortcuts that could create false completion.

@@ -41,6 +41,10 @@ the required `tdd-workflow` skill enforces test-first implementation.
 
 Do not skip, replace, reorder, or weaken this chain.
 
+Implementation is not a chain stage. The main agent implements between the TDD
+and review stages, but any reported chain string must contain only the four
+named roles in the exact order above.
+
 `ACTIVE_AGENT_ROLES` declares available roles only. It does not start agents by
 itself.
 
@@ -139,35 +143,32 @@ when practical, preserves test-integrity controls, and records a supported
 decision. It reuses project `CHANGELOG_PATH` and `EVIDENCE_PATH` and does not
 alter, replace, or add stages to the mandatory orchestration chain.
 
-## Reasoning Effort Policy
+## Model And Reasoning Routing
 
-Default runtime settings live in `~/.codex/config.toml`.
+Agent TOML files define the default matrix. Official Codex precedence says
+agent-file values take precedence over the parent or spawn configuration, so
+model escalation uses static `*-sol` variants; all custom subagents use `medium`
+reasoning. Selecting a Sol variant changes only the model for that
+role invocation; it does not alter the mandatory chain, approval state,
+sandbox, or persistent defaults.
 
-The four mandatory Codex chain agents use `medium` reasoning by default. A
-future increase must be justified by measured missed findings or a documented
-quality regression; use the EXPERIMENT escalation workflow before changing the
-baseline.
+| Role | Default | Sol variant and trigger |
+|---|---|---|
+| `planner` | `gpt-5.6-terra` / `medium` | `planner-sol`, `gpt-5.6-sol` / `medium`, for architecture, unclear scope, high-impact runtime, or security-sensitive planning |
+| `tdd-guide` | `gpt-5.6-terra` / `medium` | `tdd-guide-sol`, `gpt-5.6-sol` / `medium`, for complex test architecture, safety-critical behavior, weak-test detection, or hardcoded-success traps |
+| `code-reviewer` | `gpt-5.6-sol` / `medium` | No variant; keep the configured default |
+| `security-reviewer` | `gpt-5.6-sol` / `medium` | No variant; keep the configured default |
+| `explorer` | `gpt-5.6-terra` / `medium` | `explorer-sol`, `gpt-5.6-sol` / `medium`, for complex incidents, unclear root causes, or conflicting evidence |
+| `docs-researcher` | `gpt-5.6-terra` / `medium` | `docs-researcher-sol`, `gpt-5.6-sol` / `medium`, for conflicting migration, security, API, or release-note evidence |
+| `reviewer` | `gpt-5.6-sol` / `medium` | Keep the configured default |
+| `skill-agent-governor` | `gpt-5.6-sol` / `medium` | Keep the configured default |
 
-```text
-low:
-  - typos
-  - simple command output
-  - small formatting changes
+The security-reviewer stage always runs in an approved chain. When no trust
+boundary changed, it returns `NO_SECURITY_IMPACT` with a concise evidence
+summary.
 
-medium:
-  - small bugfixes
-  - bounded file edits
-  - simple debugging
-  - mandatory orchestration chain agents
-
-high:
-  - architecture
-  - multi-file implementation
-  - security, auth, DB, API, persistence
-  - strategy, signal, or financial logic
-  - uncertain root cause analysis
-  - registry or skill/agent governance
-```
+The Sol variants are routing aliases, not extra mandatory stages. Render the
+canonical four-role chain even when one invocation uses a Sol variant.
 
 ## YOLO Mode Boundary
 
