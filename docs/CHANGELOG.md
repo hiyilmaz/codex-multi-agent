@@ -2,12 +2,24 @@
 
 ## 2026-08-04
 
+- [FIX] EXP-20260804-003: Required one independently verifiable outcome and one
+  coherent verbatim proof excerpt per evidence claim while prohibiting
+  reporting-only semantic downgrades.
+- [TEST] EXP-20260804-003: Recorded meaningful source and portable RED failures,
+  then passed 17 focused tests, 55 full CMA tests, independent reviews, and EV
+  validation of six atomic claims.
 - [FIX] EXP-20260804-002: Added a conditional temporal TDD evidence contract
-  with one ordered structural RED-to-final pair and final-only success proof.
+  with one ordered structural RED-to-final pair, final-only success proof, and
+  a same-scope post-fix rerun requirement.
 - [TEST] EXP-20260804-002: Verified source and portable contracts, fenced and
   quoted proof boundaries, 14 focused tests, and 52 full CMA tests.
 - [INFRA] EXP-20260804-002: Backed up and synchronized the validated temporal
   records contract to the active global Codex runtime.
+- [FIX] Standardized `ask-approval` final messages on the exact six-line CMA
+  decision block so EV can defer only the current non-completion Stop.
+- [DOCS] Diagnosed the EV Stop-hook false trigger on structured CMA decision
+  waits and recorded the bounded remediation scope without changing runtime
+  behavior.
 - [FEAT] EXP-20260804-001: Added the prospective CMA `## Claims` evidence
   contract required for EV compatibility.
 - [TEST] EXP-20260804-001: Added source, portable-install, and real EV/GLM

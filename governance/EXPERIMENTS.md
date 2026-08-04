@@ -565,8 +565,9 @@ Criteria IDs, mapping tables, or mandatory headings to one-phase reports.
 Solution Attempt:
 Require exact `## Initial RED Evidence` and `## Final Verification Evidence`
 headings only when both phases are documented. Require final-success claims to
-use final-section proof and identify initial RED as historical pre-fix evidence.
-Apply the rule prospectively without rewriting historical reports.
+use final-section proof from the same validation scope rerun after the fix, and
+identify initial RED as historical pre-fix evidence. Apply the rule
+prospectively without rewriting historical reports.
 
 Test:
 Add source and portable-install contract tests before changing the records
@@ -576,6 +577,7 @@ Claims contract, and absence of Acceptance Criteria schema expansion.
 Success Criteria:
 - Two-phase TDD evidence has explicit initial and final sections.
 - Final-success claims depend only on final verification proof.
+- Final success requires the same validation scope to pass after the fix.
 - Initial RED is identified as expected historical evidence, not final status.
 - One-phase and non-TDD reports do not require temporal headings.
 - No Acceptance Criteria IDs or mapping tables are introduced.
@@ -600,6 +602,11 @@ it explicitly classified fenced or quoted headings as proof text. The focused
 14/14 and full 52/52 suites passed again. Reopened code and security reviews
 both passed with no blocking findings.
 
+A final scoped RED failed the source and portable contract paths because the
+policy did not explicitly require the same validation scope to be rerun after
+the fix. One additional rule closed that gap; the focused 14/14 and full 52/52
+suites passed again.
+
 Decision:
 ACCEPT
 
@@ -609,8 +616,72 @@ Approved option A covers local implementation, tests, evidence, and review.
 Active global runtime synchronization was initially outside that scope. After
 separate explicit approval, the prior active module was copied to
 `~/.codex/archive/cma-temporal-evidence-20260804_230500/CMA_RECORDS.md` and the
-validated source was synchronized. Source and active SHA-256 are both
+then-validated source was synchronized. At that time, source and active SHA-256 were both
 `c3d4813491a493775db57f24b451e13c5b9168c5a15445113d1f33a72e9299ea`;
-the active mode remains `0644`.
+the active mode remains `0644`. The later same-scope hardening changed only the
+managed source and tests; active runtime synchronization was not repeated.
 Detailed evidence is recorded in
 `docs/reports/EVIDENCE_EXP-20260804-002_TEMPORAL_TDD_EVIDENCE_CONTRACT_20260804.md`.
+
+## EXP-20260804-003 - Atomic Evidence Claim Contract
+
+Date: 2026-08-04
+Status: ACCEPTED
+
+Problem:
+CMA requires one material claim per bullet and direct proof outside Claims, but
+does not explicitly prevent one bullet from combining independently verifiable
+outcomes. Codex can therefore enter repeated EV validation cycles or weaken a
+claim into a statement that output was reported.
+
+Evidence:
+An observed Codex/EV run repeatedly split test, review, gateway-health, and
+admin-capability assertions before GLM could bind each claim to direct proof.
+The final validation passed, but the repeated rewrites exposed missing atomic
+claim semantics in CMA rather than a need to weaken EV.
+
+Hypothesis:
+If CMA requires one independently verifiable outcome per claim, one coherent
+verbatim proof excerpt for that outcome, and semantic preservation during
+splitting, future evidence will bind cleanly without narrowing acceptance
+meaning or expanding EV.
+
+Solution Attempt:
+Add four prospective atomic-claim clauses to the existing Claims contract and
+verify the managed and portable records modules. Do not rewrite historical
+reports, alter EV, or synchronize the active global runtime.
+
+Test:
+Add source and portable-install contract tests before changing the records
+module. Include negative checks showing that formatting-only wording and a
+reporting-only downgrade do not satisfy the contract. Run focused and full CMA
+regression suites, independent code and security reviews, and EV validation of
+the new evidence report.
+
+Success Criteria:
+- Each claim bullet contains exactly one independently verifiable outcome.
+- One coherent verbatim proof excerpt outside Claims directly proves it.
+- Splitting preserves every original acceptance outcome.
+- Outcome claims cannot be weakened into reporting-only meta-claims.
+- Managed and portable records modules are byte-identical and satisfy the rule.
+- No EV, active global runtime, historical evidence, dependency, commit, push,
+  or deployment change occurs.
+
+Result:
+The targeted source and portable tests first failed 2/2 because the records
+module lacked the independently verifiable outcome clause. After the four
+prospective semantics were added, both targeted tests passed. The focused CMA
+records suite passed 17/17, the complete CMA suite passed 55/55, and
+`git diff --check` completed cleanly. Independent code and security reviews
+both passed. EV first returned `UNVERIFIED` for negated review-proof prose;
+after each PASS result was placed in its own direct proof sentence, the same
+six atomic claims returned `PASS` with `success=true` and no diagnostics.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment is intentionally limited to the prospective CMA records
+contract and its verification.
+Detailed evidence is recorded in
+`docs/reports/EVIDENCE_EXP-20260804-003_ATOMIC_CLAIM_CONTRACT_20260804.md`.
