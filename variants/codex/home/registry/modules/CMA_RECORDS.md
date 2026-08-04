@@ -26,7 +26,11 @@ Do not load for ordinary answer-only or read-only tasks with no record event.
 - For every new or materially updated evidence report:
   - Include the exact heading `## Claims`.
   - Put exactly one bullet under it for each material claim.
+  - Each bullet must state exactly one independently verifiable outcome.
   - Keep supporting proof outside the `## Claims` section.
+  - Support each claim with one coherent verbatim proof excerpt outside the `## Claims` section that directly proves that outcome.
+  - When splitting a compound claim, preserve every original acceptance outcome.
+  - Do not replace an acceptance outcome with a weaker meta-claim that only says output or results were reported.
   - End the claims section at the next Markdown heading.
   - Apply this requirement prospectively; do not rewrite historical evidence reports solely to adopt it.
 - When a new or materially updated evidence report records both an expected TDD RED result and a final verification result:
@@ -34,6 +38,7 @@ Do not load for ordinary answer-only or read-only tasks with no record event.
   - Include the exact heading `## Final Verification Evidence`.
   - Treat Initial RED Evidence as historical pre-fix proof, not as the final status.
   - Support final-success claims only with proof from `## Final Verification Evidence`.
+  - Require the same validation scope to be rerun after the fix and pass before reporting final success.
   - Use each temporal heading exactly once and keep Initial RED Evidence before Final Verification Evidence.
   - Treat temporal headings inside fenced or quoted evidence as proof text, not as report structure.
   - Do not require these temporal headings for one-phase or non-TDD evidence reports.

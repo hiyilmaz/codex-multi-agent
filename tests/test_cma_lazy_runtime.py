@@ -50,6 +50,16 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
         for marker in required:
             self.assertIn(marker, text)
 
+    def assert_atomic_claim_contract(self, text: str) -> None:
+        required = (
+            "Each bullet must state exactly one independently verifiable outcome.",
+            "Support each claim with one coherent verbatim proof excerpt outside the `## Claims` section that directly proves that outcome.",
+            "When splitting a compound claim, preserve every original acceptance outcome.",
+            "Do not replace an acceptance outcome with a weaker meta-claim that only says output or results were reported.",
+        )
+        for marker in required:
+            self.assertIn(marker, text)
+
     def assert_temporal_tdd_evidence_contract(self, text: str) -> None:
         required = (
             "records both an expected TDD RED result and a final verification result",
@@ -57,6 +67,7 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
             "Include the exact heading `## Final Verification Evidence`.",
             "Treat Initial RED Evidence as historical pre-fix proof, not as the final status.",
             "Support final-success claims only with proof from `## Final Verification Evidence`.",
+            "Require the same validation scope to be rerun after the fix and pass before reporting final success.",
             "Use each temporal heading exactly once and keep Initial RED Evidence before Final Verification Evidence.",
             "Treat temporal headings inside fenced or quoted evidence as proof text, not as report structure.",
             "Do not require these temporal headings for one-phase or non-TDD evidence reports.",
@@ -77,6 +88,29 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
             self.assert_evidence_validator_claim_contract(
                 "Include the exact heading `## Claims`."
             )
+
+    def test_records_module_defines_atomic_claim_semantics(self) -> None:
+        self.assert_atomic_claim_contract(
+            self.read("variants/codex/home/registry/modules/CMA_RECORDS.md")
+        )
+
+    def test_atomic_claim_contract_rejects_format_only_policy(self) -> None:
+        with self.assertRaises(AssertionError):
+            self.assert_atomic_claim_contract(
+                "Include `## Claims` and put one bullet under it for each material claim."
+            )
+
+    def test_atomic_claim_contract_rejects_reporting_only_downgrade(self) -> None:
+        partial = "\n".join(
+            (
+                "Each bullet must state exactly one independently verifiable outcome.",
+                "Support each claim with one coherent verbatim proof excerpt outside the `## Claims` section that directly proves that outcome.",
+                "When splitting a compound claim, preserve every original acceptance outcome.",
+                "A split claim may only say output was reported.",
+            )
+        )
+        with self.assertRaises(AssertionError):
+            self.assert_atomic_claim_contract(partial)
 
     def test_records_module_defines_conditional_temporal_tdd_contract(self) -> None:
         text = self.read("variants/codex/home/registry/modules/CMA_RECORDS.md")
@@ -256,6 +290,7 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
             )
             self.assertEqual(installed_records, source_records)
             self.assert_temporal_tdd_evidence_contract(installed_records)
+            self.assert_atomic_claim_contract(installed_records)
             installed_agents = sorted(
                 path.name for path in (runtime / "agents").glob("*.toml")
             )
