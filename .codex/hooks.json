@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env node \"/Users/iyilmaz/WebStorm/evidence-validator/hooks/session-start.mjs\" --owner evidence-validator-owned",
+            "timeout": 180,
+            "statusMessage": "Validating evidence with GLM"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env node \"/Users/iyilmaz/WebStorm/evidence-validator/hooks/stop.mjs\" --owner evidence-validator-owned",
+            "timeout": 180,
+            "statusMessage": "Validating evidence with GLM"
+          }
+        ]
+      }
+    ]
+  }
+}

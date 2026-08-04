@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "evidence_path": "docs/reports",
+  "mode": "completion-gate"
+}
