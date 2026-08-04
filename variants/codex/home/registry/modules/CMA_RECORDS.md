@@ -29,4 +29,12 @@ Do not load for ordinary answer-only or read-only tasks with no record event.
   - Keep supporting proof outside the `## Claims` section.
   - End the claims section at the next Markdown heading.
   - Apply this requirement prospectively; do not rewrite historical evidence reports solely to adopt it.
+- When a new or materially updated evidence report records both an expected TDD RED result and a final verification result:
+  - Include the exact heading `## Initial RED Evidence`.
+  - Include the exact heading `## Final Verification Evidence`.
+  - Treat Initial RED Evidence as historical pre-fix proof, not as the final status.
+  - Support final-success claims only with proof from `## Final Verification Evidence`.
+  - Use each temporal heading exactly once and keep Initial RED Evidence before Final Verification Evidence.
+  - Treat temporal headings inside fenced or quoted evidence as proof text, not as report structure.
+  - Do not require these temporal headings for one-phase or non-TDD evidence reports.
 - Never auto-commit.

@@ -50,6 +50,23 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
         for marker in required:
             self.assertIn(marker, text)
 
+    def assert_temporal_tdd_evidence_contract(self, text: str) -> None:
+        required = (
+            "records both an expected TDD RED result and a final verification result",
+            "Include the exact heading `## Initial RED Evidence`.",
+            "Include the exact heading `## Final Verification Evidence`.",
+            "Treat Initial RED Evidence as historical pre-fix proof, not as the final status.",
+            "Support final-success claims only with proof from `## Final Verification Evidence`.",
+            "Use each temporal heading exactly once and keep Initial RED Evidence before Final Verification Evidence.",
+            "Treat temporal headings inside fenced or quoted evidence as proof text, not as report structure.",
+            "Do not require these temporal headings for one-phase or non-TDD evidence reports.",
+        )
+        for marker in required:
+            self.assertIn(marker, text)
+        self.assertNotIn("## Acceptance Criteria", text)
+        self.assertNotIn("Acceptance Criteria ID", text)
+        self.assertNotIn("acceptance mapping table", text.lower())
+
     def test_records_module_defines_evidence_validator_claim_contract(self) -> None:
         self.assert_evidence_validator_claim_contract(
             self.read("variants/codex/home/registry/modules/CMA_RECORDS.md")
@@ -59,6 +76,17 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.assert_evidence_validator_claim_contract(
                 "Include the exact heading `## Claims`."
+            )
+
+    def test_records_module_defines_conditional_temporal_tdd_contract(self) -> None:
+        text = self.read("variants/codex/home/registry/modules/CMA_RECORDS.md")
+        self.assert_evidence_validator_claim_contract(text)
+        self.assert_temporal_tdd_evidence_contract(text)
+
+    def test_temporal_tdd_contract_rejects_headings_without_semantics(self) -> None:
+        with self.assertRaises(AssertionError):
+            self.assert_temporal_tdd_evidence_contract(
+                "## Initial RED Evidence\n\n## Final Verification Evidence\n"
             )
 
     def test_global_policy_is_compact_and_routes_lazy_modules(self) -> None:
@@ -220,6 +248,14 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
                     encoding="utf-8"
                 )
             )
+            installed_records = (
+                runtime / "registry/modules/CMA_RECORDS.md"
+            ).read_text(encoding="utf-8")
+            source_records = self.read(
+                "variants/codex/home/registry/modules/CMA_RECORDS.md"
+            )
+            self.assertEqual(installed_records, source_records)
+            self.assert_temporal_tdd_evidence_contract(installed_records)
             installed_agents = sorted(
                 path.name for path in (runtime / "agents").glob("*.toml")
             )

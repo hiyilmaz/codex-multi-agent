@@ -2,6 +2,12 @@
 
 ## 2026-08-04
 
+- [FIX] EXP-20260804-002: Added a conditional temporal TDD evidence contract
+  with one ordered structural RED-to-final pair and final-only success proof.
+- [TEST] EXP-20260804-002: Verified source and portable contracts, fenced and
+  quoted proof boundaries, 14 focused tests, and 52 full CMA tests.
+- [INFRA] EXP-20260804-002: Backed up and synchronized the validated temporal
+  records contract to the active global Codex runtime.
 - [FEAT] EXP-20260804-001: Added the prospective CMA `## Claims` evidence
   contract required for EV compatibility.
 - [TEST] EXP-20260804-001: Added source, portable-install, and real EV/GLM

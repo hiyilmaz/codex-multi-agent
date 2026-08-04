@@ -542,3 +542,75 @@ alignment revision without weakening validation.
 The source candidate was accepted before runtime activation. After explicit
 option A approval, only the active records module was backed up and synchronized.
 Its final SHA-256 matches the source candidate and its mode remains `0644`.
+
+## EXP-20260804-002 - Temporal TDD Evidence Contract
+
+Date: 2026-08-04
+Status: ACCEPTED
+
+Problem:
+CMA requires explicit claims and grounded proof, but a TDD evidence report can
+mix an expected pre-fix RED result with final verification. That structure is
+technically truthful yet can make the final state temporally ambiguous.
+
+Evidence:
+The current records module does not distinguish initial RED proof from final
+verification proof or state which section may support a final-success claim.
+
+Hypothesis:
+A conditional two-section rule for reports that contain both expected RED and
+final outcomes will remove temporal ambiguity without adding Acceptance
+Criteria IDs, mapping tables, or mandatory headings to one-phase reports.
+
+Solution Attempt:
+Require exact `## Initial RED Evidence` and `## Final Verification Evidence`
+headings only when both phases are documented. Require final-success claims to
+use final-section proof and identify initial RED as historical pre-fix evidence.
+Apply the rule prospectively without rewriting historical reports.
+
+Test:
+Add source and portable-install contract tests before changing the records
+module. Verify the conditional headings, final-proof restriction, unchanged
+Claims contract, and absence of Acceptance Criteria schema expansion.
+
+Success Criteria:
+- Two-phase TDD evidence has explicit initial and final sections.
+- Final-success claims depend only on final verification proof.
+- Initial RED is identified as expected historical evidence, not final status.
+- One-phase and non-TDD reports do not require temporal headings.
+- No Acceptance Criteria IDs or mapping tables are introduced.
+- Active global CMA runtime remains unchanged pending separate approval.
+
+Result:
+The focused RED run failed two contract tests because the records module lacked
+the conditional temporal rule. After the minimal policy change, the focused
+suite passed 14/14 and the full CMA suite passed 52/52. Portable installation
+was byte-identical to the managed records module. The source candidate was
+accepted before active global synchronization.
+
+Security review found that ordering and uniqueness were not part of the CMA
+contract, allowing reversed or duplicate temporal headings to misrepresent the
+final state. A new RED contract test failed until the module required each
+heading exactly once with Initial RED before Final Verification. The focused
+14/14 and full 52/52 suites passed again.
+
+Reopened security review found that temporal headings embedded in fenced proof
+could still be mistaken for report structure. The CMA contract RED failed until
+it explicitly classified fenced or quoted headings as proof text. The focused
+14/14 and full 52/52 suites passed again. Reopened code and security reviews
+both passed with no blocking findings.
+
+Decision:
+ACCEPT
+
+Notes:
+Implementation, tests, and independent reviews passed.
+Approved option A covers local implementation, tests, evidence, and review.
+Active global runtime synchronization was initially outside that scope. After
+separate explicit approval, the prior active module was copied to
+`~/.codex/archive/cma-temporal-evidence-20260804_230500/CMA_RECORDS.md` and the
+validated source was synchronized. Source and active SHA-256 are both
+`c3d4813491a493775db57f24b451e13c5b9168c5a15445113d1f33a72e9299ea`;
+the active mode remains `0644`.
+Detailed evidence is recorded in
+`docs/reports/EVIDENCE_EXP-20260804-002_TEMPORAL_TDD_EVIDENCE_CONTRACT_20260804.md`.
