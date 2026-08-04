@@ -76,6 +76,8 @@ Recommendation: [option + reason]
 Awaiting decision.
 ```
 
+For `ask-approval`, the final assistant message must contain only the exact six-line `CRITICAL DECISION` block. This deferral applies only to the current Stop invocation and does not mean `PASS`, validation, or task completion.
+
 Stop immediately for High or Critical decisions. Proceed with Medium risk only
 when the user explicitly allows it.
 

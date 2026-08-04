@@ -43,6 +43,19 @@ class OrchestrationContractTests(unittest.TestCase):
             self.read("variants/codex/home/AGENTS.md"),
         )
 
+    def test_codex_approval_wait_is_exact_and_not_completion(self) -> None:
+        policy = self.read("GLOBAL_AGENTS_TEMPLATE.md")
+        skill = self.read("variants/codex/home/skills/orchestration-gate/SKILL.md")
+        required = (
+            "For `ask-approval`, the final assistant message must contain only the exact six-line `CRITICAL DECISION` block",
+            "applies only to the current Stop invocation",
+            "does not mean `PASS`, validation, or task completion",
+        )
+        for marker in required:
+            with self.subTest(marker=marker):
+                self.assertIn(marker, policy)
+                self.assertIn(marker, skill)
+
     def test_runtime_policies_define_truthful_outcome_contract(self) -> None:
         paths = (
             "GLOBAL_AGENTS_TEMPLATE.md",

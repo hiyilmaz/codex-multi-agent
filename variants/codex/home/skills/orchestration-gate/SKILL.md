@@ -108,7 +108,7 @@ do not add a chain stage or change the canonical chain string.
 
 ## Output
 
-Use this exact shape:
+For `skip` and `run-chain`, use this exact shape:
 
 ```text
 Decision: skip | ask-approval | run-chain
@@ -116,5 +116,4 @@ Reason: [one short reason]
 Chain: planner -> tdd-guide -> code-reviewer -> security-reviewer
 ```
 
-If the decision is `ask-approval`, ask the user for approval before spawning
-subagents.
+For `ask-approval`, the final assistant message must contain only the exact six-line `CRITICAL DECISION` block. This deferral applies only to the current Stop invocation and does not mean `PASS`, validation, or task completion. Ask the user for approval before spawning subagents; do not add the `Decision`, `Reason`, or `Chain` preamble to that final message.
