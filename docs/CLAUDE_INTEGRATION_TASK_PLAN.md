@@ -3,7 +3,7 @@
 Date: 2026-08-06
 Last Updated: 2026-08-06
 Overall Status: **Tamamlandı**
-Current Gate: Phase 5 complete; optional Gate C real API work remains gated
+Current Gate: Phase 7 full Claude CMA source parity is complete; optional Gates C, D, and F remain gated
 
 ## Purpose
 
@@ -44,8 +44,8 @@ Status update rules:
 
 ## Scope Boundaries
 
-Phase 0 through Phase 4 and the local, offline Phase 5 SDK pilot are approved
-and complete.
+Phase 0 through Phase 4 and the local, offline Phase 5 SDK pilot are complete.
+Phase 7 full Claude CMA source parity is approved and in progress.
 
 Excluded until separately approved:
 
@@ -70,6 +70,7 @@ Excluded until separately approved:
 | Phase 4 | Parity verification and documentation | **Tamamlandı** |
 | Phase 5 | Optional Claude Agent SDK pilot | **Tamamlandı** |
 | Phase 6 | Optional production hardening | **Bekliyor** |
+| Phase 7 | Full Claude CMA source parity | **Tamamlandı** |
 
 ## Plan Task
 
@@ -264,6 +265,32 @@ Approval Gate: Required only if the SDK will be hosted as a service
 | CLD-606 | Add observability and resource budgets | **Bekliyor** | OpenTelemetry, subprocess health, token cost, and timeout alerts work. |
 | CLD-607 | Complete production security and rollback review | **Bekliyor** | Production activation remains separately approved and reversible. |
 
+## Phase 7 - Full Claude CMA Source Parity
+
+Phase Status: **Tamamlandı**
+Approval Gate: Repository-only implementation approved; active runtime changes remain excluded
+
+| ID | Task | Status | Verification / Notes |
+|---|---|---|---|
+| CLD-700 | Complete the mandatory planner and TDD Guide handoffs | **Tamamlandı** | Both read-only handoffs completed; TDD Guide also proved the old 69/69 focused suite permits the 14/34 false-positive package. |
+| CLD-701 | Record the full-parity hypothesis and rollback contract | **Tamamlandı** | `EXP-20260806-009` is in `TESTING` before implementation. |
+| CLD-702 | Add semantic RED tests for the complete Claude package | **Tamamlandı** | Meaningful RED: 7 failures and 10 missing-file errors identified the exact policy, role, module, registry, skill, and archive-helper gaps. |
+| CLD-703 | Expand Core CMA policy and all eight lazy module routes | **Tamamlandı** | Full Core headings and all eight `${CLAUDE_CONFIG_DIR}` lazy routes pass semantic checks. |
+| CLD-704 | Package eight canonical roles and four Opus escalation roles | **Tamamlandı** | Twelve native agents pass exact body, model, effort, tool, and permission contracts. |
+| CLD-705 | Package complete skills, archive helper, modules, and registries | **Tamamlandı** | Twelve neutral assets match bytes; adapted indexes and routing surfaces are consistent. |
+| CLD-706 | Verify exact 34-file source and isolated-install manifests | **Tamamlandı** | Source and temporary installation match byte-for-byte; forbidden artifacts are absent. |
+| CLD-707 | Run focused and complete regression verification | **Tamamlandı** | Final focused security/parity suites passed 48/48 and the complete root suite passed 106/106; JSON, executable mode, forbidden-pattern, byte-parity, and diff checks passed. |
+| CLD-708 | Complete independent code and security reviews | **Tamamlandı** | Audit-history, parent-symlink escape, and rollback blockers were reproduced with RED tests, fixed, and passed code/security re-reviews. |
+| CLD-709 | Finalize tracker, experiment decision, changelog, and archive check | **Tamamlandı** | `EXP-20260806-009` accepted; changelog updated; threshold-triggered experiment compaction applied and post-check is below threshold. |
+
+Phase exit criteria:
+
+- Claude exposes the complete Core CMA policy, role, skill, module, and registry
+  behavior through native Claude Code surfaces.
+- The exact mandatory chain is unchanged and escalation variants remain outside
+  the four-stage chain.
+- Tests and both independent reviews pass without activating `~/.claude`.
+
 ## Approval Gates
 
 | Gate | Required Decision | Status |
@@ -274,6 +301,7 @@ Approval Gate: Required only if the SDK will be hosted as a service
 | GATE-D | Approve active local/global Claude runtime activation | **Bekliyor** |
 | GATE-E | Approve commit and push | **Tamamlandı** |
 | GATE-F | Approve production deployment | **Bekliyor** |
+| GATE-G | Approve full Claude CMA repository source parity | **Tamamlandı** |
 
 ## Definition Of Done
 
@@ -308,3 +336,5 @@ runtime completion unless the user explicitly expands the objective.
 | 2026-08-06 | Save the Claude integration phases and tasks in one tracker | **Tamamlandı** |
 | 2026-08-06 | Approve Phase 0 through Phase 4 implementation | **Tamamlandı** |
 | 2026-08-06 | Approve four logical commits and one push to `main` | **Tamamlandı** |
+| 2026-08-06 | Approve full Claude CMA repository source parity | **Tamamlandı** |
+| 2026-08-06 | Complete full Claude CMA parity and shared archive hardening | **Tamamlandı** |

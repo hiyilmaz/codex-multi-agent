@@ -2,6 +2,294 @@
 
 [Back to active experiments](EXPERIMENTS.md)
 
+## EXP-20260804-003 - Atomic Evidence Claim Contract
+
+Date: 2026-08-04
+Status: ACCEPTED
+
+Problem:
+CMA requires one material claim per bullet and direct proof outside Claims, but
+does not explicitly prevent one bullet from combining independently verifiable
+outcomes. Codex can therefore enter repeated EV validation cycles or weaken a
+claim into a statement that output was reported.
+
+Evidence:
+An observed Codex/EV run repeatedly split test, review, gateway-health, and
+admin-capability assertions before GLM could bind each claim to direct proof.
+The final validation passed, but the repeated rewrites exposed missing atomic
+claim semantics in CMA rather than a need to weaken EV.
+
+Hypothesis:
+If CMA requires one independently verifiable outcome per claim, one coherent
+verbatim proof excerpt for that outcome, and semantic preservation during
+splitting, future evidence will bind cleanly without narrowing acceptance
+meaning or expanding EV.
+
+Solution Attempt:
+Add four prospective atomic-claim clauses to the existing Claims contract and
+verify the managed and portable records modules. Do not rewrite historical
+reports, alter EV, or synchronize the active global runtime.
+
+Test:
+Add source and portable-install contract tests before changing the records
+module. Include negative checks showing that formatting-only wording and a
+reporting-only downgrade do not satisfy the contract. Run focused and full CMA
+regression suites, independent code and security reviews, and EV validation of
+the new evidence report.
+
+Success Criteria:
+- Each claim bullet contains exactly one independently verifiable outcome.
+- One coherent verbatim proof excerpt outside Claims directly proves it.
+- Splitting preserves every original acceptance outcome.
+- Outcome claims cannot be weakened into reporting-only meta-claims.
+- Managed and portable records modules are byte-identical and satisfy the rule.
+- No EV, active global runtime, historical evidence, dependency, commit, push,
+  or deployment change occurs.
+
+Result:
+The targeted source and portable tests first failed 2/2 because the records
+module lacked the independently verifiable outcome clause. After the four
+prospective semantics were added, both targeted tests passed. The focused CMA
+records suite passed 17/17, the complete CMA suite passed 55/55, and
+`git diff --check` completed cleanly. Independent code and security reviews
+both passed. EV first returned `UNVERIFIED` for negated review-proof prose;
+after each PASS result was placed in its own direct proof sentence, the same
+six atomic claims returned `PASS` with `success=true` and no diagnostics.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment is intentionally limited to the prospective CMA records
+contract and its verification.
+Detailed evidence is recorded in
+`docs/reports/EVIDENCE_EXP-20260804-003_ATOMIC_CLAIM_CONTRACT_20260804.md`.
+
+## EXP-20260805-001 - Optional Evidence Mode
+
+Date: 2026-08-05
+Status: ACCEPTED
+
+Problem:
+CMA projects declare an evidence path but have no explicit switch controlling
+automatic evidence creation or validation. Evidence can therefore add cost and
+friction to low-risk work even after EV hooks are disabled.
+
+Evidence:
+The user approved optional evidence with exactly `enable | disable`, selected
+`disable` as the default, and requested the setting across all active CMA
+projects under `/Users/iyilmaz/WebStorm`.
+
+Hypothesis:
+An explicit fail-closed project field with missing treated as disabled will
+make evidence genuinely optional without weakening evidence quality when the
+mode is enabled or when the user explicitly requests it.
+
+Solution Attempt:
+Add `EVIDENCE_MODE: disable` to the project template and active CMA project
+configuration blocks. Gate only automatic evidence-report creation and
+automatic EV use in the records module. Preserve explicit user requests and
+all existing evidence quality rules.
+
+Test:
+Add RED tests for fresh-project defaults, configuration guidance, source and
+portable records semantics, missing values, invalid values, and explicit user
+requests. Run focused and full CMA suites, verify an explicit 17-project
+manifest, and preserve excluded archives, backups, worktrees, and variants.
+
+Success Criteria:
+- Only literal `enable` activates automatic evidence creation and validation.
+- Literal `disable` and a missing field keep automation disabled.
+- Invalid explicit values are reported and never enable automation.
+- Explicit user evidence requests remain applicable in either mode.
+- Fresh projects and all 17 active CMA projects declare `disable` exactly once.
+- Excluded copies and unrelated dirty changes remain untouched.
+- Active global CMA runtime, dependencies, commits, pushes, and deployment
+  remain unchanged.
+
+Result:
+The initial targeted run failed 3/3 because fresh projects omitted the field
+and the source and portable records modules lacked the mode contract. After the
+minimal framework change, the targeted tests passed 3/3, project-upgrade tests
+passed 6/6, and CMA lazy-runtime tests passed 20/20. The explicit rollout
+manifest verified exactly one `EVIDENCE_MODE: disable` declaration in each of
+17 active CMA projects. The complete CMA suite passed 60/60 and
+`git diff --check` completed cleanly. Code review passed. Security review
+confirmed that the project declarations are staged but not yet enforced by the
+active global runtime because its `CMA_RECORDS.md` lacks the new mode gate.
+After separate option A approval, the previous active records module was backed
+up at
+`~/.codex/archive/cma-evidence-mode-20260805_135615/CMA_RECORDS.md` with SHA-256
+`c3d4813491a493775db57f24b451e13c5b9168c5a15445113d1f33a72e9299ea`.
+Only the four EVIDENCE_MODE clauses were added to the active module; its new
+SHA-256 is
+`e8d6a962ea74990028baedea10f183726484e8fe64ba5f4995bb1c1d1921c065`
+and mode remains `0644`. Reopened code and security reviews both passed with
+no blocking findings.
+
+Decision:
+ACCEPT
+
+Notes:
+Active global runtime synchronization was performed only after separate option
+A approval. No evidence report was created because this project now declares
+`EVIDENCE_MODE: disable` and the user did not explicitly request one.
+
+## EXP-20260806-001 - Git Archive Executable Mode Verification
+
+Date: 2026-08-06
+Status: ACCEPTED
+
+Problem:
+The transferred CMA source archive passed SHA-256 verification, but the remote
+installer-mode check expected exactly `755` and observed `775`, leaving the
+source-integrity gate unresolved before installation.
+
+Evidence:
+The local and remote archive SHA-256 values are identical, the local and remote
+installer content SHA-256 values are identical, the local working-tree mode is
+`755`, and the extracted archive mode is `775` inside a root-owned mode-`700`
+staging directory.
+
+Hypothesis:
+Git archive preserved an executable script with additional group execute/write
+mode bits, while content and executable semantics remained intact. Verifying
+the executable bits together with the root-only staging boundary is the correct
+security and integrity criterion.
+
+Solution Attempt:
+Replace the overly strict exact-`755` staging assertion with checks that the
+installer is a regular root-owned file, has at least one executable bit, and is
+contained by a root-owned mode-`700` staging directory. Do not change archive
+content or installed target permissions.
+
+Test:
+Re-run the revised mode assertion, verify local and remote installer hashes are
+identical, and include a negative check proving a non-executable copied mode is
+rejected.
+
+Success Criteria:
+- Local and remote installer content hashes match exactly.
+- The extracted installer is a regular root-owned executable file.
+- The staging directory remains `root:root` mode `700`.
+- The same assertion rejects a non-executable mode.
+- No real runtime or project installation occurs before this gate passes.
+
+Result:
+The revised positive check accepted the root-owned executable installer at
+mode `775` inside the root-owned mode-`700` staging directory. Local and remote
+installer SHA-256 values both equal
+`627312caeaf016427267d4f67bda236113204818d970eec9dad14c4194526321`.
+The same checker rejected an explicit mode-`600` non-executable copy. No real
+runtime or project installation occurred during the test.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment is limited to the source-transfer mode assertion and does not
+expand the approved remote-installation scope.
+
+## EXP-20260806-002 - Sentinel Preservation Manifest Scope
+
+Date: 2026-08-06
+Status: ACCEPTED
+
+Problem:
+The isolated no-overwrite installation stopped because the before and after
+manifest files differed even though every seeded sentinel retained its hash.
+
+Evidence:
+The diff contains only three newly installed, previously absent skill files:
+`hypothesis-workflow`, `orchestration-gate`, and `record-archive`. All seven
+seeded managed and unrelated sentinels have identical before/after SHA-256
+values.
+
+Hypothesis:
+The first post-install `find` expression selected new files by shared basename,
+so it compared the complete installed tree rather than the fixed sentinel set.
+Comparing an explicit sentinel path list will prove preservation without
+mistaking legitimate additions for overwrites.
+
+Solution Attempt:
+Re-run the preservation assertion over the seven exact pre-seeded paths and
+separately require that a previously absent managed skill was installed. Keep
+the installer command and isolated target unchanged.
+
+Test:
+Generate before and after hashes from the same explicit sentinel path list,
+require byte-identical manifests, verify `Skipped existing:` output, and mutate
+a copied manifest value to prove the equality check fails.
+
+Success Criteria:
+- The seven exact sentinel hashes remain unchanged.
+- Existing managed files are reported as skipped.
+- Missing managed files are installed.
+- A deliberately altered expected hash is rejected.
+- No real runtime or project installation occurs during the test.
+
+Result:
+The explicit seven-path sentinel check confirmed identical SHA-256 values for
+all pre-existing managed and unrelated files. Installer output reported
+existing managed paths as skipped, and previously absent skills were installed.
+An altered expected hash was rejected. The isolated project conflict test also
+preserved archived conflicts and the unrelated file, while the cancellation
+test produced no project mutation.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment changes only the isolated-test manifest selection.
+
+## EXP-20260806-004 - Bounded Fresh SSH Codex Install
+
+Date: 2026-08-06
+Status: ACCEPTED
+
+Problem:
+Codex remains missing after apt completed because the original PTY stdin was
+consumed and later closed, preventing continuation in that session.
+
+Evidence:
+Node.js and npm are installed and verified through a fresh read-only SSH
+connection, while `codex` is missing. Writing to the previous session failed
+before command delivery.
+
+Hypothesis:
+A fresh non-PTY SSH invocation with the pinned npm command passed as the remote
+command argument will avoid stdin consumers and complete only the missing Codex
+installation.
+
+Solution Attempt:
+Run one bounded non-PTY SSH command that verifies the global prefix, installs
+`@openai/codex@0.146.1`, and prints executable paths and versions. Do not invoke
+apt or use a heredoc.
+
+Test:
+Require the SSH command to exit zero and then verify package identity and CLI
+version through an independent fresh SSH call.
+
+Success Criteria:
+- Only the pinned npm package is added.
+- `codex --version` reports `0.146.1`.
+- The executable resolves from npm's actual global prefix.
+- A separate verification command exits zero.
+- No service or host restart occurs.
+
+Result:
+The fresh non-PTY command installed two npm packages and exited successfully.
+The verified global prefix is `/usr/local`, the CLI resolves to
+`/usr/local/bin/codex`, and `codex --version` reports `codex-cli 0.146.1`.
+An independent SSH check confirmed `@openai/codex@0.146.1` under
+`/usr/local/lib/node_modules` and reproduced the expected CLI version.
+
+Decision:
+ACCEPT
+
+Notes:
+This is the final retry for the missing Codex package action.
+
 ## EXP-20260801-003 - Root-Only Contextual Voice Notification
 
 Date: 2026-08-01
@@ -470,157 +758,3 @@ ACCEPT
 Notes:
 The global installation makes the validator available only. Project activation,
 commit, and push remain outside this task.
-
-## EXP-20260804-001 - CMA Evidence Claims Contract
-
-Date: 2026-08-04
-Status: ACCEPTED
-
-Problem:
-CMA evidence reports do not require an explicit claims section, while EV
-requires `## Claims` or explicit `Claim:` declarations before it invokes GLM.
-Consequently, valid CMA evidence can stop as `UNVERIFIED` before validation.
-
-Evidence:
-The active CMA records module requires concise, reproducible proof but defines
-no claim syntax. Existing reports commonly use headings such as `Outcome`,
-`Implemented`, `Test Evidence`, and `Fresh Evidence`, which EV intentionally
-does not interpret as material claim declarations.
-
-Hypothesis:
-Requiring one material claim per bullet under an exact `## Claims` heading for
-new or materially updated CMA evidence will make future reports EV-compatible
-without weakening EV or rewriting historical reports.
-
-Solution Attempt:
-Add a prospective claim-format contract to the CMA records module, enforce it
-in source and portable-install tests, and add EV integration fixtures that use
-the unchanged production parser. After the first real pilot showed GLM quoting
-claim declarations instead of supporting proof, strengthen only EV's validation
-prompt to require proof outside `## Claims` that directly supports the same
-claim; keep the parser and fail-closed checks unchanged.
-
-Test:
-Run a meaningful CMA RED test before changing the module, then run focused and
-full CMA suites plus focused and full EV suites. Verify portable installation,
-unchanged EV runtime code, dirty-worktree isolation, and independent code and
-security reviews.
-
-Success Criteria:
-- CMA requires the exact `## Claims` heading for new evidence reports.
-- Each material claim is one bullet and supporting proof stays outside the
-  claims section.
-- Historical reports are not rewritten solely for compatibility.
-- A representative CMA report passes EV parsing with complete grounded claims.
-- Missing coverage and prompt injection remain `UNVERIFIED`.
-- No EV parser, schema, hook, dependency, or activation behavior changes; the
-  prompt may only be strengthened to align GLM output with existing grounding.
-- Active global CMA runtime remains unchanged pending separate approval.
-
-Result:
-The CMA contract test first failed in the source and portable installation at
-the missing `## Claims` requirement. After implementation, the focused CMA
-suite passed 12/12 and the full CMA suite passed 49/49. EV compatibility tests
-passed against the production parser, including complete coverage, omitted
-claims, and prompt injection.
-
-The first real GLM pilot reached ACP but returned `UNVERIFIED` because GLM cited
-claim declarations instead of proof. The revised prompt-only attempt retained
-all parser checks and explicitly required proof outside `## Claims` supporting
-the same claim. The repeated end-to-end temporary pilot then returned `PASS`.
-The final EV suite passed 34/34. Independent code and security reviews both
-returned PASS with no blocking findings.
-
-Decision:
-ACCEPT
-
-Notes:
-Option A was explicitly approved. Commit, push, real-project activation, and
-active global runtime synchronization are outside this implementation step.
-The first real pilot reached GLM but returned `UNVERIFIED` because two GLM
-responses cited claim declarations as proof. A diagnostic response demonstrated
-that the same document can produce valid proof excerpts, supporting a prompt-
-alignment revision without weakening validation.
-The source candidate was accepted before runtime activation. After explicit
-option A approval, only the active records module was backed up and synchronized.
-Its final SHA-256 matches the source candidate and its mode remains `0644`.
-
-## EXP-20260804-002 - Temporal TDD Evidence Contract
-
-Date: 2026-08-04
-Status: ACCEPTED
-
-Problem:
-CMA requires explicit claims and grounded proof, but a TDD evidence report can
-mix an expected pre-fix RED result with final verification. That structure is
-technically truthful yet can make the final state temporally ambiguous.
-
-Evidence:
-The current records module does not distinguish initial RED proof from final
-verification proof or state which section may support a final-success claim.
-
-Hypothesis:
-A conditional two-section rule for reports that contain both expected RED and
-final outcomes will remove temporal ambiguity without adding Acceptance
-Criteria IDs, mapping tables, or mandatory headings to one-phase reports.
-
-Solution Attempt:
-Require exact `## Initial RED Evidence` and `## Final Verification Evidence`
-headings only when both phases are documented. Require final-success claims to
-use final-section proof from the same validation scope rerun after the fix, and
-identify initial RED as historical pre-fix evidence. Apply the rule
-prospectively without rewriting historical reports.
-
-Test:
-Add source and portable-install contract tests before changing the records
-module. Verify the conditional headings, final-proof restriction, unchanged
-Claims contract, and absence of Acceptance Criteria schema expansion.
-
-Success Criteria:
-- Two-phase TDD evidence has explicit initial and final sections.
-- Final-success claims depend only on final verification proof.
-- Final success requires the same validation scope to pass after the fix.
-- Initial RED is identified as expected historical evidence, not final status.
-- One-phase and non-TDD reports do not require temporal headings.
-- No Acceptance Criteria IDs or mapping tables are introduced.
-- Active global CMA runtime remains unchanged pending separate approval.
-
-Result:
-The focused RED run failed two contract tests because the records module lacked
-the conditional temporal rule. After the minimal policy change, the focused
-suite passed 14/14 and the full CMA suite passed 52/52. Portable installation
-was byte-identical to the managed records module. The source candidate was
-accepted before active global synchronization.
-
-Security review found that ordering and uniqueness were not part of the CMA
-contract, allowing reversed or duplicate temporal headings to misrepresent the
-final state. A new RED contract test failed until the module required each
-heading exactly once with Initial RED before Final Verification. The focused
-14/14 and full 52/52 suites passed again.
-
-Reopened security review found that temporal headings embedded in fenced proof
-could still be mistaken for report structure. The CMA contract RED failed until
-it explicitly classified fenced or quoted headings as proof text. The focused
-14/14 and full 52/52 suites passed again. Reopened code and security reviews
-both passed with no blocking findings.
-
-A final scoped RED failed the source and portable contract paths because the
-policy did not explicitly require the same validation scope to be rerun after
-the fix. One additional rule closed that gap; the focused 14/14 and full 52/52
-suites passed again.
-
-Decision:
-ACCEPT
-
-Notes:
-Implementation, tests, and independent reviews passed.
-Approved option A covers local implementation, tests, evidence, and review.
-Active global runtime synchronization was initially outside that scope. After
-separate explicit approval, the prior active module was copied to
-`~/.codex/archive/cma-temporal-evidence-20260804_230500/CMA_RECORDS.md` and the
-then-validated source was synchronized. At that time, source and active SHA-256 were both
-`c3d4813491a493775db57f24b451e13c5b9168c5a15445113d1f33a72e9299ea`;
-the active mode remains `0644`. The later same-scope hardening changed only the
-managed source and tests; active runtime synchronization was not repeated.
-Detailed evidence is recorded in
-`docs/reports/EVIDENCE_EXP-20260804-002_TEMPORAL_TDD_EVIDENCE_CONTRACT_20260804.md`.

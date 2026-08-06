@@ -2,6 +2,20 @@
 
 ## 2026-08-06
 
+- [CHORE] Normalized shared registry file endings across Codex, Dolphin, and
+  Claude while preserving byte-identical provider-neutral assets.
+- [FEAT] EXP-20260806-009 expanded the portable Claude Code runtime to full
+  Core CMA source parity with 12 native agents, four complete skills, eight
+  lazy modules, six registry records, and an exact 34-file home manifest.
+- [SECURITY] Hardened the shared Codex, Dolphin, and Claude record archive
+  helper against managed-parent symlink escapes using `O_NOFOLLOW` directory
+  descriptors and rollback registration before atomic writes.
+- [TEST] Added semantic Claude parity, truthful audit-history, external path
+  escape, and post-replace rollback regressions; verified 48/48 focused tests,
+  106/106 complete regressions, and clean independent code/security re-reviews.
+- [CHORE] Applied threshold-triggered terminal experiment compaction and
+  verified the active and split archives return `BELOW_THRESHOLD` without
+  losing experiment records.
 - [SECURITY] Extended project containment preflight to every managed template
   parent for dry-run, apply, and initial-state operations.
 - [SECURITY] Rejected symlinked or non-directory project runtime parents before

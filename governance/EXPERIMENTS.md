@@ -2,246 +2,6 @@
 
 [Terminal experiment archive](EXPERIMENTS_ARCHIVE.md)
 
-## EXP-20260804-003 - Atomic Evidence Claim Contract
-
-Date: 2026-08-04
-Status: ACCEPTED
-
-Problem:
-CMA requires one material claim per bullet and direct proof outside Claims, but
-does not explicitly prevent one bullet from combining independently verifiable
-outcomes. Codex can therefore enter repeated EV validation cycles or weaken a
-claim into a statement that output was reported.
-
-Evidence:
-An observed Codex/EV run repeatedly split test, review, gateway-health, and
-admin-capability assertions before GLM could bind each claim to direct proof.
-The final validation passed, but the repeated rewrites exposed missing atomic
-claim semantics in CMA rather than a need to weaken EV.
-
-Hypothesis:
-If CMA requires one independently verifiable outcome per claim, one coherent
-verbatim proof excerpt for that outcome, and semantic preservation during
-splitting, future evidence will bind cleanly without narrowing acceptance
-meaning or expanding EV.
-
-Solution Attempt:
-Add four prospective atomic-claim clauses to the existing Claims contract and
-verify the managed and portable records modules. Do not rewrite historical
-reports, alter EV, or synchronize the active global runtime.
-
-Test:
-Add source and portable-install contract tests before changing the records
-module. Include negative checks showing that formatting-only wording and a
-reporting-only downgrade do not satisfy the contract. Run focused and full CMA
-regression suites, independent code and security reviews, and EV validation of
-the new evidence report.
-
-Success Criteria:
-- Each claim bullet contains exactly one independently verifiable outcome.
-- One coherent verbatim proof excerpt outside Claims directly proves it.
-- Splitting preserves every original acceptance outcome.
-- Outcome claims cannot be weakened into reporting-only meta-claims.
-- Managed and portable records modules are byte-identical and satisfy the rule.
-- No EV, active global runtime, historical evidence, dependency, commit, push,
-  or deployment change occurs.
-
-Result:
-The targeted source and portable tests first failed 2/2 because the records
-module lacked the independently verifiable outcome clause. After the four
-prospective semantics were added, both targeted tests passed. The focused CMA
-records suite passed 17/17, the complete CMA suite passed 55/55, and
-`git diff --check` completed cleanly. Independent code and security reviews
-both passed. EV first returned `UNVERIFIED` for negated review-proof prose;
-after each PASS result was placed in its own direct proof sentence, the same
-six atomic claims returned `PASS` with `success=true` and no diagnostics.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment is intentionally limited to the prospective CMA records
-contract and its verification.
-Detailed evidence is recorded in
-`docs/reports/EVIDENCE_EXP-20260804-003_ATOMIC_CLAIM_CONTRACT_20260804.md`.
-
-## EXP-20260805-001 - Optional Evidence Mode
-
-Date: 2026-08-05
-Status: ACCEPTED
-
-Problem:
-CMA projects declare an evidence path but have no explicit switch controlling
-automatic evidence creation or validation. Evidence can therefore add cost and
-friction to low-risk work even after EV hooks are disabled.
-
-Evidence:
-The user approved optional evidence with exactly `enable | disable`, selected
-`disable` as the default, and requested the setting across all active CMA
-projects under `/Users/iyilmaz/WebStorm`.
-
-Hypothesis:
-An explicit fail-closed project field with missing treated as disabled will
-make evidence genuinely optional without weakening evidence quality when the
-mode is enabled or when the user explicitly requests it.
-
-Solution Attempt:
-Add `EVIDENCE_MODE: disable` to the project template and active CMA project
-configuration blocks. Gate only automatic evidence-report creation and
-automatic EV use in the records module. Preserve explicit user requests and
-all existing evidence quality rules.
-
-Test:
-Add RED tests for fresh-project defaults, configuration guidance, source and
-portable records semantics, missing values, invalid values, and explicit user
-requests. Run focused and full CMA suites, verify an explicit 17-project
-manifest, and preserve excluded archives, backups, worktrees, and variants.
-
-Success Criteria:
-- Only literal `enable` activates automatic evidence creation and validation.
-- Literal `disable` and a missing field keep automation disabled.
-- Invalid explicit values are reported and never enable automation.
-- Explicit user evidence requests remain applicable in either mode.
-- Fresh projects and all 17 active CMA projects declare `disable` exactly once.
-- Excluded copies and unrelated dirty changes remain untouched.
-- Active global CMA runtime, dependencies, commits, pushes, and deployment
-  remain unchanged.
-
-Result:
-The initial targeted run failed 3/3 because fresh projects omitted the field
-and the source and portable records modules lacked the mode contract. After the
-minimal framework change, the targeted tests passed 3/3, project-upgrade tests
-passed 6/6, and CMA lazy-runtime tests passed 20/20. The explicit rollout
-manifest verified exactly one `EVIDENCE_MODE: disable` declaration in each of
-17 active CMA projects. The complete CMA suite passed 60/60 and
-`git diff --check` completed cleanly. Code review passed. Security review
-confirmed that the project declarations are staged but not yet enforced by the
-active global runtime because its `CMA_RECORDS.md` lacks the new mode gate.
-After separate option A approval, the previous active records module was backed
-up at
-`~/.codex/archive/cma-evidence-mode-20260805_135615/CMA_RECORDS.md` with SHA-256
-`c3d4813491a493775db57f24b451e13c5b9168c5a15445113d1f33a72e9299ea`.
-Only the four EVIDENCE_MODE clauses were added to the active module; its new
-SHA-256 is
-`e8d6a962ea74990028baedea10f183726484e8fe64ba5f4995bb1c1d1921c065`
-and mode remains `0644`. Reopened code and security reviews both passed with
-no blocking findings.
-
-Decision:
-ACCEPT
-
-Notes:
-Active global runtime synchronization was performed only after separate option
-A approval. No evidence report was created because this project now declares
-`EVIDENCE_MODE: disable` and the user did not explicitly request one.
-
-## EXP-20260806-001 - Git Archive Executable Mode Verification
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-The transferred CMA source archive passed SHA-256 verification, but the remote
-installer-mode check expected exactly `755` and observed `775`, leaving the
-source-integrity gate unresolved before installation.
-
-Evidence:
-The local and remote archive SHA-256 values are identical, the local and remote
-installer content SHA-256 values are identical, the local working-tree mode is
-`755`, and the extracted archive mode is `775` inside a root-owned mode-`700`
-staging directory.
-
-Hypothesis:
-Git archive preserved an executable script with additional group execute/write
-mode bits, while content and executable semantics remained intact. Verifying
-the executable bits together with the root-only staging boundary is the correct
-security and integrity criterion.
-
-Solution Attempt:
-Replace the overly strict exact-`755` staging assertion with checks that the
-installer is a regular root-owned file, has at least one executable bit, and is
-contained by a root-owned mode-`700` staging directory. Do not change archive
-content or installed target permissions.
-
-Test:
-Re-run the revised mode assertion, verify local and remote installer hashes are
-identical, and include a negative check proving a non-executable copied mode is
-rejected.
-
-Success Criteria:
-- Local and remote installer content hashes match exactly.
-- The extracted installer is a regular root-owned executable file.
-- The staging directory remains `root:root` mode `700`.
-- The same assertion rejects a non-executable mode.
-- No real runtime or project installation occurs before this gate passes.
-
-Result:
-The revised positive check accepted the root-owned executable installer at
-mode `775` inside the root-owned mode-`700` staging directory. Local and remote
-installer SHA-256 values both equal
-`627312caeaf016427267d4f67bda236113204818d970eec9dad14c4194526321`.
-The same checker rejected an explicit mode-`600` non-executable copy. No real
-runtime or project installation occurred during the test.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment is limited to the source-transfer mode assertion and does not
-expand the approved remote-installation scope.
-
-## EXP-20260806-002 - Sentinel Preservation Manifest Scope
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-The isolated no-overwrite installation stopped because the before and after
-manifest files differed even though every seeded sentinel retained its hash.
-
-Evidence:
-The diff contains only three newly installed, previously absent skill files:
-`hypothesis-workflow`, `orchestration-gate`, and `record-archive`. All seven
-seeded managed and unrelated sentinels have identical before/after SHA-256
-values.
-
-Hypothesis:
-The first post-install `find` expression selected new files by shared basename,
-so it compared the complete installed tree rather than the fixed sentinel set.
-Comparing an explicit sentinel path list will prove preservation without
-mistaking legitimate additions for overwrites.
-
-Solution Attempt:
-Re-run the preservation assertion over the seven exact pre-seeded paths and
-separately require that a previously absent managed skill was installed. Keep
-the installer command and isolated target unchanged.
-
-Test:
-Generate before and after hashes from the same explicit sentinel path list,
-require byte-identical manifests, verify `Skipped existing:` output, and mutate
-a copied manifest value to prove the equality check fails.
-
-Success Criteria:
-- The seven exact sentinel hashes remain unchanged.
-- Existing managed files are reported as skipped.
-- Missing managed files are installed.
-- A deliberately altered expected hash is rejected.
-- No real runtime or project installation occurs during the test.
-
-Result:
-The explicit seven-path sentinel check confirmed identical SHA-256 values for
-all pre-existing managed and unrelated files. Installer output reported
-existing managed paths as skipped, and previously absent skills were installed.
-An altered expected hash was rejected. The isolated project conflict test also
-preserved archived conflicts and the unrelated file, while the cancellation
-test produced no project mutation.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment changes only the isolated-test manifest selection.
-
 ## EXP-20260806-003 - PTY Package Install Stdin Continuation
 
 Date: 2026-08-06
@@ -291,54 +51,6 @@ REVISE
 Notes:
 This experiment addresses only stdin continuation after the already completed
 approved package transaction.
-
-## EXP-20260806-004 - Bounded Fresh SSH Codex Install
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-Codex remains missing after apt completed because the original PTY stdin was
-consumed and later closed, preventing continuation in that session.
-
-Evidence:
-Node.js and npm are installed and verified through a fresh read-only SSH
-connection, while `codex` is missing. Writing to the previous session failed
-before command delivery.
-
-Hypothesis:
-A fresh non-PTY SSH invocation with the pinned npm command passed as the remote
-command argument will avoid stdin consumers and complete only the missing Codex
-installation.
-
-Solution Attempt:
-Run one bounded non-PTY SSH command that verifies the global prefix, installs
-`@openai/codex@0.146.1`, and prints executable paths and versions. Do not invoke
-apt or use a heredoc.
-
-Test:
-Require the SSH command to exit zero and then verify package identity and CLI
-version through an independent fresh SSH call.
-
-Success Criteria:
-- Only the pinned npm package is added.
-- `codex --version` reports `0.146.1`.
-- The executable resolves from npm's actual global prefix.
-- A separate verification command exits zero.
-- No service or host restart occurs.
-
-Result:
-The fresh non-PTY command installed two npm packages and exited successfully.
-The verified global prefix is `/usr/local`, the CLI resolves to
-`/usr/local/bin/codex`, and `codex --version` reports `codex-cli 0.146.1`.
-An independent SSH check confirmed `@openai/codex@0.146.1` under
-`/usr/local/lib/node_modules` and reproduced the expected CLI version.
-
-Decision:
-ACCEPT
-
-Notes:
-This is the final retry for the missing Codex package action.
 
 ## EXP-20260806-005 - Archived Bootstrap Experiment Contract
 
@@ -592,3 +304,98 @@ The user approved Gate B by asking implementation to continue after the native
 phase. Gate C must add a separate per-call authorization capability, isolated
 workspace and Claude configuration, and a minimal allowlisted child-process
 environment. Gates C through F remain pending.
+
+## EXP-20260806-009 - Full Claude CMA Source Parity
+
+Date: 2026-08-06
+Status: ACCEPTED
+
+Problem:
+The packaged Claude runtime exposes the mandatory four-role chain and four
+skills, but it does not yet carry the complete Codex Core CMA policy, canonical
+role catalog, escalation roles, lazy modules, registry records, or archive
+helper. Existing tests prove only the reduced Claude contract and can pass
+while these semantic parity gaps remain.
+
+Evidence:
+The pre-change Claude source contains 14 home files, four agent definitions,
+four abbreviated skills, and three registry files. The Codex source contains
+38 home files, including 12 agents, four complete skills, eight lazy modules,
+six registry records, and the record archive script. Four Codex-only
+`skills/*/agents/openai.yaml` files are not portable Claude artifacts.
+
+Hypothesis:
+If provider-neutral CMA assets are copied byte-for-byte and provider-specific
+surfaces are translated to documented Claude Markdown/YAML, model, permission,
+and configuration conventions, Claude can reach full semantic CMA parity
+without copying Codex-only runtime metadata or activating a local Claude home.
+
+Solution Attempt:
+First add semantic parity tests that reject the reduced package. Then package
+the 34-file Claude-native manifest: the complete Core policy, 12 agents, four
+skills and archive helper, eight lazy modules, six registry records, safe
+settings, and updated runtime documentation. Preserve the mandatory chain
+exactly and map complex Codex escalation roles to explicit Claude Opus roles.
+
+Test:
+Run a focused RED test before production edits. After implementation, verify
+the exact manifest, agent frontmatter and model matrix, policy/router semantics,
+byte-identical provider-neutral assets, adapted registry consistency, archive
+helper behavior and executable mode, isolated installation, prohibited artifact
+absence, complete regression suite, diff checks, and independent code and
+security reviews.
+
+Success Criteria:
+- The RED run fails for observable missing policy, role, module, registry, and
+  archive-helper behaviors rather than counts alone.
+- The Claude home contains exactly the approved 34-file native manifest.
+- Eight canonical roles and four `-opus` escalation roles use valid Claude
+  frontmatter, medium effort, least-authority tools, and documented models.
+- Core policy sections, all eight lazy routes, skills, modules, and registry
+  indexes are semantically consistent with Codex CMA.
+- No `openai.yaml`, `*-sol` role, Codex model ID, Codex-only TOML agent field,
+  credential, hook, or permission bypass is packaged.
+- Focused and complete suites pass without skipped or weakened tests, followed
+  by clean code and security reviews.
+
+Rollback:
+Reverse only files and tracker records owned by this experiment with
+`apply_patch`. Do not modify active `~/.claude`, use destructive Git commands,
+or disturb unrelated repository work.
+
+Result:
+The initial semantic RED run produced seven failures and ten missing-file
+errors, proving the reduced 14-file Claude package did not satisfy the 34-file
+contract despite the old focused suites passing. The completed package now
+contains the full Core policy, 12 native agents, four complete skills, the
+record archive helper, eight lazy modules, six registry records, and safe
+settings. Source and isolated-install manifests match byte-for-byte, while
+Codex-only model, TOML, `*-sol`, and OpenAI skill metadata remain excluded.
+
+Code review rejected mechanically backdated Claude audit history. A dedicated
+RED regression exposed all seven false date headings; the audit log now records
+only evidenced 2026-08-06 Claude changes and code re-review passed.
+
+Security review then reproduced `docs` and `governance` parent-symlink escapes
+in the shared archive helper. After explicit user approval, the canonical
+Codex, Dolphin, and Claude scripts were hardened with `O_NOFOLLOW` directory
+descriptors for managed reads, atomic replacement, and rollback deletion. A
+second RED regression exposed a post-replace `fsync` rollback gap; registering
+paths before writes restored transaction rollback. Code and security re-reviews
+both passed.
+
+Final focused security/parity verification passed 48/48 and the complete root
+suite passed 106/106. JSON parsing, executable modes, exact 34-file manifest,
+three-provider script byte parity, prohibited-pattern search, Python source
+compilation, and `git diff --check` passed. No credential, real API call,
+active runtime mutation, dependency addition, commit, push, or deployment
+occurred.
+
+Decision:
+ACCEPT
+
+Notes:
+User approval covers repository source parity and offline verification only.
+Local/global Claude activation, credentials, real API use, commit, push, and
+deployment remain outside this experiment. The user separately approved the
+shared archive-helper security remediation required to close review.
