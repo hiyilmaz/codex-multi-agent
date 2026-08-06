@@ -24,4 +24,3 @@ YOLO mode must not bypass approval for:
 - auth/security code changes
 
 If any of these are needed: stop, report, and wait for user approval.
-

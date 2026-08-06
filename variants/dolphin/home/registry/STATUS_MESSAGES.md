@@ -11,4 +11,3 @@ Default Turkish messages for common stop or wait states.
 | completed | Görev tamamlandı, yeni talimatını bekliyorum. |
 | decision_required | Karar gerekiyor, seni bekliyorum. |
 | blocked | İlerleyemiyorum, kararını bekliyorum. |
-
