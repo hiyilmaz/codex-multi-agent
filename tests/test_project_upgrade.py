@@ -170,6 +170,43 @@ class ProjectUpgradeTests(unittest.TestCase):
         self.assertIn("symbolic link", result.stderr)
         self.assertEqual(settings.read_text(), '{"outside": true}\n')
 
+    def test_init_rejects_symlinked_codex_directory_before_mutation(self) -> None:
+        project = self.root / "symlink-codex-init"
+        project.mkdir()
+        outside = self.root / "outside-codex-init"
+        outside.mkdir()
+        sentinel = outside / "sentinel.txt"
+        sentinel.write_text("outside\n", encoding="utf-8")
+        (project / ".codex").symlink_to(outside, target_is_directory=True)
+
+        result = self.run_command(
+            PROJECT_INIT, project, input_text="y\n", check=False
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symbolic link", result.stderr)
+        self.assertNotIn("Continue?", result.stdout)
+        self.assertEqual(sentinel.read_text(encoding="utf-8"), "outside\n")
+        self.assertEqual(list(outside.iterdir()), [sentinel])
+
+    def test_claude_init_rejects_file_directory_before_mutation(self) -> None:
+        project = self.root / "file-claude-init"
+        project.mkdir()
+        claude_path = project / ".claude"
+        claude_path.write_text("local file\n", encoding="utf-8")
+
+        result = self.run_command(
+            PROJECT_INIT, "--variant", "claude", project,
+            input_text="y\n", check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("directory", result.stderr)
+        self.assertNotIn("Continue?", result.stdout)
+        self.assertEqual(claude_path.read_text(encoding="utf-8"), "local file\n")
+        self.assertFalse((project / "AGENTS.md").exists())
+        self.assertFalse((project / ".codex").exists())
+
     def test_claude_upgrade_rejects_symlinked_claude_directory(self) -> None:
         project = self.initialize("symlink-upgrade", "claude")
         shutil.rmtree(project / ".claude")
@@ -183,6 +220,52 @@ class ProjectUpgradeTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("symbolic link", result.stderr)
         self.assertEqual(settings.read_text(), '{"outside": true}\n')
+
+    def test_upgrade_rejects_symlinked_codex_directory(self) -> None:
+        project = self.initialize("symlink-codex-upgrade")
+        outside = self.root / "outside-codex-upgrade"
+        (project / ".codex").rename(outside)
+        (project / ".codex").symlink_to(outside, target_is_directory=True)
+
+        result = self.run_command(PROJECT_UPGRADE, "--dry-run", project, check=False)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symbolic link", result.stderr)
+
+    def test_upgrade_rejects_symlinked_archive_before_mutation(self) -> None:
+        project = self.initialize("symlink-archive-upgrade")
+        archive = project / ".codex/archive"
+        shutil.rmtree(archive)
+        outside = self.root / "outside-archive-upgrade"
+        outside.mkdir()
+        archive.symlink_to(outside, target_is_directory=True)
+        agents = project / "AGENTS.md"
+        agents.write_text(
+            agents.read_text(encoding="utf-8").replace(
+                "ORCHESTRATION_MODE: ask-approval\n", ""
+            ),
+            encoding="utf-8",
+        )
+        before = agents.read_bytes()
+
+        result = self.run_command(
+            PROJECT_UPGRADE, "--apply", "--force", project, check=False
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symbolic link", result.stderr)
+        self.assertEqual(agents.read_bytes(), before)
+        self.assertEqual(list(outside.iterdir()), [])
+
+    def test_claude_upgrade_rejects_file_directory(self) -> None:
+        project = self.initialize("file-claude-upgrade", "claude")
+        shutil.rmtree(project / ".claude")
+        (project / ".claude").write_text("local file\n", encoding="utf-8")
+
+        result = self.run_command(PROJECT_UPGRADE, "--dry-run", project, check=False)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("directory", result.stderr)
 
     def test_legacy_project_preserves_local_files(self) -> None:
         project = self.root / "legacy"

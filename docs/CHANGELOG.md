@@ -2,6 +2,8 @@
 
 ## 2026-08-06
 
+- [SECURITY] Rejected symlinked or non-directory project runtime parents before
+  init/upgrade confirmation or mutation to prevent path escape and partial reset.
 - [FIX] Classified terminal-less Claude assistant errors as failed outcomes
   while retaining unverified status for genuinely missing terminal evidence.
 - [FIX] Made experiment archiving support contiguous split archive indexes and

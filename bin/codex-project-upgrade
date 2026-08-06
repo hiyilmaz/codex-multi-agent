@@ -84,6 +84,25 @@ def atomic_write(path: Path, content: str) -> None:
     os.replace(temporary, path)
 
 
+def require_contained_directory(project: Path, path: Path) -> None:
+    if path.is_symlink():
+        raise ValueError(f"refusing symbolic link for project directory: {path}")
+    if path.exists() and not path.is_dir():
+        raise ValueError(f"expected project directory: {path}")
+    resolved = path.resolve() if path.exists() else path.parent.resolve()
+    try:
+        resolved.relative_to(project)
+    except ValueError as error:
+        raise ValueError(f"project directory escapes target: {path}") from error
+
+
+def validate_project_directories(project: Path, variant: str | None = None) -> None:
+    require_contained_directory(project, project / ".codex")
+    require_contained_directory(project, project / ".codex/archive")
+    if variant == "claude":
+        require_contained_directory(project, project / ".claude")
+
+
 def template_version(repo_root: Path) -> str:
     text = (repo_root / "PROJECT_AGENTS_TEMPLATE.md").read_text(encoding="utf-8")
     match = re.search(r"(?m)^\*\*Version:\*\*\s+([^\s]+)", text)
@@ -242,11 +261,7 @@ def build_plan(repo_root: Path, project: Path, requested_variant: str | None) ->
         previous_manifest.get("variant") if previous_manifest else None
     ) or default_variant(repo_root)
     validate_variant(repo_root, variant)
-
-    if variant == "claude" and (project / ".claude").is_symlink():
-        raise ValueError(
-            f"refusing symbolic link for project Claude directory: {project / '.claude'}"
-        )
+    validate_project_directories(project, variant)
 
     agents_path = project / "AGENTS.md"
     if not agents_path.is_file():
@@ -451,9 +466,11 @@ def main() -> int:
     try:
         if not project.is_dir():
             raise ValueError(f"project directory does not exist: {project}")
+        validate_project_directories(project)
         if args.record_initial_state:
             variant = args.variant or default_variant(repo_root)
             validate_variant(repo_root, variant)
+            validate_project_directories(project, variant)
             manifest = initial_manifest(repo_root, project, variant)
             atomic_write(project / MANIFEST_PATH, manifest_text(manifest))
             print(f"Created: {project / MANIFEST_PATH}")

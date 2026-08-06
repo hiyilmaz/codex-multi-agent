@@ -80,6 +80,24 @@ fi
 mkdir -p "$PROJECT_PATH"
 PROJECT_PATH="$(cd "$PROJECT_PATH" && pwd)"
 
+PROJECT_DIRECTORIES=(
+  "$PROJECT_PATH/.codex"
+  "$PROJECT_PATH/.codex/archive"
+)
+if [[ "$VARIANT_ID" == "claude" ]]; then
+  PROJECT_DIRECTORIES+=("$PROJECT_PATH/.claude")
+fi
+for directory in "${PROJECT_DIRECTORIES[@]}"; do
+  if [[ -L "$directory" ]]; then
+    echo "FAILED: refusing symbolic link for project directory: $directory" >&2
+    exit 1
+  fi
+  if [[ -e "$directory" && ! -d "$directory" ]]; then
+    echo "FAILED: expected project directory: $directory" >&2
+    exit 1
+  fi
+done
+
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 ARCHIVE_DIR="$PROJECT_PATH/.codex/archive/init-$TIMESTAMP"
 
@@ -96,10 +114,6 @@ CONFLICTS=(
 )
 
 if [[ "$VARIANT_ID" == "claude" ]]; then
-  if [[ -L "$PROJECT_PATH/.claude" ]]; then
-    echo "FAILED: refusing symbolic link for project Claude directory: $PROJECT_PATH/.claude" >&2
-    exit 1
-  fi
   CONFLICTS+=(
     "CLAUDE.md"
     ".claude/settings.json"
