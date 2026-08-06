@@ -27,6 +27,17 @@ class ResultMapperTests(unittest.TestCase):
                 self.assertEqual(outcome.status, status)
                 self.assertFalse(outcome.success)
 
+    def test_assistant_error_without_terminal_is_failed(self):
+        outcome = map_messages(
+            [SimpleNamespace(error="authentication_failed")],
+            max_turns=1,
+            max_budget_usd=0.1,
+            elapsed_seconds=0.1,
+        )
+        self.assertEqual(outcome.status, "failed")
+        self.assertFalse(outcome.success)
+        self.assertFalse(outcome.terminal_observed)
+
     def test_preserves_metadata_and_normalizes_usage(self):
         terminal = result_message()
         outcome = map_messages([terminal], max_turns=4, max_budget_usd=0.4, elapsed_seconds=0.25)

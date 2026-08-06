@@ -42,9 +42,11 @@ def map_messages(messages, *, max_turns, max_budget_usd, elapsed_seconds):
     )
     terminal = terminals[0] if terminals else None
 
-    if len(terminals) != 1:
+    if assistant_error:
+        status = "failed"
+    elif len(terminals) != 1:
         status = "unverified"
-    elif terminal.is_error or terminal.errors or terminal.api_error_status is not None or assistant_error:
+    elif terminal.is_error or terminal.errors or terminal.api_error_status is not None:
         status = "failed"
     else:
         status = "passed"

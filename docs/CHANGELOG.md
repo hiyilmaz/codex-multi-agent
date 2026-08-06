@@ -2,6 +2,8 @@
 
 ## 2026-08-06
 
+- [FIX] Classified terminal-less Claude assistant errors as failed outcomes
+  while retaining unverified status for genuinely missing terminal evidence.
 - [FIX] Made experiment archiving support contiguous split archive indexes and
   append rotations to the latest validated part.
 - [CHORE] Excluded local Graphify indexes and reports from version control.
