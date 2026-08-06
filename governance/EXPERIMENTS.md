@@ -570,3 +570,98 @@ ACCEPT
 Notes:
 The user approved source, tests, records, and isolated CMA Claude prompt
 synchronization only.
+
+## EXP-20260807-001 - Native Claude Global CMA Activation
+
+Date: 2026-08-07
+Status: ACCEPTED
+
+Problem:
+The Claude variant defaults to `${HOME}/.llm-runtimes/claude`, so the portable
+CMA package is isolated from Claude Code's native user-global `${HOME}/.claude`
+surface and is not available to normal Claude sessions.
+
+Evidence:
+The variant catalog and launcher select the isolated runtime. The current
+user's native `${HOME}/.claude` already contains `CLAUDE.md`, `settings.json`,
+skills, and runtime state, while the isolated CMA directory contains only the
+restoration prompt. Official Claude Code documentation defines
+`${HOME}/.claude` as user scope and `CLAUDE_CONFIG_DIR` as an override.
+
+Hypothesis:
+A dedicated native activation overlay can make CMA available to normal Claude
+Code sessions while preserving existing instructions, settings, credentials,
+history, plugins, and unrelated files. A separate managed policy plus one
+idempotent import avoids replacing the existing global `CLAUDE.md`.
+
+Solution Attempt:
+Change the Claude default home to `${HOME}/.claude`. Delegate only native-home
+installs to a transactional activation helper that validates all source and
+target paths before writes, preserves existing settings byte-for-byte, backs
+up and appends one `@registry/CMA_GLOBAL.md` import to existing instructions,
+installs missing CMA-owned files, rejects conflicts, and rolls back partial
+activation. Keep explicit non-native installs portable and leave the legacy
+isolated directory unchanged.
+
+Test:
+Add RED contracts for native default resolution, complete preservation-aware
+activation, idempotency, functional import detection, conflict and symlink
+rejection, rollback after copy failure, and incomplete source rejection. Run
+focused Claude activation, installer, runtime, and complete regression suites,
+shell syntax, JSON, diff, source-target parity, live native state preservation,
+and independent code and security reviews.
+
+Success Criteria:
+- Default Claude installation resolves to `${HOME}/.claude`; explicit alternate
+  runtime homes continue to use portable isolated installation behavior.
+- Existing `CLAUDE.md` content and mode are preserved with exactly one
+  functional CMA import and a byte-identical recoverable backup.
+- Existing `settings.json` bytes and mode never change.
+- Missing CMA agents, skills, registry, prompt, README, and launcher files are
+  installed; differing CMA-owned files fail before mutation.
+- Symlink, unsafe-type, incomplete-source, backup, and late-copy failures do
+  not leave partial activation or touch unrelated native Claude state.
+- Repeated activation is byte- and path-idempotent.
+- The legacy `${HOME}/.llm-runtimes/claude` tree remains unchanged.
+- Focused and complete tests, syntax, diff, live hashes, and independent code
+  and security reviews pass before acceptance.
+
+Result:
+The initial native-activation contract produced seven intended failures: the
+catalog still selected the isolated home, no preserved import or backup was
+created, force and differing managed files did not fail closed, incomplete
+sources reported success, and a symlinked native home could be followed.
+
+The first implementation passed 8/8 focused checks, both related suites at
+17/17, and the then-complete 120/120 suite. Live activation created a
+byte-identical policy backup, preserved existing policy and settings modes,
+preserved the settings and legacy-runtime hashes, installed the complete CMA
+surface with source parity, and remained idempotent on a second run.
+
+Independent code review then found an equivalent-path force bypass and two
+partial-backup cleanup gaps. New RED cases reproduced trailing, dot, and
+symlink-alias bypasses plus partial copy and post-move hash failures. Canonical
+native routing, non-native root-symlink rejection, atomic backup writes, and
+explicit incomplete-backup tracking resolved them. The durable plan was also
+updated to reflect the approved activation.
+
+Security review found insecure first-install permissions under an open umask.
+The new regression reproduced `0777` directories and a `0666` instruction
+bridge. Applying `umask 077` before creation made new directories `0700`, new
+files `0600`, and the launcher `0700` without changing existing file modes.
+Task-created live directory trees were narrowed from `0755` to `0700`.
+
+Final activation checks passed 10/10, installer and Claude runtime suites each
+passed 17/17, and the complete suite passed 122/122. Bash syntax and diff
+checks passed; ShellCheck was unavailable. Final code review and security
+review both passed with no blocking findings. No credentials, sessions,
+plugins, authenticated Claude request, legacy deletion, commit, push, or
+deployment were involved.
+
+Decision:
+ACCEPT
+
+Notes:
+The user explicitly approved active native Claude CMA activation with a
+preservation-first merge. Credential use, authenticated Claude requests,
+legacy deletion, commit, push, and deployment remain outside scope.

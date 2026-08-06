@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-08-07
+
+- [FEAT] EXP-20260807-001 changed Claude's default user-global runtime from the
+  isolated `.llm-runtimes/claude` path to native `${HOME}/.claude` with a
+  preservation-first CMA policy import and dedicated activation helper.
+- [SECURITY] Native activation rejects force, differing managed files,
+  incomplete sources, unsafe or equivalent-path bypasses, and partial backup
+  failures; new runtime paths use owner-only permissions regardless of umask.
+- [MIGRATION] Activated the current user's native Claude CMA surface with a
+  byte-identical policy backup while preserving existing settings, modes,
+  unrelated user state, and the legacy isolated runtime.
+- [TEST] Verified meaningful RED regressions, 10/10 activation checks, 17/17
+  installer checks, 17/17 Claude runtime checks, 122/122 complete regressions,
+  live source parity and idempotency, plus passing independent code and
+  security reviews.
+
 ## 2026-08-06
 
 - [FEAT] EXP-20260806-011 added a portable Claude Code subagent restoration

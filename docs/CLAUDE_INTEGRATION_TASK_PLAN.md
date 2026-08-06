@@ -1,9 +1,9 @@
 # Claude Integration Task Plan
 
 Date: 2026-08-06
-Last Updated: 2026-08-06
+Last Updated: 2026-08-07
 Overall Status: **Tamamlandı**
-Current Gate: Phase 7 full Claude CMA source parity is complete; optional Gates C, D, and F remain gated
+Current Gate: Native Claude integration is complete; optional Gates C and F remain gated
 
 ## Purpose
 
@@ -15,7 +15,7 @@ The recommended delivery path is:
 
 1. Add native Claude Code CLI compatibility.
 2. Add a safe project-level `CLAUDE.md` bridge.
-3. Verify parity without changing active user runtime state.
+3. Verify parity in isolation before separately approved native activation.
 4. Evaluate the Claude Agent SDK only through a separately approved pilot.
 5. Add production hosting controls only if the SDK will be operated as a
    service.
@@ -44,14 +44,13 @@ Status update rules:
 
 ## Scope Boundaries
 
-Phase 0 through Phase 4 and the local, offline Phase 5 SDK pilot are complete.
-Phase 7 full Claude CMA source parity is approved and in progress.
+Phase 0 through Phase 5 and Phase 7 are complete. Phase 8 native global
+activation was approved and is in final review.
 
 Excluded until separately approved:
 
 - Using a real Anthropic API key or subscription credential.
 - Making a real Claude API request.
-- Installing or changing an active `~/.claude` or global Claude runtime.
 - Changing remote machines or production services.
 - Releasing or deploying changes.
 - Commit and push were excluded from the implementation phases; Gate E is now
@@ -71,6 +70,7 @@ Excluded until separately approved:
 | Phase 5 | Optional Claude Agent SDK pilot | **Tamamlandı** |
 | Phase 6 | Optional production hardening | **Bekliyor** |
 | Phase 7 | Full Claude CMA source parity | **Tamamlandı** |
+| Phase 8 | Native user-global Claude CMA activation | **Tamamlandı** |
 
 ## Plan Task
 
@@ -291,6 +291,29 @@ Phase exit criteria:
   the four-stage chain.
 - Tests and both independent reviews pass without activating `~/.claude`.
 
+## Phase 8 - Native User-Global Activation
+
+Phase Status: **Tamamlandı**
+Approval Gate: Active `${HOME}/.claude` activation explicitly approved
+
+| ID | Task | Status | Verification / Notes |
+|---|---|---|---|
+| CLD-800 | Obtain approval for preservation-first native activation and orchestration | **Tamamlandı** | Option A and the exact mandatory chain were explicitly approved. |
+| CLD-801 | Record the native-activation hypothesis and meaningful RED | **Tamamlandı** | `EXP-20260807-001`; initial 7/7 contract failures reproduced the isolated default and missing safe overlay. |
+| CLD-802 | Implement native default and transactional overlay | **Tamamlandı** | Existing instructions/settings are preserved; CMA-owned files install separately; force, conflicts, unsafe paths, and partial copies fail closed. |
+| CLD-803 | Activate and verify the current user's native runtime | **Tamamlandı** | Backup, modes, settings, legacy runtime, source-target parity, and second-run idempotency verified without credential use. |
+| CLD-804 | Remediate independent code-review findings | **Tamamlandı** | Equivalent-path force bypass and partial-backup cleanup reproduced with RED tests and corrected. |
+| CLD-805 | Complete final code and security reviews | **Tamamlandı** | Both independent re-reviews passed after scoped RED/GREEN remediations. |
+| CLD-806 | Finalize experiment, changelog, and archive check | **Tamamlandı** | Experiment accepted, changelog updated, and all managed records are below threshold. |
+
+Phase exit criteria:
+
+- Claude defaults to `${HOME}/.claude`; explicit alternate homes remain
+  available for isolated tests.
+- Existing global instructions and settings remain preserved and recoverable.
+- CMA agents, skills, registries, prompt, and launcher match their source.
+- Focused and complete regressions plus final code/security reviews pass.
+
 ## Approval Gates
 
 | Gate | Required Decision | Status |
@@ -298,7 +321,7 @@ Phase exit criteria:
 | GATE-A | Approve local Phase 0 through Phase 4 implementation | **Tamamlandı** |
 | GATE-B | Approve Claude Agent SDK dependency and API contract | **Tamamlandı** |
 | GATE-C | Approve credential use and real Claude API smoke test | **Bekliyor** |
-| GATE-D | Approve active local/global Claude runtime activation | **Bekliyor** |
+| GATE-D | Approve active local/global Claude runtime activation | **Tamamlandı** |
 | GATE-E | Approve commit and push | **Tamamlandı** |
 | GATE-F | Approve production deployment | **Bekliyor** |
 | GATE-G | Approve full Claude CMA repository source parity | **Tamamlandı** |
@@ -310,7 +333,8 @@ The native Claude integration is complete only when:
 - Phase 0 through Phase 4 are **Tamamlandı**.
 - All scoped RED tests were observed before implementation and later pass.
 - Codex and Dolphin regression coverage remains green.
-- Claude installs into a temporary runtime without touching active user state.
+- Claude installs into a temporary runtime for isolation tests and activates
+  the approved native user-global runtime through a recoverable overlay.
 - Existing project Claude files are preserved during init and upgrade.
 - Mandatory orchestration and truthful-success contracts remain intact.
 - Code review and security review have no blocking findings.
@@ -338,3 +362,5 @@ runtime completion unless the user explicitly expands the objective.
 | 2026-08-06 | Approve four logical commits and one push to `main` | **Tamamlandı** |
 | 2026-08-06 | Approve full Claude CMA repository source parity | **Tamamlandı** |
 | 2026-08-06 | Complete full Claude CMA parity and shared archive hardening | **Tamamlandı** |
+| 2026-08-07 | Approve preservation-first native `${HOME}/.claude` activation | **Tamamlandı** |
+| 2026-08-07 | Activate native Claude CMA and preserve existing global state | **Tamamlandı** |
