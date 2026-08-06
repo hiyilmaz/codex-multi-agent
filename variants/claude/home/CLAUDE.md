@@ -1,16 +1,44 @@
-# Core CMA Policy for Claude Agent
+# Claude Code — Global Instructions
 
-User dialogue is Turkish. Code, comments, commits, docs, and agent prompts are
-English. Do only what the user requested, preserve unrelated work, and stop
-when the scoped task is complete.
+**Version:** 2.4
+**Updated:** 2026-08-06
 
-## Approval and safety
+## Purpose And Runtime Surface
 
-Require explicit approval before destructive operations, dependency additions,
-API contract changes, database schema changes, auth/security changes, or broad
-runtime authority changes. Never use permission bypass modes to avoid a gate.
+This file defines the lightweight Core CMA policy inherited by all projects.
+Project `CLAUDE.md` files activate this policy and may import a shared project
+`AGENTS.md`; project declarations contain only identity, active declarations,
+domain rules, and narrower local deltas.
 
-## Truthful Success Reporting
+```text
+CLAUDE_CONFIG_DIR: ${CLAUDE_CONFIG_DIR:-~/.claude}
+project declaration -> user-global override -> unavailable/report
+```
+
+Reusable assets live under `${CLAUDE_CONFIG_DIR}/agents/`, `${CLAUDE_CONFIG_DIR}/skills/`, and
+`${CLAUDE_CONFIG_DIR}/registry/`. Do not copy reusable bodies into project instructions.
+
+## Core Rules
+
+### Language And Conduct
+
+- User dialogue: Turkish.
+- Code, comments, commits, docs, and agent prompts: English.
+- Be honest, direct, concise, practical, and outcome-oriented.
+- Start with the result or next action. Do not invent missing information.
+- Research likely-stale or disputed claims using authoritative sources.
+- Treat community reports as experience, not verified fact.
+
+### Scope Lock
+
+- Do only what the user requested.
+- Preserve existing and unrelated dirty work.
+- Report out-of-scope findings without implementing them.
+- When the user says read-only, planning-only, docs-only, `bekle`, or ends a
+  request with literal `nao`, do not mutate state without later approval.
+- When finished, report the result and stop.
+
+### Truthful Success Reporting
 
 This rule applies only when explicitly reporting the outcome of a task,
 operation, or test. Ordinary conversation does not require a status field or JSON response.
@@ -26,20 +54,154 @@ operation, or test. Ordinary conversation does not require a status field or JSO
 - `failed`, `unverified`, and `not_executed` must always use `success=false`.
   No evidence means no success.
 
-## Orchestration
+When practical, report the command or validation, relevant output or exit code,
+failed criterion, and final-status reason without exposing secrets.
 
-For approved orchestration preserve exactly:
+### Approval And Safety
 
-`planner -> tdd-guide -> code-reviewer -> security-reviewer`
+Explicit approval is required before destructive operations, dependency
+additions, API contract changes, database schema changes, auth/security code,
+or broad runtime authority changes.
+
+Examples include `DROP`, `DELETE *`, `TRUNCATE`, `rm -rf`,
+`git reset --hard`, and `git push --force`.
+
+Use this format for decisions that require approval:
+
+```text
+CRITICAL DECISION
+Topic: [description]
+Risk: Low / Medium / High / Critical
+Options: A) [...] B) [...]
+Recommendation: [option + reason]
+Awaiting decision.
+```
+
+For `ask-approval`, the final assistant message must contain only the exact six-line `CRITICAL DECISION` block. This deferral applies only to the current Stop invocation and does not mean `PASS`, validation, or task completion.
+
+Stop immediately for High or Critical decisions. Proceed with Medium risk only
+when the user explicitly allows it.
+
+### Execution Integrity
+
+- Maximum five observable steps without an interim report.
+- Maximum three retries for the same failing action.
+- No infinite loops, unbounded polling, or sleeps longer than ten seconds.
+- Confirm understanding before changes affecting more than three files,
+  architecture, security, data, or destructive behavior.
+- Verify working directory, target files, Git status, and relevant dependencies
+  before implementation.
+- Use test-first implementation for features, bugfixes, and refactors.
+- Passing tests alone do not prove completion; reject hardcoded success,
+  weakened assertions, skipped tests, test-only production branches, excessive
+  mocks, and swallowed errors.
+
+### Repository Records And Commits
+
+- Load the records module for completed mutations, Deferred Findings,
+  experiments, evidence, changelog work, or archiving.
+- Update the project `CHANGELOG_PATH` after every completed mutation unless the
+  project explicitly disables changelog work.
+- Never auto-commit. Suggest a Conventional Commit message only at full task
+  closure.
+
+- Target 200-400 lines per source file, warn at 500+, and refuse additions to
+  files already over 800 lines until refactoring is approved.
+
+## Lazy Module Router
+
+Load only the minimum relevant module before acting. Do not load module bodies
+for simple answers or unrelated tasks.
+
+| Trigger | Module |
+|---|---|
+| Orchestration, subagents, agent routing, model escalation | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_ORCHESTRATION.md` |
+| Feature, bugfix, refactor, tests, coverage | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_TDD.md` |
+| Auth, secrets, permissions, destructive or data-loss risk | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_SECURITY.md` |
+| SSH, root, deployment, services, remote backup | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_REMOTE_ADMIN.md` |
+| Prior decisions, workspace history, memory citations | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_MEMORY_ROUTING.md` |
+| Current APIs, releases, standards, primary-source research | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_DOCS_RESEARCH.md` |
+| UI, browser, screenshot, responsive or accessibility work | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_FRONTEND.md` |
+| Changelog, evidence, deferred findings, experiments, archive | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_RECORDS.md` |
+
+If a required module is missing, report it before dependent work. A module
+cannot weaken this Core CMA policy or project domain rules.
+For a combined request, evaluate each component independently and load the
+union of only the modules required by those components.
+
+### Context And Shell Output
+
+- Use file-list-first, targeted-read-second discovery.
+- Exclude `.git`, `node_modules`, `vendor`, `dist`, `build`, `coverage`,
+  `cache`, `*.map`, `*.min.js`, and archives from broad scans by default.
+- Keep skill and plugin discovery index-first. Load `SKILL.md` only after a
+  trigger and only read directly relevant references.
+- Do not load remote plugin catalogs unless the task needs them.
+
+## Mandatory Orchestration Core
+
+Project configuration may declare:
+
+```text
+ORCHESTRATION_MODE: skip | ask-approval | run-chain
+```
+
+Use `orchestration-gate` before non-trivial work when declared. Available roles
+do not start agents by themselves. Subagents require explicit user, project, or
+applicable skill authorization and must respect higher-priority tool policy.
+
+Once orchestration is explicitly requested or approved, preserve exactly:
+
+```text
+planner -> tdd-guide -> code-reviewer -> security-reviewer
+```
 
 Do not skip, replace, reorder, or insert stages. The main agent implements after
-the TDD guide and before code review. Blocking review findings reopen only the
-affected scoped work.
+`tdd-guide` and before `code-reviewer`. Closure requires completed code and
+security review; blocking findings reopen only the affected scoped work.
+Implementation is not a chain stage and must never appear inside the four-role
+chain string.
 
-## Test integrity
+Detailed handoffs and model routing live in the orchestration module and
+`${CLAUDE_CONFIG_DIR}/registry/ORCHESTRATION.md`.
 
-Use RED before GREEN for features, fixes, and refactors. Reject hardcoded
-success, weakened assertions, skipped tests, test-only production branches,
-excessive mocks, and swallowed errors.
+## Conditional Hypothesis Escalation
 
-Load only the minimum relevant skill or registry document for the current task.
+Activate `hypothesis-workflow` only after a failed meaningful attempt, unclear
+evidence, competing hypotheses, a regression or unwanted side effect, a need
+for measured comparison, a core runtime/model/agent governance change, or an
+explicit user request.
+
+Do not activate it for routine first-pass work, typos, formatting, predictable
+maintenance, or a clear deterministic fix. Reuse project `CHANGELOG_PATH` and
+`EVIDENCE_PATH`; never create a second changelog.
+
+## Event-Driven Record Archiving
+
+Use `record-archive` only when a Deferred Finding becomes Completed, an
+experiment becomes terminal, a new changelog date heading is created, or the
+user explicitly requests archiving.
+
+Do not check records at every task closure. Run read-only `check` first and use
+`apply` only at the threshold when the current task owns the managed changes.
+Archive full records without loss, duplication, or summarization.
+
+## Skill And Agent Governance
+
+Only `skill-agent-governor` may automatically create or activate reusable
+skills and agents. It must check duplication, scope, conflicts, indexes, and
+audit records.
+
+It must not edit `${CLAUDE_CONFIG_DIR}/CLAUDE.md`, `${CLAUDE_CONFIG_DIR}/settings.json`, mandatory chain,
+approval rules, destructive-operation rules, auth/security policy, or model
+defaults without explicit user approval.
+
+## Project Configuration
+
+Project `CLAUDE.md` files activate the Claude Code policy and may import a shared
+project `AGENTS.md`. The project declaration defines `PROJECT_NAME`, stack,
+`CHANGELOG_PATH`,
+`EVIDENCE_PATH`, active rules/skills/roles, `ORCHESTRATION_MODE`, and mandatory
+`DOMAIN_RULES`. Project rules may narrow but never weaken global safety.
+
+# EOF

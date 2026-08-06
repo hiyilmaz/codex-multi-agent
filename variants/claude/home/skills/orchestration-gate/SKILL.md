@@ -1,15 +1,119 @@
 ---
-name: orchestration-gate
-description: Decide whether work skips orchestration, requires approval, or runs the mandatory chain.
+name: "orchestration-gate"
+description: "Decide whether a task should skip orchestration, ask for approval, or run the mandatory orchestration chain. Use when a project CLAUDE.md declares ORCHESTRATION_MODE, when the user asks about orchestration, or before non-trivial implementation, bugfix, refactor, security, or test-driven work."
 ---
 
 # Orchestration Gate
 
-Read the project `ORCHESTRATION_MODE`. Simple answers and read-only status work
-may skip. For `ask-approval`, request approval before non-trivial work. Once
-approved, preserve exactly:
+Use this skill as a decision gate before orchestration. It produces a decision;
+it does not spawn subagents or bypass tool policy.
 
-`planner -> tdd-guide -> code-reviewer -> security-reviewer`
+## Inputs
 
-Do not skip, replace, reorder, or insert stages. Approval waiting is not task
-completion and never proves PASS.
+Read the minimum relevant context:
+
+1. User request
+2. Project `CLAUDE.md` and any imported `AGENTS.md` `## Project Configuration`
+3. Current task scope from already inspected files, if available
+
+Look for:
+
+```text
+ORCHESTRATION_MODE: skip | ask-approval | run-chain
+ACTIVE_AGENT_ROLES:
+  - planner
+  - tdd-guide
+  - code-reviewer
+  - security-reviewer
+```
+
+If `ORCHESTRATION_MODE` is missing, treat it as `ask-approval` for
+non-trivial tasks.
+
+## Decision Rules
+
+## Decision Precedence
+
+Apply the first matching rule:
+
+1. Explicit orchestration request: `run-chain`, subject to higher-priority tool
+   approval policy.
+2. Configured `run-chain` for non-trivial work: run or ask according to tool
+   approval policy.
+3. Non-trivial or risk-triggering work in `ask-approval` mode: `ask-approval`.
+4. Only a task that is both simple and read-only or answer-only: `skip`.
+
+Read-only does not override explicit orchestration, non-triviality, security,
+runtime, database, API, test, or cross-module risk triggers.
+
+Return `skip` when:
+
+- The task is simple, local, read-only, or answer-only.
+- The user asks for a short command, explanation, or direct inspection.
+- The configured mode is `skip` and the user did not explicitly request
+  orchestration.
+
+Return `ask-approval` when:
+
+- The task is non-trivial and the configured mode is `ask-approval`.
+- The task likely affects more than 3 files, architecture, security, database
+  behavior, API contracts, runtime setup, tests, or cross-module behavior.
+- The configured mode is unclear and starting subagents would require explicit
+  user approval.
+
+Return `run-chain` when:
+
+- The user explicitly asks to use orchestration, subagents, delegation, parallel
+  agent work, or the named chain.
+- The configured mode is `run-chain`, the task is non-trivial, and active tool
+  policy permits orchestration without a separate user approval.
+
+If active tool policy requires explicit user approval before subagents are
+spawned, return `ask-approval` even when the configured mode is `run-chain`.
+
+## Mandatory Chain
+
+When the result is `run-chain`, the required order is:
+
+```text
+planner -> tdd-guide -> code-reviewer -> security-reviewer
+```
+
+Do not skip, reorder, or add stages to this chain.
+
+Implementation is not a chain stage. Never insert `implementation`, the main
+agent, or any review lens into the four-role chain string.
+
+## Model And Effort Escalation
+
+Agent frontmatter defines role defaults and all custom subagents use `medium`
+effort. When a
+model-quality trigger applies to a Sonnet role, select its static Opus variant:
+
+- `planner-opus`: `opus` / `medium` for architecture, unclear scope,
+  high-impact runtime, or security-sensitive planning.
+- `tdd-guide-opus`: `opus` / `medium` for complex test architecture,
+  safety-critical behavior, weak-test detection, or hardcoded-success traps.
+- `code-reviewer`: keep `opus` / `medium`; no separate variant.
+- `security-reviewer`: keep `opus` / `medium`; no separate variant. The
+  stage still returns `NO_SECURITY_IMPACT` when appropriate.
+- `explorer-opus`: `opus` / `medium` for complex incidents, unclear root causes,
+  or conflicting evidence.
+- `docs-researcher-opus`: `opus` / `medium` for conflicting migration,
+  security, API, or release-note evidence.
+
+Selecting an Opus variant must not bypass approval, sandbox, scope, or the
+mandatory chain. Opus variants replace only the corresponding invocation; they
+do not add a chain stage or change the canonical chain string.
+
+## Output
+
+For `skip` and `run-chain`, use this exact shape:
+
+```text
+Decision: skip | ask-approval | run-chain
+Reason: [one short reason]
+Chain: planner -> tdd-guide -> code-reviewer -> security-reviewer
+```
+
+For `ask-approval`, the final assistant message must contain only the exact six-line `CRITICAL DECISION` block. This deferral applies only to the current Stop invocation and does not mean `PASS`, validation, or task completion. Ask the user for approval before spawning subagents; do not add the `Decision`, `Reason`, or `Chain` preamble to that final message.
