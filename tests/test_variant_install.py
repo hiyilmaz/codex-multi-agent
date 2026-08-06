@@ -79,6 +79,117 @@ class VariantInstallTests(unittest.TestCase):
                     other_policy = "CLAUDE.md" if variant["policy_file"] == "AGENTS.md" else "AGENTS.md"
                     self.assertFalse((runtime / other_policy).exists())
 
+    def test_variant_prompts_install_to_explicit_runtime_and_match_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fake_config = root / "active-claude"
+            fake_home = root / "home"
+            environment = {
+                **os.environ,
+                "CLAUDE_CONFIG_DIR": str(fake_config),
+                "HOME": str(fake_home),
+            }
+            for variant in ("codex", "claude"):
+                runtime = root / variant
+                result = subprocess.run(
+                    (str(INSTALLER), "--runtime-home", str(runtime), "--variant", variant),
+                    cwd=REPO_ROOT,
+                    env=environment,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                installed = runtime / "prompts/recreate-global-subagents.md"
+                source = REPO_ROOT / f"variants/{variant}/home/prompts/recreate-global-subagents.md"
+                with self.subTest(variant=variant):
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertTrue(installed.is_file())
+                    self.assertEqual(installed.read_bytes(), source.read_bytes())
+            self.assertFalse((fake_config / "prompts/recreate-global-subagents.md").exists())
+            self.assertFalse((fake_home / ".claude/prompts/recreate-global-subagents.md").exists())
+
+    def test_codex_home_environment_selects_default_codex_target(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for configured_home in (root / "configured", None):
+                home = root / ("fallback-home" if configured_home is None else "other-home")
+                environment = {**os.environ, "HOME": str(home)}
+                if configured_home is None:
+                    environment.pop("CODEX_HOME", None)
+                    expected = home / ".codex"
+                else:
+                    environment["CODEX_HOME"] = str(configured_home)
+                    expected = configured_home
+                result = subprocess.run(
+                    (str(INSTALLER), "--variant", "codex"),
+                    cwd=REPO_ROOT,
+                    env=environment,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                with self.subTest(configured_home=configured_home):
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertTrue((expected / "AGENTS.md").is_file())
+                    self.assertTrue(
+                        (expected / "prompts/recreate-global-subagents.md").is_file()
+                    )
+
+    def test_existing_variant_prompt_is_untouched_without_force(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for variant in ("codex", "claude"):
+                runtime = root / variant
+                prompt = runtime / "prompts/recreate-global-subagents.md"
+                prompt.parent.mkdir(parents=True)
+                prompt.write_text("local prompt\n", encoding="utf-8")
+                prompt.chmod(0o640)
+                result = subprocess.run(
+                    (str(INSTALLER), "--runtime-home", str(runtime), "--variant", variant),
+                    cwd=REPO_ROOT,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                with self.subTest(variant=variant):
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(prompt.read_text(encoding="utf-8"), "local prompt\n")
+                    self.assertEqual(prompt.stat().st_mode & 0o777, 0o640)
+
+    def test_installer_refuses_variant_prompts_directory_symlink(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for variant, policy_name in (("codex", "AGENTS.md"), ("claude", "CLAUDE.md")):
+                runtime = root / variant
+                outside = root / f"outside-{variant}"
+                runtime.mkdir()
+                outside.mkdir()
+                policy = runtime / policy_name
+                policy.write_text("local policy\n", encoding="utf-8")
+                sentinel = outside / "sentinel"
+                sentinel.write_text("outside\n", encoding="utf-8")
+                (runtime / "prompts").symlink_to(outside, target_is_directory=True)
+                result = subprocess.run(
+                    (
+                        str(INSTALLER),
+                        "--runtime-home",
+                        str(runtime),
+                        "--variant",
+                        variant,
+                        "--force",
+                    ),
+                    cwd=REPO_ROOT,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                with self.subTest(variant=variant):
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn("symbolic link", result.stderr)
+                    self.assertEqual(policy.read_text(encoding="utf-8"), "local policy\n")
+                    self.assertEqual(sentinel.read_text(encoding="utf-8"), "outside\n")
+                    self.assertFalse((outside / "recreate-global-subagents.md").exists())
+
     def test_unknown_variant_fails_without_writes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             runtime = Path(temporary) / "runtime"

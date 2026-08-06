@@ -399,3 +399,174 @@ User approval covers repository source parity and offline verification only.
 Local/global Claude activation, credentials, real API use, commit, push, and
 deployment remain outside this experiment. The user separately approved the
 shared archive-helper security remediation required to close review.
+
+## EXP-20260806-010 - Portable Codex Subagent Restoration Prompt
+
+Date: 2026-08-06
+Status: ACCEPTED
+
+Problem:
+The current Codex runtime has a verified token-conscious 12-agent matrix, but
+there is no installed CMA prompt for restoring that matrix without embedding a
+specific user's absolute home path or re-generating the full agent bodies.
+
+Evidence:
+The managed Codex variant and active runtime contain eight default agent TOMLs
+plus four conditional Sol variants, all at medium reasoning. The portable
+installer rewrites a selected runtime home but does not currently install a
+`prompts/` tree or prefer an active `CODEX_HOME` when no explicit target is
+provided.
+
+Hypothesis:
+A concise restoration prompt derived from the authoritative agent TOMLs,
+installed through a dynamically resolved runtime home, will make recovery
+portable while preserving the current model quality and reducing repeated
+discovery, generated output, and reasoning-token pressure.
+
+Solution Attempt:
+Add a Codex-only restoration prompt, teach the shared variant installer to
+manage optional prompt trees and prefer an explicit target, then `CODEX_HOME`,
+then the selected variant's current-user default. Preserve no-overwrite and
+symlink protections. Validate source before narrowly synchronizing only the
+prompt into the active Codex home.
+
+Test:
+Add RED contracts for the prompt's exact live TOML-derived inventory, portable
+runtime resolution, real installer output, no-overwrite preservation, and
+prompt-directory symlink rejection. Then run focused, related, and complete
+regressions, shell syntax and diff checks, active source-target hashes, and
+independent code and security reviews.
+
+Success Criteria:
+- No fixed username or `/Users/.../.codex` path appears in the prompt.
+- Exactly eight default roles and four conditional Sol variants retain their
+  current friendly identities, models, medium reasoning, and sandboxes.
+- The mandatory chain remains unchanged and no high-reasoning role is added.
+- Installer resolution is explicit target, active `CODEX_HOME`, then the
+  selected current-user default.
+- Existing prompt files are preserved without force and prompt-directory
+  symlink escapes fail before outside mutation.
+- Source tests pass before a narrow, hash-verified active prompt sync.
+- Config, auth, agent TOMLs, registries, skills, other providers, commit, push,
+  and deployment remain unchanged.
+
+Result:
+The initial five-test RED run produced four failures and one missing-file
+error for the absent prompt, missing installer transport, ignored
+`CODEX_HOME`, and missing prompt-directory preflight. The first implementation
+then passed the focused 5/5 checks, related suites at 17/17, 21/21, and 11/11,
+and the complete 111/111 regression suite. Shell syntax and diff checks passed.
+
+The approved narrow activation installed only the new prompt into the resolved
+active Codex home. Its SHA-256 matched the managed source and the protected
+runtime surface hash remained unchanged. Independent code review then found
+that the symlink test did not yet prove fail-before-write behavior. A second
+meaningful RED test reproduced policy overwrite before the symlink failure.
+Adding `prompts` to the pre-write managed-directory validation made that test
+and the focused 5/5 checks pass while preserving both target and outside
+sentinels.
+
+After remediation, the installer suite passed 17/17 and the complete suite
+passed 111/111. Shell syntax and diff checks passed. Code re-review and security
+review both passed with no remaining blocking finding; security review
+confirmed fail-before-write path containment, no-overwrite behavior, quoted
+runtime resolution, and no credential, auth, dependency, external-service, or
+destructive-operation change.
+
+Decision:
+ACCEPT
+
+Notes:
+The user approved Codex source, tests, records, and narrow active prompt
+synchronization. Claude adaptation is planning-only after Codex closure.
+
+## EXP-20260806-011 - Portable Claude Subagent Restoration Prompt
+
+Date: 2026-08-06
+Status: ACCEPTED
+
+Problem:
+The portable Claude CMA variant has the verified 12-agent Sonnet/Opus matrix
+but lacks an installed recovery prompt that derives the current Markdown/YAML
+definitions without embedding a machine-specific user path or duplicating full
+agent bodies.
+
+Evidence:
+The Claude source contains eight canonical agents and four conditional Opus
+variants, all at medium effort. The shared installer now transports optional
+prompt trees safely, but the Claude package has no prompt to install and its
+exact manifest remains 34 files.
+
+Hypothesis:
+A Claude-native restoration prompt derived from authoritative frontmatter and
+installed only into an explicitly selected isolated runtime will provide
+portable recovery with bounded token use while preserving models, effort,
+tools, permissions, orchestration, and active native Claude isolation.
+
+Solution Attempt:
+Add one Claude prompt and document it. Reuse the existing provider-neutral
+installer prompt transport without changing installer behavior unless RED
+evidence requires it. Validate source and an isolated installation before
+narrowly synchronizing the prompt to the current user's isolated CMA Claude
+runtime, never the active native Claude home.
+
+Test:
+Add RED contracts for the 35-file manifest, actual frontmatter-derived role
+rows, target-resolution order, token/model rules, exact chain, explicit-runtime
+installation, no-overwrite preservation, and provider-neutral symlink
+preflight. Run focused Claude and installer suites, complete regressions,
+syntax/diff checks, isolated source-target hashes, and independent reviews.
+
+Success Criteria:
+- The prompt contains no fixed username or machine-specific absolute path.
+- Exactly 12 roles preserve their actual identity, model, medium effort, tools,
+  and permission mode, including four conditional Opus replacements.
+- Target resolution is explicit target, non-empty `CLAUDE_CONFIG_DIR`, then
+  the current user's `${HOME}/.claude`.
+- No Codex agent format, Codex model identifier, `-sol` role, unsupported token
+  field, extra chain stage, or broad escalation is introduced.
+- The installer copies the prompt to an explicit isolated runtime, preserves
+  existing prompts without force, and rejects prompt symlinks before writes.
+- Source validation precedes a narrow hash-verified sync to the isolated CMA
+  Claude runtime; `${HOME}/.claude` remains unchanged.
+- Settings, credentials, native Claude, SDK, dependencies, commit, push, and
+  deployment remain unchanged.
+
+Result:
+The initial source RED produced one manifest failure and one missing-file error:
+the package had 34 files and no Claude restoration prompt. The installer RED
+kept the Codex, no-overwrite, and symlink cases green while the Claude explicit
+install subcase failed because no source or installed prompt existed.
+
+After adding only the Claude-native prompt and README entry, the focused source
+checks passed 2/2 and provider-neutral installer checks passed 3/3. The Claude
+suite passed 17/17, installer suite 17/17, orchestration suite 11/11, and the
+complete suite 112/112. Shell syntax and diff checks passed. No shared installer
+implementation change was required.
+
+The isolated CMA Claude runtime did not previously exist, so broad installation
+was avoided. Only its `prompts/` directory and the approved prompt were created.
+The source and isolated prompt SHA-256 values match, the isolated runtime
+contains no other file, and the native `${HOME}/.claude` prompt path remains
+absent.
+
+Code review found a high-severity cross-runtime delegation risk: an explicit
+target could differ from the active `CLAUDE_CONFIG_DIR` while Sam remained
+scoped to the active runtime. After explicit user approval, a meaningful RED
+contract required fail-closed target equality, isolated-process continuation,
+and governor use only after the effective config directory equals the resolved
+target. The corrected contract passed and the prior isolated prompt was saved
+in a hash-verified recoverable backup before narrow replacement.
+
+After remediation, the Claude suite passed 17/17, installer suite 17/17, and
+complete suite 112/112; shell syntax and diff checks passed. Code re-review and
+security review both passed. The updated source and isolated prompt SHA-256 is
+`b6e1b926d4f47e8bd5d886eb450378792f4d12fbe05e4fa6ec326978334e17e8`,
+and native Claude state remains unchanged.
+
+Decision:
+ACCEPT
+
+Notes:
+The user approved source, tests, records, and isolated CMA Claude prompt
+synchronization only.

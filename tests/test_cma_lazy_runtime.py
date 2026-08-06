@@ -1,8 +1,14 @@
 import os
+import re
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10 compatibility
+    import tomli as tomllib
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -209,6 +215,45 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
                 self.assertIn('model_reasoning_effort = "medium"', text.splitlines())
                 self.assertNotIn('model_reasoning_effort = "high"', text)
                 self.assertNotIn("-high", path.stem)
+
+    def test_recreate_global_subagents_prompt_matches_active_codex_matrix_and_token_contract(self) -> None:
+        prompt_path = REPO_ROOT / "variants/codex/home/prompts/recreate-global-subagents.md"
+        prompt = prompt_path.read_text(encoding="utf-8")
+        agent_root = REPO_ROOT / "variants/codex/home/agents"
+        agents = {}
+        for path in sorted(agent_root.glob("*.toml")):
+            data = tomllib.loads(path.read_text(encoding="utf-8"))
+            identity_match = re.search(
+                r"Identity: You are ([^,]+),", data["developer_instructions"]
+            )
+            self.assertIsNotNone(identity_match, path.name)
+            agents[data["name"]] = (
+                identity_match.group(1),
+                data["model"],
+                data["model_reasoning_effort"],
+                data["sandbox_mode"],
+            )
+
+        self.assertEqual(len(agents), 12)
+        for role, values in agents.items():
+            row = "| " + " | ".join((f"`{role}`", *values)) + " |"
+            with self.subTest(role=role):
+                self.assertIn(row, prompt)
+
+        self.assertIn(CHAIN, prompt)
+        self.assertNotIn("planner -> tdd-guide -> implementation", prompt)
+        self.assertIn("explicit target", prompt)
+        self.assertIn("`CODEX_HOME`", prompt)
+        self.assertIn("`${HOME}/.codex`", prompt)
+        self.assertNotIn("/Users/", prompt)
+        self.assertNotIn("iyilmaz", prompt.lower())
+        self.assertNotIn("high", prompt.lower())
+        self.assertIn("conditional replacements", prompt)
+        self.assertIn("authoritative agent files", prompt)
+        self.assertIn("bounded", prompt)
+        self.assertIn("Do not add unsupported token-budget TOML fields", prompt)
+        self.assertEqual(prompt.count("workspace-write"), 1)
+        self.assertEqual(prompt.count("read-only"), 11)
 
     def test_sol_variants_make_model_escalation_operational(self) -> None:
         for role, identity in SOL_AGENTS.items():

@@ -11,7 +11,7 @@ Installs a portable user-global runtime template.
 
 Behavior:
   - uses the selected variant's default home unless a target home is provided
-  - creates agents, skills, rules, registry, and bin directories
+  - creates agents, skills, rules, registry, prompts, and bin directories
   - installs the selected provider's declared policy and settings files
   - installs template agents, skills, and registry files
   - installs variant launchers into the target runtime bin directory
@@ -196,7 +196,11 @@ if [[ -n "$VARIANT_LAUNCHER_RELATIVE" || -n "$VARIANT_LAUNCHER_NAME" ]]; then
 fi
 
 if [[ -z "$RUNTIME_HOME" ]]; then
-  RUNTIME_HOME="$DEFAULT_RUNTIME_HOME"
+  if [[ "$VARIANT_ID" == "codex" && -n "${CODEX_HOME:-}" ]]; then
+    RUNTIME_HOME="$CODEX_HOME"
+  else
+    RUNTIME_HOME="$DEFAULT_RUNTIME_HOME"
+  fi
 fi
 RUNTIME_HOME="$(expand_home_path "$RUNTIME_HOME")"
 
@@ -269,7 +273,7 @@ assert_safe_target_path() {
   fi
 }
 
-for managed_name in agents skills rules registry bin; do
+for managed_name in agents skills rules registry prompts bin; do
   validate_managed_directory "$RUNTIME_HOME/$managed_name"
 done
 
@@ -336,6 +340,7 @@ rewrite_installed_variant_paths() {
       s/\Q$source_home\/agents\E/$target_home\/agents/g;
       s/\Q$source_home\/skills\E/$target_home\/skills/g;
       s/\Q$source_home\/registry\E/$target_home\/registry/g;
+      s/\Q$source_home\/prompts\E/$target_home\/prompts/g;
       s/\Q$source_home\E/$target_home/g;
 
       if ($source_launcher ne "" && $target_launcher ne "") {
@@ -365,7 +370,7 @@ install_variant_launcher() {
   fi
 }
 
-for managed_name in agents skills rules registry bin; do
+for managed_name in agents skills rules registry prompts bin; do
   mkdir -p "$RUNTIME_HOME/$managed_name"
 done
 
@@ -375,6 +380,7 @@ install_file "$SOURCE_DIR/README.md" "$RUNTIME_HOME/README.md"
 install_tree_files "$SOURCE_DIR/agents" "$RUNTIME_HOME/agents"
 install_tree_files "$SOURCE_DIR/skills" "$RUNTIME_HOME/skills"
 install_tree_files "$SOURCE_DIR/registry" "$RUNTIME_HOME/registry"
+install_tree_files "$SOURCE_DIR/prompts" "$RUNTIME_HOME/prompts"
 install_variant_launcher "$VARIANT_LAUNCHER_RELATIVE" "$RUNTIME_HOME" "$VARIANT_LAUNCHER_NAME"
 
 rewrite_installed_variant_paths "$SOURCE_RELATIVE" "$RUNTIME_HOME" "$VARIANT_LAUNCHER_RELATIVE" "$VARIANT_LAUNCHER_NAME"

@@ -22,6 +22,7 @@ Included:
 - `agents/`
 - `skills/`
 - `registry/`
+- `prompts/`
 
 The template includes `orchestration-gate` for project-level
 `ORCHESTRATION_MODE` decisions:
@@ -40,6 +41,12 @@ Mandatory chain agents use `medium` reasoning and bounded handoffs. Each stage
 consumes prior evidence, avoids repeated discovery, and returns a concise
 result. Passing tests alone do not prove completion; reviewers also check
 acceptance criteria, observable behavior, and test integrity.
+
+`prompts/recreate-global-subagents.md` restores the verified 12-agent matrix
+from authoritative CMA definitions. It resolves an explicit target first,
+then an active `CODEX_HOME`, then the current user's default runtime home. It
+preserves the medium-only Terra/Sol routing and avoids duplicating full agent
+bodies in the prompt or result.
 
 Setup preferences and status messages live under `registry/`.
 

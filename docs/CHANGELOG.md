@@ -2,6 +2,22 @@
 
 ## 2026-08-06
 
+- [FEAT] EXP-20260806-011 added a portable Claude Code subagent restoration
+  prompt derived from the verified 12-agent Sonnet/Opus frontmatter matrix.
+- [SECURITY] Fail-closed explicit-target restoration unless the effective
+  `CLAUDE_CONFIG_DIR` equals the resolved target before delegation or writes.
+- [TEST] Verified Claude and installer suites at 17/17 each, complete
+  regressions at 112/112, isolated prompt hash parity, native Claude isolation,
+  and passing independent code/security reviews.
+- [FEAT] EXP-20260806-010 added a portable, token-conscious Codex subagent
+  restoration prompt with dynamic runtime-home resolution and the verified
+  12-role medium-only Terra/Sol matrix.
+- [SECURITY] Extended installer fail-before-write symlink validation to the
+  managed prompt directory and preserved existing prompts without force.
+- [TEST] Verified meaningful restoration and partial-mutation RED cases,
+  focused 5/5 checks, 17/17 installer tests, 21/21 runtime-contract tests,
+  11/11 orchestration tests, 111/111 complete regressions, active prompt hash
+  parity, and independent code/security review.
 - [CHORE] Normalized shared registry file endings across Codex, Dolphin, and
   Claude while preserving byte-identical provider-neutral assets.
 - [FEAT] EXP-20260806-009 expanded the portable Claude Code runtime to full

@@ -51,6 +51,7 @@ EXPECTED_HOME_FILES = {
     "CLAUDE.md",
     "README.md",
     "settings.json",
+    "prompts/recreate-global-subagents.md",
     *(f"agents/{name}.md" for name in EXPECTED_AGENT_NAMES),
     *(f"skills/{name}/SKILL.md" for name in EXPECTED_SKILL_NAMES),
     "skills/record-archive/scripts/record_archive.py",
@@ -125,8 +126,65 @@ class ClaudeRuntimeTests(unittest.TestCase):
             for path in CLAUDE_HOME.rglob("*")
             if path.is_file()
         }
-        self.assertEqual(len(EXPECTED_HOME_FILES), 34)
+        self.assertEqual(len(EXPECTED_HOME_FILES), 35)
         self.assertEqual(actual, EXPECTED_HOME_FILES)
+
+    def test_recreate_global_subagents_prompt_matches_authoritative_claude_agents_and_token_contract(self) -> None:
+        prompt_path = CLAUDE_HOME / "prompts/recreate-global-subagents.md"
+        prompt = prompt_path.read_text(encoding="utf-8")
+        agents = {}
+        for path in sorted((CLAUDE_HOME / "agents").glob("*.md")):
+            metadata, body = parse_frontmatter(path)
+            identity_match = re.search(r"Identity: You are ([^,]+),", body)
+            self.assertIsNotNone(identity_match, path.name)
+            agents[metadata["name"]] = (
+                identity_match.group(1),
+                metadata["model"],
+                metadata["effort"],
+                ", ".join(metadata["tools"]),
+                metadata["permissionMode"],
+            )
+
+        self.assertEqual(len(agents), 12)
+        for role, values in agents.items():
+            row = "| " + " | ".join((f"`{role}`", *values)) + " |"
+            with self.subTest(role=role):
+                self.assertIn(row, prompt)
+
+        explicit_position = prompt.index("explicit target")
+        config_position = prompt.index("`CLAUDE_CONFIG_DIR`")
+        fallback_position = prompt.index("`${HOME}/.claude`")
+        self.assertLess(explicit_position, config_position)
+        self.assertLess(config_position, fallback_position)
+        self.assertIn("non-empty", prompt)
+        self.assertIn("validate the target before writing", prompt)
+        self.assertIn(
+            "If an explicit target differs from the effective `CLAUDE_CONFIG_DIR`, stop without writing",
+            prompt,
+        )
+        self.assertIn(
+            "Continue only in a new isolated Claude Code process whose `CLAUDE_CONFIG_DIR` resolves to the target",
+            prompt,
+        )
+        self.assertIn(
+            "Use `skill-agent-governor` only after the effective `CLAUDE_CONFIG_DIR` equals the resolved target",
+            prompt,
+        )
+        self.assertNotIn("/Users/", prompt)
+        self.assertNotIn("iyilmaz", prompt.lower())
+        self.assertNotIn("high", prompt.lower())
+        self.assertNotIn("gpt-", prompt.lower())
+        self.assertNotIn("-sol", prompt)
+        self.assertNotIn("TOML", prompt)
+        self.assertEqual(prompt.count(CHAIN), 1)
+        self.assertNotIn("planner -> tdd-guide -> implementation", prompt)
+        self.assertIn("conditional replacements", prompt)
+        self.assertIn("authoritative agent files", prompt)
+        self.assertIn("inventory-first", prompt)
+        self.assertIn("targeted reads", prompt)
+        self.assertIn("bounded handoffs", prompt)
+        self.assertIn("delta-only repair", prompt)
+        self.assertIn("concise", prompt)
 
     def test_provider_neutral_assets_are_byte_identical(self) -> None:
         codex_home = REPO_ROOT / "variants/codex/home"

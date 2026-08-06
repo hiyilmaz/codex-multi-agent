@@ -17,11 +17,18 @@ Included:
 - eight canonical agents and four Opus escalation agents
 - four complete reusable skills and the record archive helper
 - eight lazy modules and six registry records
+- a portable subagent restoration prompt under `prompts/`
 
 Claude agent definitions use Markdown with YAML frontmatter. Routine planner,
 test, exploration, and documentation roles use Sonnet; review, governance, and
 explicit complex escalation roles use Opus. All roles use medium effort. Opus
 variants replace one matching invocation and never add a mandatory chain stage.
+
+`prompts/recreate-global-subagents.md` restores the verified 12-agent matrix
+from authoritative Claude Code definitions. It resolves an explicit target
+first, then an active `CLAUDE_CONFIG_DIR`, then the current user's native
+default. It preserves medium-effort Sonnet/Opus routing and avoids duplicating
+full agent bodies in the prompt or result.
 
 The mandatory approved chain remains exactly:
 
