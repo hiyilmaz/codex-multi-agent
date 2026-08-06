@@ -1,8 +1,12 @@
+import importlib.util
 import os
 import re
+import stat
 import subprocess
+import sys
 import tempfile
 import unittest
+from unittest import mock
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -18,6 +22,20 @@ SCRIPT_RELATIVE = (
     / "scripts"
     / "record_archive.py"
 )
+
+
+def load_archive_module():
+    module_name = "record_archive_under_test"
+    spec = importlib.util.spec_from_file_location(
+        module_name,
+        REPO_ROOT / SCRIPT_RELATIVE,
+    )
+    if spec is None or spec.loader is None:
+        raise AssertionError("record archive module could not be loaded")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def deferred_item(identifier: str, completed: bool) -> str:
@@ -73,6 +91,15 @@ class RecordArchiveTests(unittest.TestCase):
         record: str,
         *extra: str,
     ) -> subprocess.CompletedProcess[str]:
+        return self.run_tool_at(self.root, action, record, *extra)
+
+    def run_tool_at(
+        self,
+        root: Path,
+        action: str,
+        record: str,
+        *extra: str,
+    ) -> subprocess.CompletedProcess[str]:
         runner = ("python3",)
         if os.environ.get("RECORD_ARCHIVE_COVERAGE") == "1":
             runner = (
@@ -89,7 +116,7 @@ class RecordArchiveTests(unittest.TestCase):
                 str(REPO_ROOT / SCRIPT_RELATIVE),
                 action,
                 "--root",
-                str(self.root),
+                str(root),
                 "--record",
                 record,
                 *extra,
@@ -342,6 +369,62 @@ class RecordArchiveTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("unsafe managed path", result.stderr)
         self.assertTrue(archive_path.is_symlink())
+
+    def test_managed_parent_symlinks_fail_closed_without_outside_mutation(self) -> None:
+        cases = (
+            ("governance", "experiments", self.write_experiments, "EXPERIMENTS.md"),
+            ("docs", "deferred-findings", self.write_deferred, "DEFERRED_FINDINGS.md"),
+        )
+        for directory, record, writer, active_name in cases:
+            with self.subTest(directory=directory), tempfile.TemporaryDirectory() as outside:
+                writer(10)
+                managed_directory = self.root / directory
+                active_path = managed_directory / active_name
+                outside_directory = Path(outside)
+                outside_active = outside_directory / active_name
+                outside_active.write_bytes(active_path.read_bytes())
+                active_path.unlink()
+                managed_directory.rmdir()
+                managed_directory.symlink_to(outside_directory, target_is_directory=True)
+                before = outside_active.read_bytes()
+
+                result = self.run_tool("apply", record)
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("unsafe managed path", result.stderr)
+                self.assertEqual(outside_active.read_bytes(), before)
+                self.assertEqual(
+                    sorted(path.name for path in outside_directory.iterdir()),
+                    [active_name],
+                )
+
+                managed_directory.unlink()
+                managed_directory.mkdir()
+
+    def test_post_replace_fsync_failure_rolls_back_the_active_file(self) -> None:
+        self.write_experiments(10)
+        active_path = self.root / "governance/EXPERIMENTS.md"
+        archive_path = self.root / "governance/EXPERIMENTS_ARCHIVE.md"
+        before = active_path.read_bytes()
+        archive_module = load_archive_module()
+        plan = archive_module.plan_experiments(self.root)
+        real_fsync = os.fsync
+        failed_once = False
+
+        def fail_first_directory_fsync(descriptor: int) -> None:
+            nonlocal failed_once
+            if stat.S_ISDIR(os.fstat(descriptor).st_mode) and not failed_once:
+                failed_once = True
+                raise OSError("injected directory fsync failure")
+            real_fsync(descriptor)
+
+        with mock.patch.object(archive_module.os, "fsync", fail_first_directory_fsync):
+            with self.assertRaisesRegex(OSError, "injected directory fsync failure"):
+                archive_module.apply_plan(plan, allow_dirty=True)
+
+        self.assertTrue(failed_once)
+        self.assertEqual(active_path.read_bytes(), before)
+        self.assertFalse(archive_path.exists())
 
 
 class RecordArchivePackagingTests(unittest.TestCase):

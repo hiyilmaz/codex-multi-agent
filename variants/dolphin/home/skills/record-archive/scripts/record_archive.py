@@ -6,9 +6,10 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import secrets
+import stat
 import subprocess
 import sys
-import tempfile
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -36,16 +37,69 @@ class RecordPlan:
         return self.status == "ACTION_REQUIRED"
 
 
+def managed_location(path: Path) -> tuple[Path, tuple[str, ...], str]:
+    root = path.parent.parent
+    try:
+        relative = path.relative_to(root)
+    except ValueError as error:
+        raise ArchiveError(f"unsafe managed path: {path}") from error
+    if (
+        len(relative.parts) != 2
+        or relative.parts[0] not in {"docs", "governance"}
+        or relative.name in {"", ".", ".."}
+    ):
+        raise ArchiveError(f"unsafe managed path: {path}")
+    return root, relative.parts[:-1], relative.name
+
+
+def open_managed_parent(path: Path) -> tuple[int, str]:
+    root, parent_parts, name = managed_location(path)
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    try:
+        descriptor = os.open(root, directory_flags)
+        for component in parent_parts:
+            try:
+                child = os.open(
+                    component,
+                    directory_flags,
+                    dir_fd=descriptor,
+                )
+            finally:
+                os.close(descriptor)
+            descriptor = child
+    except OSError as error:
+        raise ArchiveError(f"unsafe managed path: {path}") from error
+    return descriptor, name
+
+
+def read_bytes(path: Path, required: bool = True) -> bytes | None:
+    parent_descriptor, name = open_managed_parent(path)
+    try:
+        try:
+            descriptor = os.open(
+                name,
+                os.O_RDONLY | os.O_NOFOLLOW,
+                dir_fd=parent_descriptor,
+            )
+        except FileNotFoundError:
+            if required:
+                raise ArchiveError(f"missing managed file: {path}")
+            return None
+        except OSError as error:
+            raise ArchiveError(f"unsafe managed path: {path}") from error
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            os.close(descriptor)
+            raise ArchiveError(f"unsafe managed path: {path}")
+        with os.fdopen(descriptor, "rb") as stream:
+            return stream.read()
+    finally:
+        os.close(parent_descriptor)
+
+
 def read_text(path: Path, required: bool = True) -> str | None:
-    if path.is_symlink():
-        raise ArchiveError(f"unsafe managed path: {path}")
-    if not path.exists():
-        if required:
-            raise ArchiveError(f"missing managed file: {path}")
-        return None
-    if not path.is_file():
-        raise ArchiveError(f"unsafe managed path: {path}")
-    return path.read_text(encoding="utf-8")
+    content = read_bytes(path, required=required)
+    return content.decode("utf-8") if content is not None else None
 
 
 def normalize_blocks(blocks: Iterable[str]) -> str:
@@ -389,20 +443,53 @@ def is_dirty(root: Path, paths: Iterable[Path]) -> bool:
 
 
 def atomic_write(path: Path, content: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(
-        prefix=f".{path.name}.", dir=path.parent
-    )
-    temporary_path = Path(temporary_name)
+    parent_descriptor, name = open_managed_parent(path)
+    temporary_name = f".{name}.{os.getpid()}.{secrets.token_hex(8)}"
+    descriptor: int | None = None
     try:
+        try:
+            metadata = os.stat(name, dir_fd=parent_descriptor, follow_symlinks=False)
+        except FileNotFoundError:
+            metadata = None
+        if metadata is not None and not stat.S_ISREG(metadata.st_mode):
+            raise ArchiveError(f"unsafe managed path: {path}")
+        descriptor = os.open(
+            temporary_name,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+            0o600,
+            dir_fd=parent_descriptor,
+        )
         with os.fdopen(descriptor, "wb") as stream:
+            descriptor = None
             stream.write(content)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary_path, path)
+        os.replace(
+            temporary_name,
+            name,
+            src_dir_fd=parent_descriptor,
+            dst_dir_fd=parent_descriptor,
+        )
+        os.fsync(parent_descriptor)
     finally:
-        if temporary_path.exists():
-            temporary_path.unlink()
+        if descriptor is not None:
+            os.close(descriptor)
+        try:
+            os.unlink(temporary_name, dir_fd=parent_descriptor)
+        except FileNotFoundError:
+            pass
+        os.close(parent_descriptor)
+
+
+def managed_unlink(path: Path) -> None:
+    parent_descriptor, name = open_managed_parent(path)
+    try:
+        try:
+            os.unlink(name, dir_fd=parent_descriptor)
+        except FileNotFoundError:
+            pass
+    finally:
+        os.close(parent_descriptor)
 
 
 def apply_plan(plan: RecordPlan, allow_dirty: bool) -> None:
@@ -414,7 +501,7 @@ def apply_plan(plan: RecordPlan, allow_dirty: bool) -> None:
             "managed files are dirty; inspect ownership and pass --allow-dirty"
         )
     originals = {
-        path: path.read_bytes() if path.exists() else None
+        path: read_bytes(path, required=False)
         for path in paths
     }
     replacements = {
@@ -426,13 +513,13 @@ def apply_plan(plan: RecordPlan, allow_dirty: bool) -> None:
         for path, content in replacements.items():
             if originals[path] == content:
                 continue
-            atomic_write(path, content)
             written.append(path)
+            atomic_write(path, content)
     except Exception:
         for path in reversed(written):
             original = originals[path]
             if original is None:
-                path.unlink(missing_ok=True)
+                managed_unlink(path)
             else:
                 atomic_write(path, original)
         raise
@@ -458,7 +545,7 @@ def main() -> int:
             "experiments": root / "governance/EXPERIMENTS.md",
             "changelog": root / "docs/CHANGELOG.md",
         }[name]
-        if arguments.record == "all" and not active.exists():
+        if arguments.record == "all" and read_bytes(active, required=False) is None:
             print(f"{name}: SKIPPED missing")
             continue
         plans.append(PLANNERS[name](root))
