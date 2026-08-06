@@ -83,6 +83,7 @@ PROJECT_PATH="$(cd "$PROJECT_PATH" && pwd)"
 PROJECT_DIRECTORIES=(
   "$PROJECT_PATH/.codex"
   "$PROJECT_PATH/.codex/archive"
+  "$PROJECT_PATH/.codex/prompts"
 )
 if [[ "$VARIANT_ID" == "claude" ]]; then
   PROJECT_DIRECTORIES+=("$PROJECT_PATH/.claude")

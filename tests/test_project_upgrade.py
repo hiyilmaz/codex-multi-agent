@@ -257,6 +257,75 @@ class ProjectUpgradeTests(unittest.TestCase):
         self.assertEqual(agents.read_bytes(), before)
         self.assertEqual(list(outside.iterdir()), [])
 
+    def test_upgrade_dry_run_rejects_symlinked_managed_parent(self) -> None:
+        project = self.initialize("symlink-prompts-dry-run")
+        prompts = project / ".codex/prompts"
+        outside = self.root / "outside-prompts-dry-run"
+        prompts.rename(outside)
+        prompts.symlink_to(outside, target_is_directory=True)
+
+        result = self.run_command(PROJECT_UPGRADE, "--dry-run", project, check=False)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symbolic link", result.stderr)
+
+    def test_upgrade_apply_rejects_symlinked_managed_parent(self) -> None:
+        project = self.initialize("symlink-prompts-apply")
+        prompts = project / ".codex/prompts"
+        outside = self.root / "outside-prompts-apply"
+        prompts.rename(outside)
+        prompts.symlink_to(outside, target_is_directory=True)
+        prompt = outside / "fill-project-configuration.md"
+        prompt.write_text("# simulated managed prompt\n", encoding="utf-8")
+        state_path = project / ".codex/template-state.json"
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        state["files"][".codex/prompts/fill-project-configuration.md"][
+            "template_sha256"
+        ] = sha256(prompt)
+        state_path.write_text(
+            json.dumps(state, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        before = prompt.read_bytes()
+
+        result = self.run_command(
+            PROJECT_UPGRADE, "--apply", "--force", project, check=False
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symbolic link", result.stderr)
+        self.assertEqual(prompt.read_bytes(), before)
+
+    def test_record_initial_state_rejects_symlinked_managed_parent(self) -> None:
+        project = self.root / "symlink-prompts-record"
+        prompts = project / ".codex/prompts"
+        outside = self.root / "outside-prompts-record"
+        outside.mkdir()
+        project.joinpath(".codex").mkdir(parents=True)
+        prompts.symlink_to(outside, target_is_directory=True)
+        shutil.copy2(REPO_ROOT / "PROJECT_AGENTS_TEMPLATE.md", project / "AGENTS.md")
+        shutil.copy2(
+            REPO_ROOT / "CODEX_CONFIG_EXAMPLE.toml",
+            project / ".codex/config.toml",
+        )
+        shutil.copy2(
+            REPO_ROOT / "PROJECT_CONFIG_PROMPT.md",
+            outside / "fill-project-configuration.md",
+        )
+
+        result = self.run_command(
+            PROJECT_UPGRADE,
+            "--record-initial-state",
+            "--variant",
+            "codex",
+            project,
+            check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symbolic link", result.stderr)
+        self.assertFalse((project / ".codex/template-state.json").exists())
+
     def test_claude_upgrade_rejects_file_directory(self) -> None:
         project = self.initialize("file-claude-upgrade", "claude")
         shutil.rmtree(project / ".claude")

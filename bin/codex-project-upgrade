@@ -97,10 +97,15 @@ def require_contained_directory(project: Path, path: Path) -> None:
 
 
 def validate_project_directories(project: Path, variant: str | None = None) -> None:
-    require_contained_directory(project, project / ".codex")
-    require_contained_directory(project, project / ".codex/archive")
-    if variant == "claude":
-        require_contained_directory(project, project / ".claude")
+    directories = {project / ".codex", project / ".codex/archive"}
+    if variant is not None:
+        for relative_path in managed_templates(variant):
+            parent = (project / relative_path).parent
+            while parent != project:
+                directories.add(parent)
+                parent = parent.parent
+    for directory in sorted(directories, key=lambda path: len(path.parts)):
+        require_contained_directory(project, directory)
 
 
 def template_version(repo_root: Path) -> str:
