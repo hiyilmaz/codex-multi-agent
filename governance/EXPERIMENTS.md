@@ -685,3 +685,73 @@ This experiment is intentionally limited to the prospective CMA records
 contract and its verification.
 Detailed evidence is recorded in
 `docs/reports/EVIDENCE_EXP-20260804-003_ATOMIC_CLAIM_CONTRACT_20260804.md`.
+
+## EXP-20260805-001 - Optional Evidence Mode
+
+Date: 2026-08-05
+Status: ACCEPTED
+
+Problem:
+CMA projects declare an evidence path but have no explicit switch controlling
+automatic evidence creation or validation. Evidence can therefore add cost and
+friction to low-risk work even after EV hooks are disabled.
+
+Evidence:
+The user approved optional evidence with exactly `enable | disable`, selected
+`disable` as the default, and requested the setting across all active CMA
+projects under `/Users/iyilmaz/WebStorm`.
+
+Hypothesis:
+An explicit fail-closed project field with missing treated as disabled will
+make evidence genuinely optional without weakening evidence quality when the
+mode is enabled or when the user explicitly requests it.
+
+Solution Attempt:
+Add `EVIDENCE_MODE: disable` to the project template and active CMA project
+configuration blocks. Gate only automatic evidence-report creation and
+automatic EV use in the records module. Preserve explicit user requests and
+all existing evidence quality rules.
+
+Test:
+Add RED tests for fresh-project defaults, configuration guidance, source and
+portable records semantics, missing values, invalid values, and explicit user
+requests. Run focused and full CMA suites, verify an explicit 17-project
+manifest, and preserve excluded archives, backups, worktrees, and variants.
+
+Success Criteria:
+- Only literal `enable` activates automatic evidence creation and validation.
+- Literal `disable` and a missing field keep automation disabled.
+- Invalid explicit values are reported and never enable automation.
+- Explicit user evidence requests remain applicable in either mode.
+- Fresh projects and all 17 active CMA projects declare `disable` exactly once.
+- Excluded copies and unrelated dirty changes remain untouched.
+- Active global CMA runtime, dependencies, commits, pushes, and deployment
+  remain unchanged.
+
+Result:
+The initial targeted run failed 3/3 because fresh projects omitted the field
+and the source and portable records modules lacked the mode contract. After the
+minimal framework change, the targeted tests passed 3/3, project-upgrade tests
+passed 6/6, and CMA lazy-runtime tests passed 20/20. The explicit rollout
+manifest verified exactly one `EVIDENCE_MODE: disable` declaration in each of
+17 active CMA projects. The complete CMA suite passed 60/60 and
+`git diff --check` completed cleanly. Code review passed. Security review
+confirmed that the project declarations are staged but not yet enforced by the
+active global runtime because its `CMA_RECORDS.md` lacks the new mode gate.
+After separate option A approval, the previous active records module was backed
+up at
+`~/.codex/archive/cma-evidence-mode-20260805_135615/CMA_RECORDS.md` with SHA-256
+`c3d4813491a493775db57f24b451e13c5b9168c5a15445113d1f33a72e9299ea`.
+Only the four EVIDENCE_MODE clauses were added to the active module; its new
+SHA-256 is
+`e8d6a962ea74990028baedea10f183726484e8fe64ba5f4995bb1c1d1921c065`
+and mode remains `0644`. Reopened code and security reviews both passed with
+no blocking findings.
+
+Decision:
+ACCEPT
+
+Notes:
+Active global runtime synchronization was performed only after separate option
+A approval. No evidence report was created because this project now declares
+`EVIDENCE_MODE: disable` and the user did not explicitly request one.

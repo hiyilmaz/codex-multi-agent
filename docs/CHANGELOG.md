@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-05
+
+- [FEAT] EXP-20260805-001: Added fail-closed `EVIDENCE_MODE: enable | disable`
+  semantics with missing values defaulting to disabled and explicit user
+  requests remaining available.
+- [INFRA] EXP-20260805-001: Set all 17 active CMA projects to
+  `EVIDENCE_MODE: disable` and activated only the four approved mode clauses in
+  the backed-up global records module.
+- [TEST] EXP-20260805-001: Verified meaningful 3/3 RED, 60/60 full CMA tests,
+  the 17-project manifest, exact global delta, and independent code and
+  security reviews.
+
 ## 2026-08-04
 
 - [FIX] EXP-20260804-003: Required one independently verifiable outcome and one
