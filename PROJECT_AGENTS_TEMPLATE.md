@@ -19,6 +19,7 @@ STACK_FRONTEND:      [e.g. Next.js / TypeScript / shadcn/ui]
 
 CHANGELOG_PATH:      [e.g. docs/CHANGELOG.md]
 EVIDENCE_PATH:       [e.g. docs/reports/]
+EVIDENCE_MODE: disable
 
 ACTIVE_RULE_SETS:
   - [e.g. python: coding-style, security, testing, patterns]

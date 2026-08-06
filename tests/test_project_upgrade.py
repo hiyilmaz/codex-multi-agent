@@ -49,6 +49,33 @@ class ProjectUpgradeTests(unittest.TestCase):
         )
         return project
 
+    def assert_evidence_mode_prompt_contract(self, text: str) -> None:
+        required = (
+            "`EVIDENCE_MODE` must be exactly `enable` or `disable`.",
+            "Use `disable` when the field is missing or no explicit choice is provided.",
+            "If an explicit value is invalid, report it and do not treat evidence automation as enabled.",
+        )
+        for marker in required:
+            self.assertIn(marker, text)
+
+    def test_fresh_project_defaults_evidence_mode_and_installs_validation_guidance(
+        self,
+    ) -> None:
+        project = self.initialize("evidence-mode")
+        agents = (project / "AGENTS.md").read_text(encoding="utf-8")
+        prompt = (
+            project / ".codex/prompts/fill-project-configuration.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertEqual(agents.count("EVIDENCE_MODE: disable"), 1)
+        self.assert_evidence_mode_prompt_contract(prompt)
+
+    def test_evidence_mode_prompt_rejects_allowed_values_only_policy(self) -> None:
+        with self.assertRaises(AssertionError):
+            self.assert_evidence_mode_prompt_contract(
+                "`EVIDENCE_MODE` must be exactly `enable` or `disable`."
+            )
+
     def test_fresh_project_records_state_and_is_idempotent(self) -> None:
         project = self.initialize("fresh", "dolphin")
         state = json.loads((project / ".codex/template-state.json").read_text())

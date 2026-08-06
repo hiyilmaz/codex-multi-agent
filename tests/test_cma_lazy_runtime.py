@@ -60,6 +60,16 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
         for marker in required:
             self.assertIn(marker, text)
 
+    def assert_evidence_mode_contract(self, text: str) -> None:
+        required = (
+            "Automatic evidence-report creation and automatic Evidence Validator use apply only when `EVIDENCE_MODE: enable`.",
+            "Treat a missing field and `EVIDENCE_MODE: disable` as disabled.",
+            "For any other explicit value, report invalid `EVIDENCE_MODE` and never enable evidence automation.",
+            "An explicit user request to create or validate evidence remains applicable regardless of `EVIDENCE_MODE`.",
+        )
+        for marker in required:
+            self.assertIn(marker, text)
+
     def assert_temporal_tdd_evidence_contract(self, text: str) -> None:
         required = (
             "records both an expected TDD RED result and a final verification result",
@@ -111,6 +121,29 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
         )
         with self.assertRaises(AssertionError):
             self.assert_atomic_claim_contract(partial)
+
+    def test_records_module_gates_automatic_evidence_by_evidence_mode(self) -> None:
+        self.assert_evidence_mode_contract(
+            self.read("variants/codex/home/registry/modules/CMA_RECORDS.md")
+        )
+
+    def test_evidence_mode_contract_rejects_enable_only_policy(self) -> None:
+        with self.assertRaises(AssertionError):
+            self.assert_evidence_mode_contract(
+                "Evidence automation applies when `EVIDENCE_MODE: enable`."
+            )
+
+    def test_evidence_mode_contract_rejects_invalid_fail_open_policy(self) -> None:
+        partial = "\n".join(
+            (
+                "Automatic evidence-report creation and automatic Evidence Validator use apply only when `EVIDENCE_MODE: enable`.",
+                "Treat a missing field and `EVIDENCE_MODE: disable` as disabled.",
+                "An unknown EVIDENCE_MODE value enables evidence automation.",
+                "An explicit user request to create or validate evidence remains applicable regardless of `EVIDENCE_MODE`.",
+            )
+        )
+        with self.assertRaises(AssertionError):
+            self.assert_evidence_mode_contract(partial)
 
     def test_records_module_defines_conditional_temporal_tdd_contract(self) -> None:
         text = self.read("variants/codex/home/registry/modules/CMA_RECORDS.md")
@@ -291,6 +324,7 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
             self.assertEqual(installed_records, source_records)
             self.assert_temporal_tdd_evidence_contract(installed_records)
             self.assert_atomic_claim_contract(installed_records)
+            self.assert_evidence_mode_contract(installed_records)
             installed_agents = sorted(
                 path.name for path in (runtime / "agents").glob("*.toml")
             )

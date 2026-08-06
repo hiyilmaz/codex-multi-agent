@@ -19,6 +19,7 @@ STACK_FRONTEND:      Documentation and CLI template project
 
 CHANGELOG_PATH:      docs/CHANGELOG.md
 EVIDENCE_PATH:       docs/reports/
+EVIDENCE_MODE: disable
 
 ACTIVE_RULE_SETS:
   - python: scripting, documentation-indexing, testing

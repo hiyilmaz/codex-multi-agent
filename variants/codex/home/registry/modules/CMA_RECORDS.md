@@ -21,6 +21,10 @@ Do not load for ordinary answer-only or read-only tasks with no record event.
 - Use `record-archive` only on defined record events. Run `check` first and
   apply only when the threshold is reached and the task owns the changes.
 - Archive complete records without loss, duplication, or summarization.
+- Automatic evidence-report creation and automatic Evidence Validator use apply only when `EVIDENCE_MODE: enable`.
+- Treat a missing field and `EVIDENCE_MODE: disable` as disabled.
+- For any other explicit value, report invalid `EVIDENCE_MODE` and never enable evidence automation.
+- An explicit user request to create or validate evidence remains applicable regardless of `EVIDENCE_MODE`.
 - Keep evidence concise, reproducible, redacted, and tied to real commands,
   outputs, diffs, tests, and review findings.
 - For every new or materially updated evidence report:
