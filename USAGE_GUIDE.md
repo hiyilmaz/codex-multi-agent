@@ -46,6 +46,7 @@ install a specific runtime variant:
 ```bash
 bin/codex-user-install --variant codex
 bin/codex-user-install --variant dolphin
+bin/codex-user-install --variant claude
 ```
 
 Template paths are rewritten during installation so installed configs and
@@ -55,12 +56,18 @@ Default runtime homes:
 
 - `codex`: `$HOME/.codex`
 - `dolphin`: `$HOME/.llm-runtimes/dolphin`
+- `claude`: `$HOME/.llm-runtimes/claude`
 
 For Dolphin, the launcher is installed inside the runtime home:
 
 ```text
 <runtime-home>/bin/llm-dolphin
+<runtime-home>/bin/llm-claude
 ```
+
+The Claude launcher isolates configuration through `CLAUDE_CONFIG_DIR` and
+requires an existing native `claude` executable. This phase does not install
+the Claude Agent SDK, authenticate, or write to active `~/.claude` state.
 
 For guided installation, use the interactive setup:
 
@@ -113,6 +120,11 @@ Then it creates:
 <project>/.codex/config.toml
 <project>/.codex/prompts/fill-project-configuration.md
 ```
+
+With `--variant claude`, init additionally creates `CLAUDE.md` containing
+`@AGENTS.md` and `.claude/settings.json`. Existing Claude paths are listed
+before confirmation and archived only when the reset is approved; unrelated
+`.claude` content is preserved.
 
 ### Step 2 — Run the Project Configuration prompt
 

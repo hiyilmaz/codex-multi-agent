@@ -12,6 +12,7 @@ variants/
   config.toml
   codex/home/
   dolphin/home/
+  claude/home/
 
 ~/.codex/
   AGENTS.md
@@ -61,6 +62,7 @@ Belirli bir versiyonu kur:
 ```bash
 bin/codex-user-install --variant codex
 bin/codex-user-install --variant dolphin
+bin/codex-user-install --variant claude
 ```
 
 Kurulum sırasında template içindeki kaynak pathler hedef `--runtime-home`
@@ -71,13 +73,19 @@ Varsayılan hedefler:
 ```text
 codex   -> $HOME/.codex
 dolphin -> $HOME/.llm-runtimes/dolphin
+claude  -> $HOME/.llm-runtimes/claude
 ```
 
 Dolphin launcher kurulumdan sonra şurada olur:
 
 ```text
 <runtime-home>/bin/llm-dolphin
+<runtime-home>/bin/llm-claude
 ```
+
+`llm-claude`, `CLAUDE_CONFIG_DIR` değerini izole runtime dizinine ayarlar ve
+önceden kurulmuş native `claude` komutunu çalıştırır. Bu faz Claude Agent SDK
+kurmaz, giriş yapmaz ve aktif `~/.claude` içeriğini değiştirmez.
 
 Bu komut şunları hazırlar:
 
@@ -114,7 +122,8 @@ bin/codex-user-install
 ```
 
 Bu kadar. `codex` runtime `~/.codex` altında çalışır. `dolphin` runtime
-varsayılan olarak `~/.llm-runtimes/dolphin` altında çalışır. Repo içindeki
+varsayılan olarak `~/.llm-runtimes/dolphin`, `claude` runtime ise
+`~/.llm-runtimes/claude` altında çalışır. Repo içindeki
 `variants/` dizini sadece taşınabilir kurulum kaynaklarını ve varsayılan
 versiyon config dosyasını taşır.
 
@@ -134,6 +143,11 @@ Komut onay ister. Onaydan sonra şunları oluşturur:
 <project>/.codex/config.toml
 <project>/.codex/prompts/fill-project-configuration.md
 ```
+
+`--variant claude` seçildiğinde ayrıca yalnızca `@AGENTS.md` içeren
+`<project>/CLAUDE.md` ve `<project>/.claude/settings.json` oluşturulur. Mevcut
+Claude dosyaları onaydan önce listelenir; onaylanan reset sırasında arşivlenir.
+Diğer `.claude` içeriğine dokunulmaz.
 
 Eğer projede eski Codex dosyaları varsa, bunları şuraya arşivler:
 

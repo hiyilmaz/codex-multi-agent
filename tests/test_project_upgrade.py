@@ -91,6 +91,99 @@ class ProjectUpgradeTests(unittest.TestCase):
         self.assertIn("AGENTS.md: UNCHANGED", result.stdout)
         self.assertIn(".codex/template-state.json: UNCHANGED", result.stdout)
 
+    def test_claude_init_creates_minimal_bridge_and_state(self) -> None:
+        project = self.initialize("claude-project", "claude")
+        bridge = (project / "CLAUDE.md").read_text(encoding="utf-8")
+        settings = json.loads((project / ".claude/settings.json").read_text())
+        state = json.loads((project / ".codex/template-state.json").read_text())
+
+        self.assertEqual(bridge.strip(), "@AGENTS.md")
+        self.assertEqual(settings, {"permissions": {"defaultMode": "default"}})
+        self.assertEqual(state["variant"], "claude")
+        self.assertEqual(state["files"]["CLAUDE.md"]["mode"], "managed")
+        self.assertEqual(state["files"][".claude/settings.json"]["mode"], "managed")
+
+    def test_customized_claude_bridge_is_preserved_by_upgrade(self) -> None:
+        project = self.initialize("custom-claude", "claude")
+        bridge = project / "CLAUDE.md"
+        bridge.write_text("@AGENTS.md\n\n# Local Claude guidance\n", encoding="utf-8")
+        before = sha256(bridge)
+
+        preview = self.run_command(PROJECT_UPGRADE, "--dry-run", project)
+        self.assertIn("CLAUDE.md: PRESERVE_CUSTOMIZED", preview.stdout)
+        self.run_command(PROJECT_UPGRADE, "--apply", "--force", project)
+        self.assertEqual(sha256(bridge), before)
+
+    def test_claude_upgrade_dry_run_is_non_mutating(self) -> None:
+        project = self.initialize("claude-dry-run", "claude")
+        sentinel = project / ".claude/agents/local.md"
+        sentinel.parent.mkdir(parents=True)
+        sentinel.write_text("local agent\n", encoding="utf-8")
+        before = {
+            path.relative_to(project).as_posix(): sha256(path)
+            for path in project.rglob("*")
+            if path.is_file()
+        }
+
+        result = self.run_command(PROJECT_UPGRADE, "--dry-run", project)
+        after = {
+            path.relative_to(project).as_posix(): sha256(path)
+            for path in project.rglob("*")
+            if path.is_file()
+        }
+        self.assertIn("Dry run only. No files changed.", result.stdout)
+        self.assertEqual(after, before)
+
+    def test_claude_init_archives_existing_claude_files_after_confirmation(self) -> None:
+        project = self.root / "existing-claude"
+        settings = project / ".claude/settings.json"
+        settings.parent.mkdir(parents=True)
+        (project / "CLAUDE.md").write_text("local bridge\n", encoding="utf-8")
+        settings.write_text('{"local": true}\n', encoding="utf-8")
+
+        result = self.run_command(
+            PROJECT_INIT, "--variant", "claude", project, input_text="y\n"
+        )
+        self.assertIn("CLAUDE.md", result.stdout)
+        archives = list((project / ".codex/archive").glob("init-*/CLAUDE.md"))
+        archived_settings = list(
+            (project / ".codex/archive").glob("init-*/.claude/settings.json")
+        )
+        self.assertEqual(len(archives), 1)
+        self.assertEqual(archives[0].read_text(), "local bridge\n")
+        self.assertEqual(len(archived_settings), 1)
+        self.assertEqual(archived_settings[0].read_text(), '{"local": true}\n')
+
+    def test_claude_init_rejects_symlinked_claude_directory(self) -> None:
+        project = self.root / "symlink-init"
+        project.mkdir()
+        outside = self.root / "outside-init"
+        outside.mkdir()
+        settings = outside / "settings.json"
+        settings.write_text('{"outside": true}\n', encoding="utf-8")
+        (project / ".claude").symlink_to(outside, target_is_directory=True)
+
+        result = self.run_command(
+            PROJECT_INIT, "--variant", "claude", project, input_text="y\n", check=False
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symbolic link", result.stderr)
+        self.assertEqual(settings.read_text(), '{"outside": true}\n')
+
+    def test_claude_upgrade_rejects_symlinked_claude_directory(self) -> None:
+        project = self.initialize("symlink-upgrade", "claude")
+        shutil.rmtree(project / ".claude")
+        outside = self.root / "outside-upgrade"
+        outside.mkdir()
+        settings = outside / "settings.json"
+        settings.write_text('{"outside": true}\n', encoding="utf-8")
+        (project / ".claude").symlink_to(outside, target_is_directory=True)
+
+        result = self.run_command(PROJECT_UPGRADE, "--dry-run", project, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symbolic link", result.stderr)
+        self.assertEqual(settings.read_text(), '{"outside": true}\n')
+
     def test_legacy_project_preserves_local_files(self) -> None:
         project = self.root / "legacy"
         prompt = project / ".codex/prompts/fill-project-configuration.md"

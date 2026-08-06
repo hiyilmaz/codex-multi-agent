@@ -24,6 +24,7 @@ Available runtime variants:
 |---|---|---|
 | `codex` | `~/.codex` | Use the normal Codex command. |
 | `dolphin` | `~/.llm-runtimes/dolphin` | `~/.llm-runtimes/dolphin/bin/llm-dolphin` |
+| `claude` | `~/.llm-runtimes/claude` | `~/.llm-runtimes/claude/bin/llm-claude` |
 
 ## Guided Setup
 
@@ -38,6 +39,7 @@ Select a variant explicitly:
 ```bash
 bin/codex-setup --variant codex
 bin/codex-setup --variant dolphin
+bin/codex-setup --variant claude
 ```
 
 Use a custom runtime home:
@@ -61,6 +63,7 @@ Install a specific variant:
 ```bash
 bin/codex-user-install --variant codex
 bin/codex-user-install --variant dolphin
+bin/codex-user-install --variant claude
 ```
 
 Install to a custom runtime home:
@@ -76,6 +79,7 @@ Refresh template-managed runtime files intentionally:
 ```bash
 bin/codex-user-install --variant codex --force
 bin/codex-user-install --variant dolphin --force
+bin/codex-user-install --variant claude --force
 ```
 
 `--force` overwrites existing files managed by the runtime template. Review or
@@ -85,7 +89,12 @@ Launch the default Dolphin installation:
 
 ```bash
 ~/.llm-runtimes/dolphin/bin/llm-dolphin
+~/.llm-runtimes/claude/bin/llm-claude
 ```
+
+The Claude launcher sets the isolated runtime as `CLAUDE_CONFIG_DIR` and then
+executes the native `claude` binary. It does not install the Agent SDK, perform
+login, or modify active `~/.claude` files.
 
 Restart the active Codex or Dolphin session after changing runtime files so the
 new instructions, skills, and registry entries are loaded.
@@ -105,6 +114,10 @@ bin/codex-project-init \
   --variant codex \
   "/absolute/path/to/project"
 ```
+
+For Claude projects, replace `codex` with `claude`. The confirmed init adds a
+minimal `CLAUDE.md` bridge (`@AGENTS.md`) and `.claude/settings.json`; unrelated
+`.claude` files are not reset.
 
 Project initialization asks for confirmation, archives conflicting local Codex
 files, and recreates the standard project structure. Use project upgrade for an

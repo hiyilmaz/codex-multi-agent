@@ -12,7 +12,7 @@ Installs a portable user-global runtime template.
 Behavior:
   - uses the selected variant's default home unless a target home is provided
   - creates agents, skills, rules, registry, and bin directories
-  - installs AGENTS.md and config.toml if missing
+  - installs the selected provider's declared policy and settings files
   - installs template agents, skills, and registry files
   - installs variant launchers into the target runtime bin directory
   - rewrites installed template paths to the selected target home
@@ -43,106 +43,38 @@ default_variant() {
 variant_rows() {
   awk '
     /^\[\[variants\]\]/ {
-      if (id != "") print id "\t" name "\t" home "\t" default_home
-      id=""; name=""; home=""; default_home=""
+      if (id != "") print id "|" name "|" home "|" default_home "|" launcher "|" launcher_name "|" policy_file "|" settings_file "|" agent_format
+      id=""; name=""; home=""; default_home=""; launcher=""; launcher_name=""; policy_file=""; settings_file=""; agent_format=""
       next
     }
-    /^[[:space:]]*id[[:space:]]*=/ {
-      value=$0; sub(/^[^=]*=/, "", value); gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value); id=value
-    }
-    /^[[:space:]]*name[[:space:]]*=/ {
-      value=$0; sub(/^[^=]*=/, "", value); gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value); name=value
-    }
-    /^[[:space:]]*home[[:space:]]*=/ {
-      value=$0; sub(/^[^=]*=/, "", value); gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value); home=value
-    }
-    /^[[:space:]]*default_home[[:space:]]*=/ {
-      value=$0; sub(/^[^=]*=/, "", value); gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value); default_home=value
+    /^[[:space:]]*[a-z_]+[[:space:]]*=/ {
+      key=$0; sub(/[[:space:]]*=.*/, "", key); gsub(/[[:space:]]/, "", key)
+      value=$0; sub(/^[^=]*=/, "", value); gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value)
+      if (key == "id") id=value
+      else if (key == "name") name=value
+      else if (key == "home") home=value
+      else if (key == "default_home") default_home=value
+      else if (key == "launcher") launcher=value
+      else if (key == "launcher_name") launcher_name=value
+      else if (key == "policy_file") policy_file=value
+      else if (key == "settings_file") settings_file=value
+      else if (key == "agent_format") agent_format=value
     }
     END {
-      if (id != "") print id "\t" name "\t" home "\t" default_home
+      if (id != "") print id "|" name "|" home "|" default_home "|" launcher "|" launcher_name "|" policy_file "|" settings_file "|" agent_format
     }
   ' "$VARIANTS_CONFIG"
 }
 
 list_variants() {
-  variant_rows | while IFS=$'\t' read -r id name home default_home; do
+  variant_rows | while IFS='|' read -r id name home default_home launcher launcher_name policy_file settings_file agent_format; do
     printf "%s\t%s\t%s\t%s\n" "$id" "$name" "$home" "$default_home"
   done
 }
 
-variant_home() {
+variant_record() {
   local requested_id="$1"
-  variant_rows | awk -F '\t' -v requested_id="$requested_id" '$1 == requested_id { print $3; found=1 } END { exit(found ? 0 : 1) }'
-}
-
-variant_default_home() {
-  local requested_id="$1"
-  variant_rows | awk -F '\t' -v requested_id="$requested_id" '$1 == requested_id { print $4; found=1 } END { exit(found ? 0 : 1) }'
-}
-
-variant_launcher() {
-  local requested_id="$1"
-  awk -v requested_id="$requested_id" '
-    /^\[\[variants\]\]/ {
-      if (active && launcher != "") {
-        print launcher
-        found=1
-        exit
-      }
-      active=0
-      launcher=""
-      next
-    }
-    /^[[:space:]]*id[[:space:]]*=/ {
-      value=$0
-      sub(/^[^=]*=/, "", value)
-      gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value)
-      active=(value == requested_id)
-      next
-    }
-    active && /^[[:space:]]*launcher[[:space:]]*=/ {
-      value=$0
-      sub(/^[^=]*=/, "", value)
-      gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value)
-      launcher=value
-    }
-    END {
-      if (active && launcher != "" && !found) print launcher
-    }
-  ' "$VARIANTS_CONFIG"
-}
-
-variant_launcher_name() {
-  local requested_id="$1"
-  awk -v requested_id="$requested_id" '
-    /^\[\[variants\]\]/ {
-      if (active && launcher_name != "") {
-        print launcher_name
-        found=1
-        exit
-      }
-      active=0
-      launcher_name=""
-      next
-    }
-    /^[[:space:]]*id[[:space:]]*=/ {
-      value=$0
-      sub(/^[^=]*=/, "", value)
-      gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value)
-      active=(value == requested_id)
-      next
-    }
-    active && /^[[:space:]]*launcher_name[[:space:]]*=/ {
-      value=$0
-      sub(/^[^=]*=/, "", value)
-      gsub(/^[[:space:]]*"|"[[:space:]]*$/, "", value)
-      launcher_name=value
-    }
-    END {
-      if (active && launcher_name != "" && !found) print launcher_name
-    }
-  ' "$VARIANTS_CONFIG"
+  variant_rows | awk -F '|' -v requested_id="$requested_id" '$1 == requested_id { print; found=1 } END { exit(found ? 0 : 1) }'
 }
 
 expand_home_path() {
@@ -223,34 +155,134 @@ if [[ -z "$DEFAULT_VARIANT" ]]; then
 fi
 
 VARIANT_ID="$(select_variant "$DEFAULT_VARIANT")"
-SOURCE_RELATIVE="$(variant_home "$VARIANT_ID" || true)"
-if [[ -z "$SOURCE_RELATIVE" ]]; then
+VARIANT_RECORD="$(variant_record "$VARIANT_ID" || true)"
+if [[ -z "$VARIANT_RECORD" ]]; then
   echo "FAILED: unknown variant: $VARIANT_ID" >&2
   echo "Available variants:" >&2
   list_variants >&2
   exit 1
 fi
 
-DEFAULT_RUNTIME_HOME="$(variant_default_home "$VARIANT_ID" || true)"
+IFS='|' read -r _VARIANT_ID VARIANT_NAME SOURCE_RELATIVE DEFAULT_RUNTIME_HOME VARIANT_LAUNCHER_RELATIVE VARIANT_LAUNCHER_NAME POLICY_FILE SETTINGS_FILE AGENT_FORMAT <<< "$VARIANT_RECORD"
+
+for required_value in "$VARIANT_NAME" "$SOURCE_RELATIVE" "$DEFAULT_RUNTIME_HOME" "$POLICY_FILE" "$SETTINGS_FILE" "$AGENT_FORMAT"; do
+  if [[ -z "$required_value" ]]; then
+    echo "FAILED: incomplete metadata for variant: $VARIANT_ID" >&2
+    exit 1
+  fi
+done
+
+case "$SOURCE_RELATIVE" in
+  /*|../*|*/../*|*/..) echo "FAILED: unsafe variant home: $SOURCE_RELATIVE" >&2; exit 1 ;;
+esac
+case "$POLICY_FILE|$SETTINGS_FILE" in
+  */*) echo "FAILED: policy and settings metadata must be file names" >&2; exit 1 ;;
+esac
+case "$AGENT_FORMAT" in
+  toml|markdown) ;;
+  *) echo "FAILED: unsupported agent format: $AGENT_FORMAT" >&2; exit 1 ;;
+esac
+if [[ -n "$VARIANT_LAUNCHER_RELATIVE" || -n "$VARIANT_LAUNCHER_NAME" ]]; then
+  if [[ -z "$VARIANT_LAUNCHER_RELATIVE" || -z "$VARIANT_LAUNCHER_NAME" ]]; then
+    echo "FAILED: incomplete launcher metadata for variant: $VARIANT_ID" >&2
+    exit 1
+  fi
+  case "$VARIANT_LAUNCHER_RELATIVE" in
+    /*|../*|*/../*|*/..) echo "FAILED: unsafe launcher path: $VARIANT_LAUNCHER_RELATIVE" >&2; exit 1 ;;
+  esac
+  case "$VARIANT_LAUNCHER_NAME" in
+    ""|.|..|*/*|*[!A-Za-z0-9._-]*) echo "FAILED: unsafe launcher name: $VARIANT_LAUNCHER_NAME" >&2; exit 1 ;;
+  esac
+fi
+
 if [[ -z "$RUNTIME_HOME" ]]; then
-  RUNTIME_HOME="${DEFAULT_RUNTIME_HOME:-~/.codex}"
+  RUNTIME_HOME="$DEFAULT_RUNTIME_HOME"
 fi
 RUNTIME_HOME="$(expand_home_path "$RUNTIME_HOME")"
 
-VARIANT_LAUNCHER_RELATIVE="$(variant_launcher "$VARIANT_ID" || true)"
-VARIANT_LAUNCHER_NAME="$(variant_launcher_name "$VARIANT_ID" || true)"
 SOURCE_DIR="$REPO_ROOT/$SOURCE_RELATIVE"
 if [[ ! -d "$SOURCE_DIR" ]]; then
   echo "FAILED: missing template directory: $SOURCE_DIR" >&2
+  exit 1
+fi
+if [[ ! -f "$SOURCE_DIR/$POLICY_FILE" || ! -f "$SOURCE_DIR/$SETTINGS_FILE" || ! -f "$SOURCE_DIR/README.md" ]]; then
+  echo "FAILED: variant $VARIANT_ID is missing declared policy, settings, or README" >&2
+  exit 1
+fi
+if [[ -n "$VARIANT_LAUNCHER_RELATIVE" && ! -f "$REPO_ROOT/$VARIANT_LAUNCHER_RELATIVE" ]]; then
+  echo "FAILED: missing variant launcher: $VARIANT_LAUNCHER_RELATIVE" >&2
   exit 1
 fi
 
 mkdir -p "$RUNTIME_HOME"
 RUNTIME_HOME="$(cd "$RUNTIME_HOME" && pwd)"
 
+validate_managed_directory() {
+  local directory="$1"
+  local found_link=""
+
+  if [[ -L "$directory" ]]; then
+    echo "FAILED: refusing symbolic link for managed directory: $directory" >&2
+    exit 1
+  fi
+  if [[ -e "$directory" && ! -d "$directory" ]]; then
+    echo "FAILED: managed directory path is not a directory: $directory" >&2
+    exit 1
+  fi
+  if [[ -d "$directory" ]]; then
+    found_link="$(find "$directory" -type l -print -quit)"
+    if [[ -n "$found_link" ]]; then
+      echo "FAILED: refusing symbolic link inside managed directory: $found_link" >&2
+      exit 1
+    fi
+  fi
+}
+
+assert_safe_target_path() {
+  local target_path="$1"
+  local relative_path=""
+  local parent_path=""
+  local current_path="$RUNTIME_HOME"
+  local component=""
+  local components=()
+
+  case "$target_path" in
+    "$RUNTIME_HOME"/*) ;;
+    *) echo "FAILED: target escapes runtime home: $target_path" >&2; exit 1 ;;
+  esac
+
+  relative_path="${target_path#$RUNTIME_HOME/}"
+  parent_path="$(dirname "$relative_path")"
+  if [[ "$parent_path" != "." ]]; then
+    IFS='/' read -r -a components <<< "$parent_path"
+    for component in "${components[@]}"; do
+      current_path="$current_path/$component"
+      if [[ -L "$current_path" ]]; then
+        echo "FAILED: refusing symbolic link in target path: $current_path" >&2
+        exit 1
+      fi
+      if [[ -e "$current_path" && ! -d "$current_path" ]]; then
+        echo "FAILED: target parent is not a directory: $current_path" >&2
+        exit 1
+      fi
+    done
+  fi
+}
+
+for managed_name in agents skills rules registry bin; do
+  validate_managed_directory "$RUNTIME_HOME/$managed_name"
+done
+
 install_file() {
   local source_path="$1"
   local target_path="$2"
+
+  assert_safe_target_path "$target_path"
+
+  if [[ -L "$target_path" ]]; then
+    echo "FAILED: refusing to overwrite symbolic link: $target_path" >&2
+    exit 1
+  fi
 
   if [[ -e "$target_path" && "$FORCE" != "true" ]]; then
     echo "Skipped existing: $target_path"
@@ -324,21 +356,28 @@ install_variant_launcher() {
     target_launcher_name="$(basename "$source_launcher")"
   fi
 
-  install_file "$REPO_ROOT/$source_launcher" "$target_home/bin/$target_launcher_name"
-  chmod +x "$target_home/bin/$target_launcher_name"
+  local target_launcher="$target_home/bin/$target_launcher_name"
+  local target_existed="false"
+  [[ -e "$target_launcher" ]] && target_existed="true"
+  install_file "$REPO_ROOT/$source_launcher" "$target_launcher"
+  if [[ "$target_existed" != "true" || "$FORCE" == "true" ]]; then
+    chmod +x "$target_launcher"
+  fi
 }
 
-mkdir -p "$RUNTIME_HOME/agents" "$RUNTIME_HOME/skills" "$RUNTIME_HOME/rules" "$RUNTIME_HOME/registry" "$RUNTIME_HOME/bin"
+for managed_name in agents skills rules registry bin; do
+  mkdir -p "$RUNTIME_HOME/$managed_name"
+done
 
-install_file "$SOURCE_DIR/AGENTS.md" "$RUNTIME_HOME/AGENTS.md"
-install_file "$SOURCE_DIR/config.toml" "$RUNTIME_HOME/config.toml"
+install_file "$SOURCE_DIR/$POLICY_FILE" "$RUNTIME_HOME/$POLICY_FILE"
+install_file "$SOURCE_DIR/$SETTINGS_FILE" "$RUNTIME_HOME/$SETTINGS_FILE"
 install_file "$SOURCE_DIR/README.md" "$RUNTIME_HOME/README.md"
 install_tree_files "$SOURCE_DIR/agents" "$RUNTIME_HOME/agents"
 install_tree_files "$SOURCE_DIR/skills" "$RUNTIME_HOME/skills"
 install_tree_files "$SOURCE_DIR/registry" "$RUNTIME_HOME/registry"
 install_variant_launcher "$VARIANT_LAUNCHER_RELATIVE" "$RUNTIME_HOME" "$VARIANT_LAUNCHER_NAME"
 
-rewrite_installed_variant_paths "$SOURCE_RELATIVE" "$RUNTIME_HOME" "$VARIANT_LAUNCHER_RELATIVE" "${VARIANT_LAUNCHER_NAME:-$(basename "$VARIANT_LAUNCHER_RELATIVE")}"
+rewrite_installed_variant_paths "$SOURCE_RELATIVE" "$RUNTIME_HOME" "$VARIANT_LAUNCHER_RELATIVE" "$VARIANT_LAUNCHER_NAME"
 
 echo "Variant installed: $VARIANT_ID"
 echo "Runtime home installed at: $RUNTIME_HOME"

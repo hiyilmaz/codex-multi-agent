@@ -187,6 +187,8 @@ echo "Codex setup"
 echo "-----------"
 
 if [[ -z "$VARIANT_ID" ]]; then
+  echo "Available runtime variants:"
+  "$TEMPLATE_DIR/bin/codex-user-install" --list-variants
   VARIANT_ID="$(ask_value "Runtime versiyonu" "$(default_variant)")"
 fi
 
@@ -231,7 +233,7 @@ echo "Yazıldı: $RUNTIME_HOME/registry/STATUS_MESSAGES.md"
 echo "Yazıldı: $RUNTIME_HOME/registry/SETUP_PREFERENCES.md"
 
 echo
-if ask_yes_no "Bir proje içine Codex yapısı kurulsun mu?" "n"; then
+if ask_yes_no "Bir proje içine CMA yapısı kurulsun mu?" "n"; then
   PROJECT_PATH="$(ask_value "Proje dizini" "/path/to/project")"
   echo
   echo "Proje kurulumu başlatılıyor. Komut kendi onayını ayrıca soracaktır."

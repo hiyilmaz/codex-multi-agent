@@ -24,6 +24,17 @@ MANAGED_TEMPLATES = {
         "PROJECT_CONFIG_PROMPT.md"
     ),
 }
+CLAUDE_MANAGED_TEMPLATES = {
+    Path("CLAUDE.md"): Path("PROJECT_CLAUDE_TEMPLATE.md"),
+    Path(".claude/settings.json"): Path("CLAUDE_SETTINGS_EXAMPLE.json"),
+}
+
+
+def managed_templates(variant: str) -> dict[Path, Path]:
+    templates = dict(MANAGED_TEMPLATES)
+    if variant == "claude":
+        templates.update(CLAUDE_MANAGED_TEMPLATES)
+    return templates
 
 
 def parse_args() -> argparse.Namespace:
@@ -106,7 +117,7 @@ def manifest_text(manifest: dict) -> str:
 
 def initial_manifest(repo_root: Path, project: Path, variant: str) -> dict:
     files: dict[str, dict[str, str]] = {"AGENTS.md": {"mode": "merge"}}
-    for relative_path in MANAGED_TEMPLATES:
+    for relative_path in managed_templates(variant):
         target = project / relative_path
         if not target.is_file():
             raise ValueError(f"missing initialized template file: {target}")
@@ -232,6 +243,11 @@ def build_plan(repo_root: Path, project: Path, requested_variant: str | None) ->
     ) or default_variant(repo_root)
     validate_variant(repo_root, variant)
 
+    if variant == "claude" and (project / ".claude").is_symlink():
+        raise ValueError(
+            f"refusing symbolic link for project Claude directory: {project / '.claude'}"
+        )
+
     agents_path = project / "AGENTS.md"
     if not agents_path.is_file():
         raise ValueError(f"missing project AGENTS.md: {agents_path}")
@@ -242,18 +258,39 @@ def build_plan(repo_root: Path, project: Path, requested_variant: str | None) ->
     files["AGENTS.md"] = {"mode": "merge"}
     managed_plans: list[dict] = []
 
-    for relative_path, source_relative in MANAGED_TEMPLATES.items():
+    for relative_path, source_relative in managed_templates(variant).items():
         key = relative_path.as_posix()
         target = project / relative_path
         source = repo_root / source_relative
         source_hash = sha256(source)
         entry = files.get(key)
 
-        if legacy or not isinstance(entry, dict):
+        if target.is_symlink():
+            files[key] = {"mode": "project"}
+            managed_plans.append(
+                {"path": relative_path, "source": source, "status": "PRESERVE_LOCAL"}
+            )
+            continue
+
+        if legacy:
             status = "PRESERVE_LEGACY" if target.exists() else "PRESERVE_MISSING"
             files[key] = {"mode": "project"}
             if target.is_file():
                 files[key]["observed_sha256"] = sha256(target)
+            managed_plans.append(
+                {"path": relative_path, "source": source, "status": status}
+            )
+            continue
+
+        if not isinstance(entry, dict):
+            if target.exists():
+                files[key] = {"mode": "project"}
+                if target.is_file():
+                    files[key]["observed_sha256"] = sha256(target)
+                status = "PRESERVE_LOCAL"
+            else:
+                files[key] = {"mode": "managed", "template_sha256": source_hash}
+                status = "CREATE"
             managed_plans.append(
                 {"path": relative_path, "source": source, "status": status}
             )
@@ -396,7 +433,7 @@ def apply_plan(plan: dict, force: bool) -> None:
     if plan["agents_before"] != plan["agents_after"]:
         atomic_write(plan["agents_path"], plan["agents_after"])
     for item in plan["managed"]:
-        if item["status"] == "UPDATE":
+        if item["status"] in {"CREATE", "UPDATE"}:
             atomic_write(
                 project / item["path"], item["source"].read_text(encoding="utf-8")
             )

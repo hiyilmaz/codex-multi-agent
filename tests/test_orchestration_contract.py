@@ -61,6 +61,7 @@ class OrchestrationContractTests(unittest.TestCase):
             "GLOBAL_AGENTS_TEMPLATE.md",
             "variants/codex/home/AGENTS.md",
             "variants/dolphin/home/AGENTS.md",
+            "variants/claude/home/CLAUDE.md",
         )
         for path in paths:
             with self.subTest(path=path):
@@ -77,6 +78,8 @@ class OrchestrationContractTests(unittest.TestCase):
             "variants/codex/home/registry/ORCHESTRATION.md",
             "variants/dolphin/home/AGENTS.md",
             "variants/dolphin/home/registry/ORCHESTRATION.md",
+            "variants/claude/home/CLAUDE.md",
+            "variants/claude/home/registry/ORCHESTRATION.md",
         )
         for path in paths:
             with self.subTest(path=path):
@@ -102,9 +105,10 @@ class OrchestrationContractTests(unittest.TestCase):
             "Do not repeat",
             "Stop condition:",
         )
-        for variant in ("codex", "dolphin"):
+        for variant in ("codex", "dolphin", "claude"):
             for role in ROLES:
-                path = f"variants/{variant}/home/agents/{role}.toml"
+                extension = "md" if variant == "claude" else "toml"
+                path = f"variants/{variant}/home/agents/{role}.{extension}"
                 text = self.read(path)
                 with self.subTest(path=path):
                     for marker in required:
@@ -131,9 +135,10 @@ class OrchestrationContractTests(unittest.TestCase):
                 "NO_SECURITY_IMPACT",
             ),
         }
-        for variant in ("codex", "dolphin"):
+        for variant in ("codex", "dolphin", "claude"):
             for role, markers in role_markers.items():
-                path = f"variants/{variant}/home/agents/{role}.toml"
+                extension = "md" if variant == "claude" else "toml"
+                path = f"variants/{variant}/home/agents/{role}.{extension}"
                 text = self.read(path).lower()
                 with self.subTest(path=path):
                     for marker in markers:
@@ -176,7 +181,7 @@ class OrchestrationContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             environment = {**os.environ, "HOME": str(root / "home")}
-            for variant in ("codex", "dolphin"):
+            for variant in ("codex", "dolphin", "claude"):
                 runtime = root / variant
                 result = subprocess.run(
                     (
@@ -195,11 +200,13 @@ class OrchestrationContractTests(unittest.TestCase):
                 )
                 with self.subTest(variant=variant):
                     self.assertEqual(result.returncode, 0, result.stderr)
-                    runtime_policy = (runtime / "AGENTS.md").read_text()
+                    policy_name = "CLAUDE.md" if variant == "claude" else "AGENTS.md"
+                    extension = "md" if variant == "claude" else "toml"
+                    runtime_policy = (runtime / policy_name).read_text()
                     self.assertIn(CHAIN, runtime_policy)
                     self.assert_truthful_outcome_contract(runtime_policy)
                     for role in ROLES:
-                        agent = (runtime / "agents" / f"{role}.toml").read_text()
+                        agent = (runtime / "agents" / f"{role}.{extension}").read_text()
                         self.assertIn("Do not repeat", agent)
                     if variant == "codex":
                         self.assertIn(

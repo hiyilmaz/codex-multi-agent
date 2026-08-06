@@ -14,6 +14,7 @@ Behavior:
   - writes <project>/AGENTS.md from PROJECT_AGENTS_TEMPLATE.md
   - writes <project>/.codex/config.toml from CODEX_CONFIG_EXAMPLE.toml
   - writes <project>/.codex/prompts/fill-project-configuration.md
+  - for the claude variant, writes CLAUDE.md and .claude/settings.json
   - records template version, runtime variant, and managed-file hashes
   - does not create project-local reusable rules/skills/agents directories
 EOF
@@ -94,13 +95,24 @@ CONFLICTS=(
   ".agents"
 )
 
+if [[ "$VARIANT_ID" == "claude" ]]; then
+  if [[ -L "$PROJECT_PATH/.claude" ]]; then
+    echo "FAILED: refusing symbolic link for project Claude directory: $PROJECT_PATH/.claude" >&2
+    exit 1
+  fi
+  CONFLICTS+=(
+    "CLAUDE.md"
+    ".claude/settings.json"
+  )
+fi
+
 echo "This will archive existing Codex project files and reset the project Codex structure."
 echo "Target: $PROJECT_PATH"
 echo "Archive: $ARCHIVE_DIR"
 echo
 echo "Items that will be archived if present:"
 for item in "${CONFLICTS[@]}"; do
-  if [[ -e "$PROJECT_PATH/$item" ]]; then
+  if [[ -e "$PROJECT_PATH/$item" || -L "$PROJECT_PATH/$item" ]]; then
     echo "  - $item"
   fi
 done
@@ -121,7 +133,7 @@ mkdir -p "$ARCHIVE_DIR"
 
 for item in "${CONFLICTS[@]}"; do
   source_path="$PROJECT_PATH/$item"
-  if [[ -e "$source_path" ]]; then
+  if [[ -e "$source_path" || -L "$source_path" ]]; then
     target_path="$ARCHIVE_DIR/$item"
     mkdir -p "$(dirname "$target_path")"
     mv "$source_path" "$target_path"
@@ -134,14 +146,25 @@ mkdir -p "$PROJECT_PATH/.codex/prompts"
 cp "$TEMPLATE_DIR/PROJECT_AGENTS_TEMPLATE.md" "$PROJECT_PATH/AGENTS.md"
 cp "$TEMPLATE_DIR/CODEX_CONFIG_EXAMPLE.toml" "$PROJECT_PATH/.codex/config.toml"
 cp "$TEMPLATE_DIR/PROJECT_CONFIG_PROMPT.md" "$PROJECT_PATH/.codex/prompts/fill-project-configuration.md"
+if [[ "$VARIANT_ID" == "claude" ]]; then
+  mkdir -p "$PROJECT_PATH/.claude"
+  cp "$TEMPLATE_DIR/PROJECT_CLAUDE_TEMPLATE.md" "$PROJECT_PATH/CLAUDE.md"
+  cp "$TEMPLATE_DIR/CLAUDE_SETTINGS_EXAMPLE.json" "$PROJECT_PATH/.claude/settings.json"
+fi
 "$TEMPLATE_DIR/bin/codex-project-upgrade" --record-initial-state --variant "$VARIANT_ID" "$PROJECT_PATH" >/dev/null
 
 echo "Created: $PROJECT_PATH/AGENTS.md"
 echo "Created: $PROJECT_PATH/.codex/config.toml"
 echo "Created: $PROJECT_PATH/.codex/prompts/fill-project-configuration.md"
+if [[ "$VARIANT_ID" == "claude" ]]; then
+  echo "Created: $PROJECT_PATH/CLAUDE.md"
+  echo "Created: $PROJECT_PATH/.claude/settings.json"
+fi
 echo "Created: $PROJECT_PATH/.codex/template-state.json"
 
-if [[ ! -e "$HOME/.codex/AGENTS.md" ]]; then
+if [[ "$VARIANT_ID" == "claude" && ! -e "$HOME/.llm-runtimes/claude/CLAUDE.md" ]]; then
+  echo "Warning: the default Claude runtime is missing. Install it with codex-user-install --variant claude." >&2
+elif [[ "$VARIANT_ID" != "claude" && ! -e "$HOME/.codex/AGENTS.md" ]]; then
   echo "Warning: ~/.codex/AGENTS.md is missing. Create the user-global Codex surface first." >&2
 fi
 
