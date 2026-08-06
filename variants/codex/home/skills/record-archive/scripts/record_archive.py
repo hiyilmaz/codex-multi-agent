@@ -177,19 +177,77 @@ def parse_experiments(text: str) -> list[tuple[str, str, str]]:
     return entries
 
 
+ARCHIVE_PART_LINK = re.compile(
+    r"- \[[^]]+\]\((EXPERIMENTS_ARCHIVE_(\d{3})\.md)\)"
+)
+
+
+def load_experiment_archive(
+    root: Path,
+    index_path: Path,
+    index_source: str,
+) -> tuple[list[tuple[str, str, str]], Path, str, list[tuple[str, str, str]]]:
+    headings = re.findall(r"(?m)^## (.+?)\s*$", index_source)
+    if "Archive Parts" not in headings:
+        entries = parse_experiments(index_source)
+        return entries, index_path, index_source, entries
+    if headings != ["Archive Parts"]:
+        raise ArchiveError("UNSUPPORTED_FORMAT: experiment archive index")
+
+    heading = re.search(r"(?m)^## Archive Parts\s*$", index_source)
+    assert heading is not None
+    part_names: list[str] = []
+    part_numbers: list[int] = []
+    for line in index_source[heading.end():].splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        match = ARCHIVE_PART_LINK.fullmatch(stripped)
+        if match is None:
+            raise ArchiveError("UNSUPPORTED_FORMAT: experiment archive part")
+        part_names.append(match.group(1))
+        part_numbers.append(int(match.group(2)))
+    if not part_names or part_numbers != list(range(1, len(part_names) + 1)):
+        raise ArchiveError("UNSUPPORTED_FORMAT: experiment archive parts")
+    unique(part_names, "experiment archive part")
+
+    all_entries: list[tuple[str, str, str]] = []
+    last_path = index_path
+    last_source = index_source
+    last_entries: list[tuple[str, str, str]] = []
+    for part_name in part_names:
+        part_path = index_path.parent / part_name
+        part_source = read_text(part_path)
+        part_entries = parse_experiments(part_source or "")
+        all_entries.extend(part_entries)
+        last_path = part_path
+        last_source = part_source or ""
+        last_entries = part_entries
+    return all_entries, last_path, last_source, last_entries
+
+
 def plan_experiments(root: Path) -> RecordPlan:
     active_path = root / "governance/EXPERIMENTS.md"
-    archive_path = root / "governance/EXPERIMENTS_ARCHIVE.md"
+    archive_index_path = root / "governance/EXPERIMENTS_ARCHIVE.md"
     active_source = read_text(active_path)
-    archive_source = read_text(archive_path, required=False)
+    archive_source = read_text(archive_index_path, required=False)
     active_entries = parse_experiments(active_source or "")
-    archived = parse_experiments(archive_source) if archive_source else []
+    if archive_source:
+        archived, archive_path, writable_archive_source, writable_entries = (
+            load_experiment_archive(root, archive_index_path, archive_source)
+        )
+    else:
+        archived = []
+        archive_path = archive_index_path
+        writable_archive_source = None
+        writable_entries = []
     unique((entry[0] for entry in active_entries + archived), "experiment ID")
     terminal = [entry for entry in active_entries if entry[1] in TERMINAL_STATUSES]
     if len(terminal) < 10:
         return RecordPlan(
             "experiments", active_path, archive_path, active_source or "",
-            archive_source, "BELOW_THRESHOLD", len(terminal), len(archived), 0
+            writable_archive_source, "BELOW_THRESHOLD", len(terminal),
+            len(archived), 0
         )
     newest_ids = {
         entry[0]
@@ -208,7 +266,7 @@ def plan_experiments(root: Path) -> RecordPlan:
     archive = (
         "# Improvement Experiments Archive\n\n"
         "[Back to active experiments](EXPERIMENTS.md)\n\n"
-        f"{normalize_blocks(entry[2] for entry in moved + archived)}\n"
+        f"{normalize_blocks(entry[2] for entry in moved + writable_entries)}\n"
     )
     return RecordPlan(
         "experiments", active_path, archive_path, active, archive,

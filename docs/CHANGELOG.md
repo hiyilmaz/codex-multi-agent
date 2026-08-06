@@ -2,6 +2,8 @@
 
 ## 2026-08-06
 
+- [FIX] Made experiment archiving support contiguous split archive indexes and
+  append rotations to the latest validated part.
 - [CHORE] Excluded local Graphify indexes and reports from version control.
 - [FEAT] EXP-20260806-008 added an optional offline Claude Agent SDK adapter
   pinned to `claude-agent-sdk==0.2.130` with bounded requests, restrictive

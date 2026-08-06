@@ -185,6 +185,38 @@ class RecordArchiveTests(unittest.TestCase):
         self.assertNotIn("Status: TESTING", archive)
         self.assertIn("EXPERIMENTS_ARCHIVE.md", active)
 
+    def test_experiment_rotation_appends_to_split_archive_part(self) -> None:
+        self.write_experiments(10, open_count=0)
+        archive_index = (
+            "# Improvement Experiments Archive\n\n"
+            "[Back to active experiments](EXPERIMENTS.md)\n\n"
+            "## Archive Parts\n\n"
+            "- [Terminal experiments 001](EXPERIMENTS_ARCHIVE_001.md)\n"
+        )
+        archive_part = "# Improvement Experiments Archive\n\n" + "\n".join(
+            experiment(f"EXP-20260726-{index:03d}", "ACCEPTED")
+            for index in range(1, 6)
+        )
+        index_path = self.root / "governance/EXPERIMENTS_ARCHIVE.md"
+        part_path = self.root / "governance/EXPERIMENTS_ARCHIVE_001.md"
+        index_path.write_text(archive_index, encoding="utf-8")
+        part_path.write_text(archive_part, encoding="utf-8")
+
+        result = self.run_tool("apply", "experiments")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(index_path.read_text(encoding="utf-8"), archive_index)
+        self.assertEqual(
+            part_path.read_text(encoding="utf-8").count("## EXP-"),
+            10,
+        )
+        self.assertEqual(
+            (self.root / "governance/EXPERIMENTS.md")
+            .read_text(encoding="utf-8")
+            .count("## EXP-"),
+            5,
+        )
+
     def test_legacy_experiment_result_is_supported_when_decision_is_explicit(self) -> None:
         (self.root / "governance/EXPERIMENTS.md").write_text(
             "# Experiments\n\n"
