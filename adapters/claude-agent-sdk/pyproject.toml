@@ -1,0 +1,10 @@
+[project]
+name = "claude-agent-sdk-adapter"
+version = "0.1.0"
+requires-python = ">=3.10,<4"
+dependencies = [
+  "claude-agent-sdk==0.2.130",
+]
+
+[tool.uv]
+package = false
