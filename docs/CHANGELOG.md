@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-08-06
+
+- [CHORE] Excluded local Graphify indexes and reports from version control.
+- [FEAT] EXP-20260806-008 added an optional offline Claude Agent SDK adapter
+  pinned to `claude-agent-sdk==0.2.130` with bounded requests, restrictive
+  permissions, session contracts, truthful terminal mapping, and usage/cost
+  observability.
+- [SECURITY] Default-denied credential-backed SDK execution until a separately
+  approved Gate C executor provides per-call authorization, isolated state,
+  and a minimal child-process environment; fixed cancellation and terminal
+  error-metadata fail-closed findings from independent reviews.
+- [TEST] Verified 21/21 adapter tests at 92% coverage, frozen lock/sync, Python
+  compilation, `git diff --check`, 88/88 root regressions, and independent code
+  and security review without credentials or a real Claude request.
+- [FEAT] EXP-20260806-007 added a provider-aware native Claude runtime,
+  isolated `llm-claude` launcher, Markdown chain agents, safe settings, and an
+  `@AGENTS.md` project bridge with preservation-aware init and upgrade support.
+- [TEST] Verified 88/88 tests plus syntax, JSON, path-boundary, symlink,
+  no-overwrite, launcher, project dry-run, code-review, and security-review
+  checks without SDK, credential, active-runtime, commit, push, or deployment
+  changes.
+- [DOCS] Added a single status-tracked Claude integration task plan covering
+  native runtime parity, project migration, optional Agent SDK work, security
+  gates, verification, and rollback.
+- [INFRA] Installed the approved Codex CMA runtime on `blockmanpro`, preserving
+  existing `/root/.codex` state and initializing `/opt/blockman-platform-dev`
+  as a multi-repository CMA workspace without deployment or service changes.
+- [INFRA] Installed Ubuntu Node.js 18.19.1, npm 9.2.0, and pinned
+  `@openai/codex@0.146.1`; authentication remains intentionally unconfigured.
+- [TEST] Verified 60/60 local tests, archive integrity, isolated RED/GREEN,
+  no-overwrite sentinels, project conflict archiving, exact managed files,
+  configuration parsing, root-only artifacts, and Codex CLI startup.
+- [FIX] EXP-20260806-001 through EXP-20260806-006 documented executable-mode,
+  manifest-scope, SSH stdin-continuation, archive-regression, and scoped
+  assertion findings with bounded resolutions.
+
 ## 2026-08-05
 
 - [FEAT] EXP-20260805-001: Added fail-closed `EVIDENCE_MODE: enable | disable`

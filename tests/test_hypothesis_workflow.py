@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import tempfile
 import unittest
@@ -124,11 +125,27 @@ class HypothesisWorkflowContractTests(unittest.TestCase):
                     self.assertIn("Do not activate", installed.read_text())
 
     def test_bootstrap_experiment_records_accepted_result(self) -> None:
-        text = self.read("governance/EXPERIMENTS.md")
-        self.assertIn("EXP-20260727-001", text)
-        self.assertIn("Status: ACCEPTED", text)
-        self.assertIn("Decision:\nACCEPT", text)
-        self.assertIn("does not alter approval", text)
+        active = self.read("governance/EXPERIMENTS.md")
+        archive_index = self.read("governance/EXPERIMENTS_ARCHIVE.md")
+        archive_parts = re.findall(
+            r"\]\((EXPERIMENTS_ARCHIVE_\d{3}\.md)\)", archive_index
+        )
+        self.assertTrue(archive_parts)
+        text = "\n".join(
+            (
+                active,
+                archive_index,
+                *(self.read(f"governance/{part}") for part in archive_parts),
+            )
+        )
+        records = re.findall(
+            r"(?ms)^## EXP-20260727-001\b.*?(?=^## EXP-|\Z)", text
+        )
+        self.assertEqual(len(records), 1)
+        bootstrap_record = records[0]
+        self.assertIn("Status: ACCEPTED", bootstrap_record)
+        self.assertIn("Decision:\nACCEPT", bootstrap_record)
+        self.assertIn("does not alter approval", bootstrap_record)
         tasks = self.read("docs/ORCHESTRATION_IMPROVEMENT_TASKS.md")
         self.assertIn("- [x] ORCH-005", tasks)
 
