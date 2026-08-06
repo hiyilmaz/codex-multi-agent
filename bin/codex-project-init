@@ -177,7 +177,7 @@ if [[ "$VARIANT_ID" == "claude" ]]; then
 fi
 echo "Created: $PROJECT_PATH/.codex/template-state.json"
 
-if [[ "$VARIANT_ID" == "claude" && ! -e "$HOME/.llm-runtimes/claude/CLAUDE.md" ]]; then
+if [[ "$VARIANT_ID" == "claude" && ! -e "$HOME/.claude/registry/CMA_GLOBAL.md" ]]; then
   echo "Warning: the default Claude runtime is missing. Install it with codex-user-install --variant claude." >&2
 elif [[ "$VARIANT_ID" != "claude" && ! -e "$HOME/.codex/AGENTS.md" ]]; then
   echo "Warning: ~/.codex/AGENTS.md is missing. Create the user-global Codex surface first." >&2

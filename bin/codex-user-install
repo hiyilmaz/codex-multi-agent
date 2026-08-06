@@ -218,6 +218,32 @@ if [[ -n "$VARIANT_LAUNCHER_RELATIVE" && ! -f "$REPO_ROOT/$VARIANT_LAUNCHER_RELA
   exit 1
 fi
 
+if [[ "$VARIANT_ID" == "claude" ]]; then
+  RESOLVED_RUNTIME_HOME="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$RUNTIME_HOME")"
+  RESOLVED_NATIVE_CLAUDE_HOME="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$HOME/.claude")"
+else
+  RESOLVED_RUNTIME_HOME=""
+  RESOLVED_NATIVE_CLAUDE_HOME=""
+fi
+
+if [[ "$VARIANT_ID" == "claude" && "$RESOLVED_RUNTIME_HOME" == "$RESOLVED_NATIVE_CLAUDE_HOME" ]]; then
+  NATIVE_ACTIVATOR="$REPO_ROOT/bin/claude-native-activate"
+  if [[ ! -x "$NATIVE_ACTIVATOR" ]]; then
+    echo "FAILED: missing executable native Claude activator: $NATIVE_ACTIVATOR" >&2
+    exit 1
+  fi
+  NATIVE_ARGS=(--runtime-home "$HOME/.claude")
+  if [[ "$FORCE" == "true" ]]; then
+    NATIVE_ARGS+=(--force)
+  fi
+  exec "$NATIVE_ACTIVATOR" "${NATIVE_ARGS[@]}"
+fi
+
+if [[ -L "$RUNTIME_HOME" ]]; then
+  echo "FAILED: refusing symbolic link for runtime home: $RUNTIME_HOME" >&2
+  exit 1
+fi
+
 mkdir -p "$RUNTIME_HOME"
 RUNTIME_HOME="$(cd "$RUNTIME_HOME" && pwd)"
 

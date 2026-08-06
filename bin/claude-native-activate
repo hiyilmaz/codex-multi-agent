@@ -1,0 +1,377 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
+
+usage() {
+  cat <<'EOF'
+Usage: claude-native-activate [--runtime-home <path>] [--force]
+
+Safely overlays the repository's Claude CMA package onto the current user's
+native ~/.claude directory. Existing native settings and unrelated files are
+preserved. --force is rejected for native activation.
+EOF
+}
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SOURCE_HOME="$REPO_ROOT/variants/claude/home"
+SOURCE_LAUNCHER="$REPO_ROOT/variants/claude/bin/claude"
+NATIVE_HOME="${HOME}/.claude"
+RUNTIME_HOME="$NATIVE_HOME"
+FORCE="false"
+IMPORT_LINE="@registry/CMA_GLOBAL.md"
+CREATED_FILES=()
+CREATED_DIRS=()
+INCOMPLETE_BACKUP_FILES=()
+BACKUP_DIR=""
+BACKUP_READY="false"
+CLAUDE_CHANGED="false"
+CLAUDE_EXISTED="false"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --runtime-home)
+      RUNTIME_HOME="$2"
+      shift 2
+      ;;
+    --force)
+      FORCE="true"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "FAILED: unknown option: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+case "$RUNTIME_HOME" in
+  "~") RUNTIME_HOME="$HOME" ;;
+  "~/"*) RUNTIME_HOME="$HOME/${RUNTIME_HOME#\~/}" ;;
+esac
+
+if [[ "$FORCE" == "true" ]]; then
+  echo "FAILED: --force is not allowed for native Claude activation" >&2
+  exit 1
+fi
+if [[ "$RUNTIME_HOME" != "$NATIVE_HOME" ]]; then
+  echo "FAILED: native Claude activation target must be $NATIVE_HOME" >&2
+  exit 1
+fi
+if [[ -L "$RUNTIME_HOME" ]]; then
+  echo "FAILED: refusing symbolic link for native Claude home: $RUNTIME_HOME" >&2
+  exit 1
+fi
+if [[ -e "$RUNTIME_HOME" && ! -d "$RUNTIME_HOME" ]]; then
+  echo "FAILED: native Claude home is not a directory: $RUNTIME_HOME" >&2
+  exit 1
+fi
+
+required_source_files() {
+  cat <<'EOF'
+CLAUDE.md
+settings.json
+README.md
+agents/code-reviewer.md
+agents/docs-researcher-opus.md
+agents/docs-researcher.md
+agents/explorer-opus.md
+agents/explorer.md
+agents/planner-opus.md
+agents/planner.md
+agents/reviewer.md
+agents/security-reviewer.md
+agents/skill-agent-governor.md
+agents/tdd-guide-opus.md
+agents/tdd-guide.md
+skills/hypothesis-workflow/SKILL.md
+skills/orchestration-gate/SKILL.md
+skills/record-archive/SKILL.md
+skills/record-archive/scripts/record_archive.py
+skills/tdd-workflow/SKILL.md
+registry/AGENTS_INDEX.md
+registry/AUDIT_LOG.md
+registry/ORCHESTRATION.md
+registry/SETUP_PREFERENCES.md
+registry/SKILLS_INDEX.md
+registry/STATUS_MESSAGES.md
+registry/modules/CMA_DOCS_RESEARCH.md
+registry/modules/CMA_FRONTEND.md
+registry/modules/CMA_MEMORY_ROUTING.md
+registry/modules/CMA_ORCHESTRATION.md
+registry/modules/CMA_RECORDS.md
+registry/modules/CMA_REMOTE_ADMIN.md
+registry/modules/CMA_SECURITY.md
+registry/modules/CMA_TDD.md
+prompts/recreate-global-subagents.md
+EOF
+}
+
+while IFS= read -r relative; do
+  if [[ ! -f "$SOURCE_HOME/$relative" || -L "$SOURCE_HOME/$relative" ]]; then
+    echo "FAILED: incomplete or unsafe Claude source manifest: $relative" >&2
+    exit 1
+  fi
+done < <(required_source_files)
+if [[ ! -f "$SOURCE_LAUNCHER" || -L "$SOURCE_LAUNCHER" ]]; then
+  echo "FAILED: missing or unsafe Claude launcher" >&2
+  exit 1
+fi
+
+target_for_source() {
+  local relative="$1"
+  case "$relative" in
+    CLAUDE.md) printf "%s" "registry/CMA_GLOBAL.md" ;;
+    README.md) printf "%s" "registry/CMA_README.md" ;;
+    settings.json) printf "%s" "settings.json" ;;
+    *) printf "%s" "$relative" ;;
+  esac
+}
+
+assert_safe_target() {
+  local target="$1"
+  local relative="${target#$RUNTIME_HOME/}"
+  local parent="$(dirname "$relative")"
+  local current="$RUNTIME_HOME"
+  local component=""
+  local components=()
+
+  case "$target" in
+    "$RUNTIME_HOME"/*) ;;
+    *) echo "FAILED: target escapes native Claude home: $target" >&2; exit 1 ;;
+  esac
+  if [[ -L "$target" ]]; then
+    echo "FAILED: refusing symbolic link target: $target" >&2
+    exit 1
+  fi
+  if [[ "$parent" != "." ]]; then
+    IFS='/' read -r -a components <<< "$parent"
+    for component in "${components[@]}"; do
+      current="$current/$component"
+      if [[ -L "$current" ]]; then
+        echo "FAILED: refusing symbolic link in target path: $current" >&2
+        exit 1
+      fi
+      if [[ -e "$current" && ! -d "$current" ]]; then
+        echo "FAILED: target parent is not a directory: $current" >&2
+        exit 1
+      fi
+    done
+  fi
+  if [[ -e "$target" && ! -f "$target" ]]; then
+    echo "FAILED: managed target is not a regular file: $target" >&2
+    exit 1
+  fi
+}
+
+functional_import_count() {
+  python3 - "$1" "$IMPORT_LINE" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+needle = sys.argv[2]
+text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+inside_fence = False
+count = 0
+for line in text.splitlines():
+    stripped = line.strip()
+    if stripped.startswith("```") or stripped.startswith("~~~"):
+        inside_fence = not inside_fence
+        continue
+    if inside_fence:
+        continue
+    without_inline = re.sub(r"`[^`]*`", "", line).strip()
+    if without_inline == needle:
+        count += 1
+print(count)
+PY
+}
+
+if [[ -e "$RUNTIME_HOME/CLAUDE.md" ]]; then
+  assert_safe_target "$RUNTIME_HOME/CLAUDE.md"
+  CLAUDE_EXISTED="true"
+fi
+if [[ -e "$RUNTIME_HOME/settings.json" ]]; then
+  assert_safe_target "$RUNTIME_HOME/settings.json"
+fi
+assert_safe_target "$RUNTIME_HOME/backups/placeholder"
+
+IMPORT_COUNT="0"
+if [[ "$CLAUDE_EXISTED" == "true" ]]; then
+  IMPORT_COUNT="$(functional_import_count "$RUNTIME_HOME/CLAUDE.md")"
+  if [[ "$IMPORT_COUNT" -gt 1 ]]; then
+    echo "FAILED: duplicate functional CMA imports in $RUNTIME_HOME/CLAUDE.md" >&2
+    exit 1
+  fi
+fi
+
+NEEDS_MUTATION="false"
+while IFS= read -r relative; do
+  target_relative="$(target_for_source "$relative")"
+  target="$RUNTIME_HOME/$target_relative"
+  assert_safe_target "$target"
+  if [[ "$relative" == "settings.json" && -e "$target" ]]; then
+    continue
+  fi
+  if [[ -e "$target" ]]; then
+    if ! cmp -s "$SOURCE_HOME/$relative" "$target"; then
+      echo "FAILED: existing CMA-managed file differs: $target" >&2
+      exit 1
+    fi
+  else
+    NEEDS_MUTATION="true"
+  fi
+done < <(required_source_files)
+
+LAUNCHER_TARGET="$RUNTIME_HOME/bin/llm-claude"
+assert_safe_target "$LAUNCHER_TARGET"
+if [[ -e "$LAUNCHER_TARGET" ]]; then
+  if ! cmp -s "$SOURCE_LAUNCHER" "$LAUNCHER_TARGET"; then
+    echo "FAILED: existing CMA-managed launcher differs: $LAUNCHER_TARGET" >&2
+    exit 1
+  fi
+else
+  NEEDS_MUTATION="true"
+fi
+if [[ "$IMPORT_COUNT" -eq 0 ]]; then
+  NEEDS_MUTATION="true"
+fi
+
+if [[ "$NEEDS_MUTATION" != "true" ]]; then
+  echo "Claude CMA already active at: $RUNTIME_HOME"
+  exit 0
+fi
+
+ensure_directory() {
+  local directory="$1"
+  if [[ ! -d "$directory" ]]; then
+    mkdir "$directory"
+    CREATED_DIRS+=("$directory")
+  fi
+}
+
+rollback() {
+  local status="$?"
+  trap - ERR
+  set +e
+  if [[ "$CLAUDE_CHANGED" == "true" ]]; then
+    if [[ "$CLAUDE_EXISTED" == "true" && "$BACKUP_READY" == "true" ]]; then
+      cp -p "$BACKUP_DIR/CLAUDE.md" "$RUNTIME_HOME/CLAUDE.md"
+    elif [[ "$CLAUDE_EXISTED" != "true" ]]; then
+      rm -f "$RUNTIME_HOME/CLAUDE.md"
+    fi
+  fi
+  local index
+  for ((index=${#CREATED_FILES[@]}-1; index>=0; index--)); do
+    rm -f "${CREATED_FILES[$index]}"
+  done
+  if [[ "$BACKUP_READY" != "true" ]]; then
+    for ((index=${#INCOMPLETE_BACKUP_FILES[@]}-1; index>=0; index--)); do
+      rm -f "${INCOMPLETE_BACKUP_FILES[$index]}"
+    done
+  fi
+  for ((index=${#CREATED_DIRS[@]}-1; index>=0; index--)); do
+    rmdir "${CREATED_DIRS[$index]}" 2>/dev/null || true
+  done
+  if [[ "$BACKUP_READY" != "true" && -n "$BACKUP_DIR" ]]; then
+    rmdir "$BACKUP_DIR" 2>/dev/null || true
+  fi
+  echo "FAILED: native Claude activation rolled back" >&2
+  exit "$status"
+}
+trap rollback ERR
+
+ensure_directory "$RUNTIME_HOME"
+ensure_directory "$RUNTIME_HOME/backups"
+BACKUP_DIR="$(mktemp -d "$RUNTIME_HOME/backups/cma-activation-$(date -u +%Y%m%dT%H%M%SZ)-XXXXXX")"
+CREATED_DIRS+=("$BACKUP_DIR")
+if [[ "$CLAUDE_EXISTED" == "true" ]]; then
+  BACKUP_POLICY_TEMP="$(mktemp "$BACKUP_DIR/.CLAUDE.md.XXXXXX")"
+  CREATED_FILES+=("$BACKUP_POLICY_TEMP")
+  INCOMPLETE_BACKUP_FILES+=("$BACKUP_POLICY_TEMP")
+  cp -p "$RUNTIME_HOME/CLAUDE.md" "$BACKUP_POLICY_TEMP"
+  mv "$BACKUP_POLICY_TEMP" "$BACKUP_DIR/CLAUDE.md"
+  INCOMPLETE_BACKUP_FILES+=("$BACKUP_DIR/CLAUDE.md")
+  BACKUP_HASH_TEMP="$(mktemp "$BACKUP_DIR/.CLAUDE.md.sha256.XXXXXX")"
+  CREATED_FILES+=("$BACKUP_HASH_TEMP")
+  INCOMPLETE_BACKUP_FILES+=("$BACKUP_HASH_TEMP")
+  shasum -a 256 "$BACKUP_DIR/CLAUDE.md" > "$BACKUP_HASH_TEMP"
+  mv "$BACKUP_HASH_TEMP" "$BACKUP_DIR/CLAUDE.md.sha256"
+  INCOMPLETE_BACKUP_FILES+=("$BACKUP_DIR/CLAUDE.md.sha256")
+fi
+BACKUP_READY="true"
+
+install_missing_file() {
+  local source="$1"
+  local target="$2"
+  local executable="${3:-false}"
+  local parent="$(dirname "$target")"
+  local relative_parent="${parent#$RUNTIME_HOME/}"
+  local current="$RUNTIME_HOME"
+  local component=""
+  local components=()
+  local temporary=""
+
+  if [[ "$parent" != "$RUNTIME_HOME" ]]; then
+    IFS='/' read -r -a components <<< "$relative_parent"
+    for component in "${components[@]}"; do
+      current="$current/$component"
+      ensure_directory "$current"
+    done
+  fi
+  if [[ ! -e "$target" ]]; then
+    temporary="$(mktemp "$parent/.cma-install.XXXXXX")"
+    CREATED_FILES+=("$temporary")
+    cp "$source" "$temporary"
+    if [[ "$executable" == "true" ]]; then
+      chmod +x "$temporary"
+    fi
+    mv "$temporary" "$target"
+    CREATED_FILES+=("$target")
+  fi
+}
+
+while IFS= read -r relative; do
+  target_relative="$(target_for_source "$relative")"
+  target="$RUNTIME_HOME/$target_relative"
+  if [[ "$relative" == "settings.json" && -e "$target" ]]; then
+    continue
+  fi
+  install_missing_file "$SOURCE_HOME/$relative" "$target"
+done < <(required_source_files)
+if [[ -e "$LAUNCHER_TARGET" && ! -x "$LAUNCHER_TARGET" ]]; then
+  echo "FAILED: existing CMA-managed launcher is not executable: $LAUNCHER_TARGET" >&2
+  false
+fi
+install_missing_file "$SOURCE_LAUNCHER" "$LAUNCHER_TARGET" "true"
+
+if [[ "$IMPORT_COUNT" -eq 0 ]]; then
+  if [[ "$CLAUDE_EXISTED" == "true" ]]; then
+    TEMP_POLICY="$(mktemp "$RUNTIME_HOME/.CLAUDE.md.cma.XXXXXX")"
+    CREATED_FILES+=("$TEMP_POLICY")
+    cp -p "$RUNTIME_HOME/CLAUDE.md" "$TEMP_POLICY"
+    printf "\n%s\n" "$IMPORT_LINE" >> "$TEMP_POLICY"
+    mv "$TEMP_POLICY" "$RUNTIME_HOME/CLAUDE.md"
+  else
+    printf "%s\n" "$IMPORT_LINE" > "$RUNTIME_HOME/CLAUDE.md"
+    CREATED_FILES+=("$RUNTIME_HOME/CLAUDE.md")
+  fi
+  CLAUDE_CHANGED="true"
+fi
+
+{
+  printf "runtime_home=%s\n" "$RUNTIME_HOME"
+  printf "import=%s\n" "$IMPORT_LINE"
+  printf "created_files=%s\n" "${#CREATED_FILES[@]}"
+} > "$BACKUP_DIR/activation-manifest.txt"
+
+trap - ERR
+echo "Claude CMA activated at: $RUNTIME_HOME"
+echo "Recovery backup: $BACKUP_DIR"

@@ -1,8 +1,9 @@
 # Claude Code Runtime Variant
 
 This directory is the portable template for a user-global Claude Code CMA
-runtime. The default native location is `~/.claude`; the launcher and tests use
-`CLAUDE_CONFIG_DIR` so isolated runtimes do not mutate active local state.
+runtime. The default target is Claude Code's native `~/.claude` user scope.
+Explicit alternate targets remain available for isolated tests through
+`--runtime-home` and `CLAUDE_CONFIG_DIR`.
 
 Install it with:
 
@@ -43,4 +44,6 @@ Excluded:
 - sessions, logs, histories, caches, and memories
 - hooks and permission bypass settings
 - Codex-only TOML agents and `skills/*/agents/openai.yaml`
-- active `~/.claude` mutation, native Claude installation, and SDK dependency
+- existing settings, credentials, sessions, native Claude installation, and
+  SDK dependency; native activation changes only the backed-up instruction
+  bridge and missing CMA-owned files

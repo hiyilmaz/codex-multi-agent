@@ -24,7 +24,7 @@ Available runtime variants:
 |---|---|---|
 | `codex` | `~/.codex` | Use the normal Codex command. |
 | `dolphin` | `~/.llm-runtimes/dolphin` | `~/.llm-runtimes/dolphin/bin/llm-dolphin` |
-| `claude` | `~/.llm-runtimes/claude` | `~/.llm-runtimes/claude/bin/llm-claude` |
+| `claude` | `~/.claude` | `~/.claude/bin/llm-claude` |
 
 ## Guided Setup
 
@@ -79,24 +79,25 @@ Refresh template-managed runtime files intentionally:
 ```bash
 bin/codex-user-install --variant codex --force
 bin/codex-user-install --variant dolphin --force
-bin/codex-user-install --variant claude --force
 ```
 
 `--force` overwrites existing files managed by the runtime template. Review or
-back up locally customized runtime files before using it.
+back up locally customized runtime files before using it. Native Claude
+activation rejects `--force` and uses a preservation-first overlay instead.
 
 Launch the default Dolphin installation:
 
 ```bash
 ~/.llm-runtimes/dolphin/bin/llm-dolphin
-~/.llm-runtimes/claude/bin/llm-claude
+~/.claude/bin/llm-claude
 ```
 
-The Claude launcher sets the isolated runtime as `CLAUDE_CONFIG_DIR` and then
-executes the native `claude` binary. It does not install the Agent SDK, perform
-login, or modify active `~/.claude` files.
+The Claude launcher sets its native runtime as `CLAUDE_CONFIG_DIR` and then
+executes the native `claude` binary. Installation preserves existing
+`~/.claude/CLAUDE.md` and `settings.json`; it does not install the Agent SDK or
+perform login. Explicit alternate `--runtime-home` targets remain isolated.
 
-Restart the active Codex or Dolphin session after changing runtime files so the
+Restart the active Codex, Dolphin, or Claude session after changing runtime files so the
 new instructions, skills, and registry entries are loaded.
 
 ## New Or Reset Project

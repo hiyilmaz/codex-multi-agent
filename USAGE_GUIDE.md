@@ -56,7 +56,7 @@ Default runtime homes:
 
 - `codex`: `$HOME/.codex`
 - `dolphin`: `$HOME/.llm-runtimes/dolphin`
-- `claude`: `$HOME/.llm-runtimes/claude`
+- `claude`: `$HOME/.claude`
 
 For Dolphin, the launcher is installed inside the runtime home:
 
@@ -65,9 +65,11 @@ For Dolphin, the launcher is installed inside the runtime home:
 <runtime-home>/bin/llm-claude
 ```
 
-The Claude launcher isolates configuration through `CLAUDE_CONFIG_DIR` and
-requires an existing native `claude` executable. This phase does not install
-the Claude Agent SDK, authenticate, or write to active `~/.claude` state.
+The default Claude path is the native user-global surface. Activation preserves
+existing instructions with a backed-up CMA import overlay, does not rewrite an
+existing `settings.json`, and rejects `--force`. The launcher sets
+`CLAUDE_CONFIG_DIR` to its installed home and requires an existing native
+`claude` executable. It does not install the Claude Agent SDK or authenticate.
 
 For guided installation, use the interactive setup:
 

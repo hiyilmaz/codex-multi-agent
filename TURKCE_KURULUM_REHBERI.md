@@ -73,7 +73,7 @@ Varsayılan hedefler:
 ```text
 codex   -> $HOME/.codex
 dolphin -> $HOME/.llm-runtimes/dolphin
-claude  -> $HOME/.llm-runtimes/claude
+claude  -> $HOME/.claude
 ```
 
 Dolphin launcher kurulumdan sonra şurada olur:
@@ -83,9 +83,12 @@ Dolphin launcher kurulumdan sonra şurada olur:
 <runtime-home>/bin/llm-claude
 ```
 
-`llm-claude`, `CLAUDE_CONFIG_DIR` değerini izole runtime dizinine ayarlar ve
-önceden kurulmuş native `claude` komutunu çalıştırır. Bu faz Claude Agent SDK
-kurmaz, giriş yapmaz ve aktif `~/.claude` içeriğini değiştirmez.
+Claude kurulumu varsayılan olarak doğal kullanıcı-global `~/.claude` dizinine
+uygulanır. Mevcut `CLAUDE.md` yedeklenip tek CMA importu eklenerek korunur;
+mevcut `settings.json` değiştirilmez ve native hedefte `--force` reddedilir.
+`llm-claude`, `CLAUDE_CONFIG_DIR` değerini kurulduğu runtime dizinine ayarlayıp
+önceden kurulmuş native `claude` komutunu çalıştırır. Agent SDK kurmaz veya
+giriş yapmaz. İzole testler için açık bir `--runtime-home` verilebilir.
 
 Bu komut şunları hazırlar:
 
@@ -123,7 +126,7 @@ bin/codex-user-install
 
 Bu kadar. `codex` runtime `~/.codex` altında çalışır. `dolphin` runtime
 varsayılan olarak `~/.llm-runtimes/dolphin`, `claude` runtime ise
-`~/.llm-runtimes/claude` altında çalışır. Repo içindeki
+doğal kullanıcı-global `~/.claude` altında çalışır. Repo içindeki
 `variants/` dizini sadece taşınabilir kurulum kaynaklarını ve varsayılan
 versiyon config dosyasını taşır.
 

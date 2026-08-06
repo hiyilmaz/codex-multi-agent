@@ -356,6 +356,8 @@ class VariantInstallTests(unittest.TestCase):
                 self.assertIn("llm-claude", text)
                 self.assertIn("CLAUDE_CONFIG_DIR", text)
                 self.assertIn("Agent SDK", text)
+                self.assertIn(".claude", text)
+                self.assertNotIn(".llm-runtimes/claude", text)
 
     def test_runtime_home_and_codex_home_aliases_are_equivalent(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

@@ -103,18 +103,22 @@ Default targets:
 
 - `codex` -> `$HOME/.codex`
 - `dolphin` -> `$HOME/.llm-runtimes/dolphin`
-- `claude` -> `$HOME/.llm-runtimes/claude`
+- `claude` -> `$HOME/.claude`
 
-The Dolphin launcher is installed as:
+Variant launchers are installed as:
 
 ```text
 <runtime-home>/bin/llm-dolphin
 <runtime-home>/bin/llm-claude
 ```
 
-`llm-claude` sets `CLAUDE_CONFIG_DIR` to the isolated runtime home and delegates
-to an already installed native `claude` command. It does not install the Claude
-Agent SDK, authenticate, or change the active `~/.claude` directory.
+The default Claude installation uses its native user-global directory. It
+preserves existing `CLAUDE.md` content through a backed-up import overlay,
+leaves existing `settings.json` unchanged, and rejects `--force`. Explicit
+alternate `--runtime-home` targets remain available for isolated testing.
+`llm-claude` sets `CLAUDE_CONFIG_DIR` to its installed runtime home and delegates
+to an already installed native `claude` command; it does not install the Claude
+Agent SDK or authenticate.
 
 Run the interactive setup:
 
