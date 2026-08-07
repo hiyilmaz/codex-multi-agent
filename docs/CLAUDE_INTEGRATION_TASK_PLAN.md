@@ -44,8 +44,8 @@ Status update rules:
 
 ## Scope Boundaries
 
-Phase 0 through Phase 5 and Phase 7 are complete. Phase 8 native global
-activation was approved and is in final review.
+Phase 0 through Phase 5, Phase 7, and Phase 8 are complete. Native global
+activation and its final reviews are complete.
 
 Excluded until separately approved:
 

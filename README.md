@@ -120,6 +120,14 @@ alternate `--runtime-home` targets remain available for isolated testing.
 to an already installed native `claude` command; it does not install the Claude
 Agent SDK or authenticate.
 
+Native activation adds exactly one functional `@registry/CMA_GLOBAL.md` import
+to `~/.claude/CLAUDE.md`. Before changing an existing instruction file, it saves
+the original and its SHA-256 checksum under
+`~/.claude/backups/cma-activation-<UTC timestamp>-<suffix>/`. Existing
+CMA-managed files must match the packaged source; conflicts, unsafe symlinks,
+incomplete sources, or copy failures stop the activation without leaving a
+partial overlay. Any legacy isolated Claude runtime is not removed or modified.
+
 Run the interactive setup:
 
 ```bash

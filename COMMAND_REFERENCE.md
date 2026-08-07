@@ -85,7 +85,11 @@ bin/codex-user-install --variant dolphin --force
 back up locally customized runtime files before using it. Native Claude
 activation rejects `--force` and uses a preservation-first overlay instead.
 
-Launch the default Dolphin installation:
+For guided Claude setup, answer `no` when asked whether existing
+template-managed files should be overwritten. Selecting `yes` passes `--force`,
+which native Claude activation intentionally rejects.
+
+Launch the default Dolphin or Claude installation:
 
 ```bash
 ~/.llm-runtimes/dolphin/bin/llm-dolphin
@@ -96,6 +100,20 @@ The Claude launcher sets its native runtime as `CLAUDE_CONFIG_DIR` and then
 executes the native `claude` binary. Installation preserves existing
 `~/.claude/CLAUDE.md` and `settings.json`; it does not install the Agent SDK or
 perform login. Explicit alternate `--runtime-home` targets remain isolated.
+
+Native activation writes CMA policy to `~/.claude/registry/CMA_GLOBAL.md` and
+adds exactly one functional `@registry/CMA_GLOBAL.md` import to the existing
+`~/.claude/CLAUDE.md`. When that file already exists, its recovery copy and
+SHA-256 checksum are stored under:
+
+```text
+~/.claude/backups/cma-activation-<UTC timestamp>-<suffix>/
+```
+
+The command fails closed before overwriting a differing CMA-managed file or
+following an unsafe symlink. A copy or backup failure triggers rollback so a
+partial native overlay is not reported as active. It does not remove or modify
+the legacy isolated Claude runtime.
 
 Restart the active Codex, Dolphin, or Claude session after changing runtime files so the
 new instructions, skills, and registry entries are loaded.

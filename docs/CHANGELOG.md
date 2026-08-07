@@ -2,6 +2,10 @@
 
 ## 2026-08-07
 
+- [DOCS] Synchronized the English and Turkish runtime guides, command reference,
+  Claude variant README, and integration tracker with the completed native
+  Claude activation, recovery backup, rollback, force-rejection, and legacy
+  runtime preservation behavior.
 - [FEAT] EXP-20260807-001 changed Claude's default user-global runtime from the
   isolated `.llm-runtimes/claude` path to native `${HOME}/.claude` with a
   preservation-first CMA policy import and dedicated activation helper.

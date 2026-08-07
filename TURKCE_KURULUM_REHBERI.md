@@ -76,7 +76,7 @@ dolphin -> $HOME/.llm-runtimes/dolphin
 claude  -> $HOME/.claude
 ```
 
-Dolphin launcher kurulumdan sonra şurada olur:
+Dolphin ve Claude launcher dosyaları kurulumdan sonra şurada olur:
 
 ```text
 <runtime-home>/bin/llm-dolphin
@@ -89,6 +89,20 @@ mevcut `settings.json` değiştirilmez ve native hedefte `--force` reddedilir.
 `llm-claude`, `CLAUDE_CONFIG_DIR` değerini kurulduğu runtime dizinine ayarlayıp
 önceden kurulmuş native `claude` komutunu çalıştırır. Agent SDK kurmaz veya
 giriş yapmaz. İzole testler için açık bir `--runtime-home` verilebilir.
+
+Native aktivasyon, CMA politikasını `~/.claude/registry/CMA_GLOBAL.md` olarak
+kurar ve mevcut `~/.claude/CLAUDE.md` dosyasına tam olarak bir işlevsel
+`@registry/CMA_GLOBAL.md` importu ekler. Mevcut talimat dosyasının aslı ve
+SHA-256 özeti şu dizinde saklanır:
+
+```text
+~/.claude/backups/cma-activation-<UTC timestamp>-<suffix>/
+```
+
+Farklı içerikte mevcut bir CMA-managed dosya, güvenli olmayan symlink, eksik
+kaynak veya kopyalama/yedekleme hatası aktivasyonu durdurur. İşlem sırasında
+hata oluşursa kısmi kurulum geri alınır. Eski izole Claude runtime dizini
+silinmez veya değiştirilmez.
 
 Bu komut şunları hazırlar:
 
@@ -108,6 +122,10 @@ Mevcut dosyaları bilinçli olarak template ile değiştirmek istersen:
 ```bash
 bin/codex-user-install --force
 ```
+
+Bu seçenek Codex ve Dolphin içindir. Native Claude aktivasyonunda `--force`
+bilerek reddedilir. Etkileşimli Claude kurulumunda “Mevcut template-managed
+dosyalar ezilsin mi?” sorusuna `n` yanıtını ver.
 
 ## 2. Başka Bilgisayarda Kurulum
 

@@ -11,6 +11,15 @@ Install it with:
 bin/codex-user-install --variant claude
 ```
 
+For the default native target, the installer delegates to the transactional
+`bin/claude-native-activate` helper. It keeps an existing `settings.json`
+unchanged, stores an existing `CLAUDE.md` plus its SHA-256 checksum under
+`~/.claude/backups/cma-activation-<UTC timestamp>-<suffix>/`, and appends exactly
+one functional `@registry/CMA_GLOBAL.md` import. Native activation rejects
+`--force`, differing CMA-managed files, unsafe symlinks, and incomplete source
+manifests. Backup or copy failures roll back newly created overlay files. The
+legacy isolated Claude runtime is outside the activation scope.
+
 Included:
 
 - complete Core CMA `CLAUDE.md` policy

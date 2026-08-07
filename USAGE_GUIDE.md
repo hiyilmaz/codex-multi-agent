@@ -71,6 +71,15 @@ existing `settings.json`, and rejects `--force`. The launcher sets
 `CLAUDE_CONFIG_DIR` to its installed home and requires an existing native
 `claude` executable. It does not install the Claude Agent SDK or authenticate.
 
+The native overlay installs policy at `~/.claude/registry/CMA_GLOBAL.md` and
+adds exactly one functional `@registry/CMA_GLOBAL.md` import to
+`~/.claude/CLAUDE.md`. If the instruction file already exists, its recovery copy
+and SHA-256 checksum are stored under
+`~/.claude/backups/cma-activation-<UTC timestamp>-<suffix>/`. Differing
+CMA-managed files, unsafe symlinks, incomplete sources, and backup or copy
+failures stop activation; transactional rollback prevents a partial overlay.
+The legacy isolated Claude runtime remains untouched.
+
 For guided installation, use the interactive setup:
 
 ```bash
@@ -97,6 +106,9 @@ files:
 ```bash
 bin/codex-user-install --force
 ```
+
+This overwrite flow applies to Codex and Dolphin. Native Claude activation
+rejects `--force`; in guided Claude setup, decline the overwrite prompt.
 
 ---
 
