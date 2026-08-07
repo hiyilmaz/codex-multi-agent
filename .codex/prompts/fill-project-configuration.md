@@ -37,6 +37,9 @@ Rules:
 - `ORCHESTRATION_MODE` must be one of `skip`, `ask-approval`, or `run-chain`.
   Use `ask-approval` unless the project or user explicitly requires another
   mode.
+- `EVIDENCE_MODE` must be exactly `enable` or `disable`.
+  Use `disable` when the field is missing or no explicit choice is provided.
+  If an explicit value is invalid, report it and do not treat evidence automation as enabled.
 - Add `openai-docs` only for OpenAI/Codex development or documentation work
   when that skill is available in the current session. Do not add it as a
   baseline skill for unrelated projects.
@@ -68,6 +71,7 @@ STACK_BACKEND:
 STACK_FRONTEND:
 CHANGELOG_PATH:
 EVIDENCE_PATH:
+EVIDENCE_MODE:
 ACTIVE_RULE_SETS:
 ACTIVE_SKILLS:
 ACTIVE_AGENT_ROLES:

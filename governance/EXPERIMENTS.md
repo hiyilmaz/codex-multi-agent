@@ -665,3 +665,89 @@ Notes:
 The user explicitly approved active native Claude CMA activation with a
 preservation-first merge. Credential use, authenticated Claude requests,
 legacy deletion, commit, push, and deployment remain outside scope.
+
+## EXP-20260807-002 - CMA Self-Hosted Codex Runtime Alignment
+
+Date: 2026-08-07
+Status: ACCEPTED
+
+Problem:
+The CMA repository uses its own project instructions and user-global Codex
+runtime, but the project remains a legacy-safe bootstrap without
+`.codex/template-state.json`. Its project config and configuration prompt are
+older than the current templates, while selected active `${HOME}/.codex` CMA
+policy files differ from the current Codex variant.
+
+Evidence:
+The read-only project upgrade reports `State: legacy-safe bootstrap`, preserves
+both legacy managed files, and would create template state. Direct comparison
+shows the active global policy, runtime README, and orchestration gate are
+older than their packaged sources. Other differing global files contain user
+preferences, runtime audit history, or stricter record/archive behavior and
+must not be overwritten as ordinary template drift.
+
+Hypothesis:
+A preservation-first, targeted alignment can make the CMA repository use the
+current project templates and selected current Codex policy surfaces without
+weakening stronger active overrides or changing user configuration, secrets,
+sessions, audit history, or unrelated runtime state.
+
+Solution Attempt:
+Back up every file that will change. Align the project config and generated
+configuration prompt with their current templates, then create managed Codex
+template state. Synchronize only the active global policy, runtime README, and
+orchestration gate that are demonstrably older than source. Preserve
+`config.toml`, setup preferences, status messages, audit history, record
+contracts, archive implementation, credentials, sessions, and extra files.
+
+Test:
+Verify pre-change backups and hashes, project-template byte parity, valid TOML
+and JSON, managed-state ownership, a clean second project upgrade dry-run,
+source parity for the three approved global files, unchanged hashes for every
+explicitly preserved global file, focused upgrade/orchestration tests, the
+complete regression suite, and final Git diff integrity.
+
+Success Criteria:
+- Project config and configuration prompt match the current templates.
+- `.codex/template-state.json` records variant `codex`, schema version 1,
+  current template version, and matching managed hashes.
+- A second project upgrade dry-run reports managed `UNCHANGED` state.
+- The approved active global policy, README, and orchestration gate match their
+  packaged sources byte-for-byte.
+- Global config, preferences, status messages, audit history, record contracts,
+  archive implementation, and unrelated runtime files remain byte-identical.
+- Every changed pre-update file has a recoverable hash-recorded backup.
+- Focused and complete regressions pass without weakened assertions or skipped
+  checks.
+
+Result:
+The legacy baseline reproduced the expected drift: both project-managed files
+differed from their templates, template state was absent, and the selected
+global policy files differed from source. A restricted backup captured all
+five changed pre-update files with verified SHA-256 manifests under
+`/Users/iyilmaz/CodexBackups/cma-self-update-20260807T100340Z-qg3IdP/`.
+
+The project config and configuration prompt now match their templates
+byte-for-byte. Template state records schema version 1, template version 2.2,
+variant `codex`, merge ownership for `AGENTS.md`, and managed hashes for both
+project template files. A second upgrade dry-run reports managed state with
+`UNCHANGED` for every path.
+
+The active global policy, runtime README, and orchestration gate match their
+packaged sources. Hash verification confirms the global config, audit log,
+setup preferences, status messages, stricter records module, record archive
+skill, modular archive scripts, and unrelated runtime state were preserved.
+
+Project upgrade, orchestration, and lazy-runtime focused suites passed 52/52;
+the complete regression suite passed 122/122. Backup manifests, TOML and JSON
+parsing, source parity, preserved hashes, idempotency, and `git diff --check`
+passed. The first TOML validation command selected Python 3.10 without
+`tomllib`; rerunning the same parse with the installed Python 3.13 completed
+successfully and did not require a product change.
+
+Decision:
+ACCEPT
+
+Notes:
+The user selected the full safe update and retained the prior instruction to
+work without the orchestration chain. Commit and push are not authorized.

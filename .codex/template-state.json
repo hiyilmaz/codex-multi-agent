@@ -1,0 +1,18 @@
+{
+  "files": {
+    ".codex/config.toml": {
+      "mode": "managed",
+      "template_sha256": "bf20cff7f9361c5ca955249b8580be6ce089f39b1bed65f8ccf20c50b7825559"
+    },
+    ".codex/prompts/fill-project-configuration.md": {
+      "mode": "managed",
+      "template_sha256": "7bee8a83ce6da418e42bfe839b0af46e4fe35f2039dccf8d94e5796ce1d396d7"
+    },
+    "AGENTS.md": {
+      "mode": "merge"
+    }
+  },
+  "schema_version": 1,
+  "template_version": "2.2",
+  "variant": "codex"
+}

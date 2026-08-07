@@ -2,6 +2,16 @@
 
 ## 2026-08-07
 
+- [INFRA] EXP-20260807-002 aligned the self-hosted CMA project with Codex
+  template 2.2, created managed template state, and synchronized the selected
+  active global policy, runtime README, and orchestration gate.
+- [SECURITY] Preserved user configuration, setup preferences, status messages,
+  audit history, stricter record/archive overrides, credentials, sessions, and
+  unrelated runtime state through a verified five-file recovery backup and
+  targeted updates only.
+- [TEST] Verified project-template and active-runtime parity, preserved hashes,
+  valid TOML/JSON, managed upgrade idempotency, 52/52 focused checks, 122/122
+  complete regressions, and clean diff integrity.
 - [DOCS] Synchronized the English and Turkish runtime guides, command reference,
   Claude variant README, and integration tracker with the completed native
   Claude activation, recovery backup, rollback, force-rejection, and legacy
