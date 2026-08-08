@@ -129,7 +129,7 @@ the legacy isolated Claude runtime.
 Restart the active Codex, Dolphin, or Claude session after changing runtime files so the
 new instructions, skills, and registry entries are loaded.
 
-## New Or Reset Project
+## Initialize, Add A Variant, Or Reset
 
 Initialize a project with the default variant:
 
@@ -137,7 +137,7 @@ Initialize a project with the default variant:
 bin/codex-project-init "/absolute/path/to/project"
 ```
 
-Record a specific runtime variant:
+Initialize or add a specific runtime variant:
 
 ```bash
 bin/codex-project-init \
@@ -145,15 +145,20 @@ bin/codex-project-init \
   "/absolute/path/to/project"
 ```
 
-For Claude projects, replace `codex` with `claude`. The confirmed init adds a
-minimal `CLAUDE.md` bridge (`@AGENTS.md`) and `.claude/settings.json`; unrelated
-`.claude` files are not reset.
-For OpenCode projects, use `--variant opencode`; init manages only
+For existing projects, init is additive: it preserves `AGENTS.md`, shared
+prompts, customized files, and other variant surfaces. Multiple runtime
+variants can coexist in one project. Codex and Dolphin share
+`.codex/config.toml`; Claude adds its bridge/settings; OpenCode adds
 `.opencode/opencode.json` and preserves sibling `.opencode` content.
 
-Project initialization asks for confirmation, archives conflicting local Codex
-files, and recreates the standard project structure. Use project upgrade for an
-already configured project unless an intentional reset is required.
+Only an explicit reset recreates the shared structure:
+
+```bash
+bin/codex-project-init --reset --variant codex "/absolute/path/to/project"
+```
+
+Reset asks for confirmation and writes conflicting files to a private recovery
+archive. Normal additive init never resets an existing project.
 
 After initialization, use this generated prompt in the project Codex session:
 
@@ -192,7 +197,7 @@ bin/codex-project-upgrade \
 
 For project upgrades, `--force` skips confirmation only. Customized project
 files are still preserved. Applied changes are archived under
-`<project>/.codex/archive/upgrade-YYYYMMDD_HHMMSS/`.
+`<project>/.codex/archive/upgrade-YYYYMMDD_HHMMSS_microseconds/`.
 
 Record a different runtime variant while upgrading:
 

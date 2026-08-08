@@ -124,7 +124,7 @@ rejects `--force`; in guided Claude setup, decline the overwrite prompt.
 
 ---
 
-## New Project
+## New Project Or Additive Variant Activation
 
 ### Step 1 — Run project init
 
@@ -132,14 +132,23 @@ rejects `--force`; in guided Claude setup, decline the overwrite prompt.
 bin/codex-project-init /new-project
 ```
 
-The command asks for confirmation before writing. When confirmed, it archives
-existing project-local Codex files under:
+For a new project, the command asks for confirmation and creates the shared
+project surface. For an existing project, init is additive: it preserves
+`AGENTS.md`, shared prompts, customized configuration, and other variant files.
+Multiple runtime variants can coexist in one project and are recorded together
+in `.codex/template-state.json`.
 
-```text
-<project>/.codex/archive/init-YYYYMMDD_HHMMSS/
+Use an explicit reset only when the shared project structure should be replaced:
+
+```bash
+bin/codex-project-init --reset --variant codex /path/to/project
 ```
 
-Then it creates:
+Reset conflicts are listed before confirmation and privately archived under
+`<project>/.codex/archive/init-YYYYMMDD_HHMMSS-PID/`. Normal additive init does not
+archive or replace shared files.
+
+A fresh Codex or Dolphin project creates:
 
 ```text
 <project>/AGENTS.md
@@ -147,13 +156,11 @@ Then it creates:
 <project>/.codex/prompts/fill-project-configuration.md
 ```
 
-With `--variant claude`, init additionally creates `CLAUDE.md` containing
-`@AGENTS.md` and `.claude/settings.json`. Existing Claude paths are listed
-before confirmation and archived only when the reset is approved; unrelated
-`.claude` content is preserved.
+With `--variant claude`, init adds `CLAUDE.md` containing `@AGENTS.md` and
+`.claude/settings.json` while preserving existing project surfaces.
 
-With `--variant opencode`, init creates `.opencode/opencode.json` instead of
-`.codex/config.toml`. It preserves sibling files and directories already under
+With `--variant opencode`, init adds `.opencode/opencode.json`. It preserves
+Codex/Dolphin configuration plus sibling files and directories under
 `.opencode`.
 
 ### Step 2 — Run the Project Configuration prompt
@@ -265,7 +272,7 @@ Project initialization records template ownership in
 - preserves locally modified or legacy files, shows a non-applied comparison,
   and marks them project-owned after approval
 - archives every changed file under
-  `.codex/archive/upgrade-YYYYMMDD_HHMMSS/`
+  `.codex/archive/upgrade-YYYYMMDD_HHMMSS_microseconds/`
 
 Dry-run is the default and never writes files. Use `--apply` after reviewing the
 plan. `--apply --force` skips only the confirmation prompt; it never overwrites
@@ -276,7 +283,7 @@ project Codex structure:
 
 1. Read the existing project instruction files if you need to preserve project
    metadata.
-2. Run `bin/codex-project-init /path/to/project`.
+2. Run `bin/codex-project-init --reset /path/to/project`.
 3. Confirm the reset when prompted.
 4. Run the generated prompt:
    `<project>/.codex/prompts/fill-project-configuration.md`.
@@ -287,7 +294,7 @@ project Codex structure:
 Archived files are stored under:
 
 ```text
-<project>/.codex/archive/init-YYYYMMDD_HHMMSS/
+<project>/.codex/archive/init-YYYYMMDD_HHMMSS-PID/
 ```
 
 ---
@@ -323,7 +330,7 @@ or install a runtime with codex-user-install [--variant codex|dolphin]
         ↓
 For existing projects, run codex-project-upgrade
         ↓
-For new/reset projects, run codex-project-init and confirm reset
+For new projects or additive variants, run codex-project-init
         ↓
 Run generated Project Configuration prompt
         ↓

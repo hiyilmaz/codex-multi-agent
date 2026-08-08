@@ -153,20 +153,22 @@ Run the interactive setup:
 bin/codex-setup
 ```
 
-Initialize a project:
+Initialize a project or add a runtime variant:
 
 ```bash
 bin/codex-project-init /path/to/project
 ```
 
-The init command asks for confirmation, archives existing project-local Codex
-files, resets the project Codex structure, and creates a fresh project
-`AGENTS.md`. It also records the selected runtime variant, template version,
-and managed-file hashes in `.codex/template-state.json`.
-For `--variant claude`, it also creates the minimal `CLAUDE.md` bridge importing
-`@AGENTS.md` and a conservative `.claude/settings.json`.
-For `--variant opencode`, it creates `.opencode/opencode.json` and preserves
-unrelated `.opencode` content such as local plugins and package metadata.
+On a new project, init creates the shared project instructions and the selected
+variant surface. On an existing project, init is additive: it preserves
+`AGENTS.md`, shared prompts, customized files, and every existing variant while
+adding only the requested surface. Multiple runtime variants can coexist and
+are recorded in `.codex/template-state.json`.
+
+Codex and Dolphin share `.codex/config.toml`; Claude adds `CLAUDE.md` and
+`.claude/settings.json`; OpenCode adds `.opencode/opencode.json`. Use `--reset`
+only for an intentional destructive reinitialization; it displays and privately
+archives conflicting files before recreating the project structure.
 
 After init, run the generated prompt:
 
@@ -188,7 +190,8 @@ bin/codex-project-upgrade --apply /path/to/project
 Dry-run is the default. Upgrade preserves project-specific values and additions,
 merges only missing baseline fields into `AGENTS.md`, updates unchanged
 template-managed files, and leaves locally modified files untouched. Every
-applied change is archived under `.codex/archive/upgrade-YYYYMMDD_HHMMSS/`.
+applied change is archived under
+`.codex/archive/upgrade-YYYYMMDD_HHMMSS_microseconds/`.
 
 ## Local Codex Docs
 

@@ -161,7 +161,7 @@ doğal kullanıcı-global `~/.claude` altında çalışır. Repo içindeki
 `variants/` dizini sadece taşınabilir kurulum kaynaklarını ve varsayılan
 versiyon config dosyasını taşır.
 
-## 3. Yeni Proje İçine Kurulum
+## 3. Yeni Proje veya Eklemeli Varyant Kurulumu
 
 Yeni veya mevcut bir projeye Codex proje yapısını eklemek için:
 
@@ -170,7 +170,19 @@ cd /path/to/Codex-Multi-Agent
 bin/codex-project-init /path/to/project
 ```
 
-Komut onay ister. Onaydan sonra şunları oluşturur:
+Yeni projede komut ortak proje yüzeyini oluşturur. Mevcut projede init eklemeli
+çalışır; `AGENTS.md` dosyasını korur, ortak promptları ve özelleştirilmiş
+dosyaları değiştirmez. Birden fazla runtime varyantı aynı projede birlikte
+kullanılabilir ve `.codex/template-state.json` içinde birlikte kaydedilir.
+
+Ortak proje yapısını yalnız bilinçli olarak sıfırlamak için:
+
+```bash
+bin/codex-project-init --reset --variant codex /path/to/project
+```
+
+Reset, çakışan dosyaları onaydan önce listeler ve özel arşive taşır. Yeni Codex
+veya Dolphin projesi şunları oluşturur:
 
 ```text
 <project>/AGENTS.md
@@ -178,19 +190,18 @@ Komut onay ister. Onaydan sonra şunları oluşturur:
 <project>/.codex/prompts/fill-project-configuration.md
 ```
 
-`--variant claude` seçildiğinde ayrıca yalnızca `@AGENTS.md` içeren
-`<project>/CLAUDE.md` ve `<project>/.claude/settings.json` oluşturulur. Mevcut
-Claude dosyaları onaydan önce listelenir; onaylanan reset sırasında arşivlenir.
-Diğer `.claude` içeriğine dokunulmaz.
+`--variant claude` seçildiğinde yalnızca `@AGENTS.md` içeren
+`<project>/CLAUDE.md` ve `<project>/.claude/settings.json` eklenir. Diğer proje
+ve `.claude` içeriğine dokunulmaz.
 
-`--variant opencode` seçildiğinde `.codex/config.toml` yerine
-`.opencode/opencode.json` oluşturulur. Mevcut `.opencode/plugins`, paket
-metadata dosyaları ve diğer kardeş içerikler korunur.
+`--variant opencode` seçildiğinde `.opencode/opencode.json` eklenir. Mevcut
+Codex/Dolphin yapılandırması, `.opencode/plugins`, paket metadata dosyaları ve
+diğer kardeş içerikler korunur.
 
-Eğer projede eski Codex dosyaları varsa, bunları şuraya arşivler:
+Yalnız `--reset` sırasında çakışan dosyalar şuraya arşivlenir:
 
 ```text
-<project>/.codex/archive/init-YYYYMMDD_HHMMSS/
+<project>/.codex/archive/init-YYYYMMDD_HHMMSS-PID/
 ```
 
 Zaten init edilmiş projeyi resetlemeden güncellemek için:
@@ -200,7 +211,7 @@ bin/codex-project-upgrade --dry-run /path/to/project
 bin/codex-project-upgrade --apply /path/to/project
 ```
 
-Init sırasında template sürümü, variant ve managed dosya hash'leri
+Init sırasında template sürümü, aktif varyantlar ve managed dosya hash'leri
 `.codex/template-state.json` içine kaydedilir. Upgrade mevcut `AGENTS.md`
 değerlerini ve projeye özel eklemeleri korur; yalnızca eksik baseline alanlarını
 ekler. Hash'i değişmiş prompt/config dosyalarının üzerine yazmaz ve bunları
@@ -210,7 +221,7 @@ Dry-run varsayılandır ve hiçbir dosya yazmaz. `--apply` yalnızca incelenen p
 uygular. Değiştirilecek mevcut dosyalar şuraya arşivlenir:
 
 ```text
-<project>/.codex/archive/upgrade-YYYYMMDD_HHMMSS/
+<project>/.codex/archive/upgrade-YYYYMMDD_HHMMSS_microseconds/
 ```
 
 ## 4. Proje AGENTS.md Doldurma
