@@ -124,6 +124,20 @@ operation, or test. Ordinary conversation does not require a status field or JSO
 - Do only what is requested.
 - When done: report result, stop, and wait for the next instruction.
 
+### Task Transition Gate
+
+- Treat each distinct task as a hard stop; never begin the next task
+  automatically after completing the current one.
+- At each task boundary, summarize the completed task in one or two short,
+  clear sentences.
+- State the next known task and explain it briefly. If no next task is known,
+  say so explicitly.
+- Ask for explicit user approval before starting that next task, and wait.
+- Approval for the completed task never authorizes the next distinct task.
+- Steps that are already part of one explicitly approved task remain within
+  that task. The user may explicitly override this default for a bounded set of
+  named tasks.
+
 ### 4. Runtime Isolation
 
 - Do not synchronize with another runtime home unless the user explicitly asks.

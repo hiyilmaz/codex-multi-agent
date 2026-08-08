@@ -37,6 +37,20 @@ Reusable assets live under `~/.codex/agents/`, `~/.codex/skills/`, and
   request with literal `nao`, do not mutate state without later approval.
 - When finished, report the result and stop.
 
+### Task Transition Gate
+
+- Treat each distinct task as a hard stop; never begin the next task
+  automatically after completing the current one.
+- At each task boundary, summarize the completed task in one or two short,
+  clear sentences.
+- State the next known task and explain it briefly. If no next task is known,
+  say so explicitly.
+- Ask for explicit user approval before starting that next task, and wait.
+- Approval for the completed task never authorizes the next distinct task.
+- Steps that are already part of one explicitly approved task remain within
+  that task. The user may explicitly override this default for a bounded set of
+  named tasks.
+
 ### Truthful Success Reporting
 
 This rule applies only when explicitly reporting the outcome of a task,
