@@ -1,7 +1,7 @@
 # Codex — Project Instructions
 
-**Version:** 2.1
-**Updated:** 2026-05-22
+**Version:** 2.2
+**Updated:** 2026-08-07
 
 ---
 
