@@ -3,15 +3,18 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: codex-project-init [--variant <id>] <project-path>
+Usage: codex-project-init [--variant <id>] [--reset] <project-path>
 
-Archives existing project-local Codex files and resets the project to the
-standard Codex structure.
+Initializes a new project or adds a runtime variant to an existing project.
+Existing projects are additive by default; --reset explicitly recreates the
+shared project structure.
 
 Behavior:
+  - preserves shared files when adding a variant to an existing project
   - asks for confirmation before writing
-  - archives conflicting files under <project>/.codex/archive/init-YYYYMMDD_HHMMSS
-  - writes <project>/AGENTS.md from PROJECT_AGENTS_TEMPLATE.md
+  - with --reset, archives conflicting files under
+    <project>/.codex/archive/init-YYYYMMDD_HHMMSS-PID
+  - writes <project>/AGENTS.md only for a new project or explicit reset
   - writes the selected variant's project settings file
   - writes <project>/.codex/prompts/fill-project-configuration.md
   - for the claude variant, writes CLAUDE.md and .claude/settings.json
@@ -25,6 +28,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 VARIANT_ID=""
 PROJECT_PATH=""
+RESET="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -35,6 +39,10 @@ while [[ $# -gt 0 ]]; do
       fi
       VARIANT_ID="$2"
       shift 2
+      ;;
+    --reset)
+      RESET="true"
+      shift
       ;;
     -h|--help)
       usage
@@ -102,7 +110,28 @@ for directory in "${PROJECT_DIRECTORIES[@]}"; do
   fi
 done
 
-TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+if [[ -L "$PROJECT_PATH/AGENTS.md" ]]; then
+  echo "FAILED: refusing symbolic link for project AGENTS.md: $PROJECT_PATH/AGENTS.md" >&2
+  exit 1
+fi
+if [[ -e "$PROJECT_PATH/AGENTS.md" && ! -f "$PROJECT_PATH/AGENTS.md" ]]; then
+  echo "FAILED: project AGENTS.md is not a regular file: $PROJECT_PATH/AGENTS.md" >&2
+  exit 1
+fi
+if [[ -f "$PROJECT_PATH/AGENTS.md" && "$RESET" != "true" ]]; then
+  echo "Existing project detected; adding variant without resetting shared files."
+  exec "$TEMPLATE_DIR/bin/codex-project-upgrade" \
+    --apply \
+    --add-variant \
+    --variant "$VARIANT_ID" \
+    "$PROJECT_PATH"
+fi
+if [[ -e "$PROJECT_PATH/.codex/template-state.json" && "$RESET" != "true" ]]; then
+  echo "FAILED: template state exists without AGENTS.md; use --reset only for an intentional recovery reset" >&2
+  exit 1
+fi
+
+TIMESTAMP="$(date +%Y%m%d_%H%M%S)-$$"
 ARCHIVE_DIR="$PROJECT_PATH/.codex/archive/init-$TIMESTAMP"
 
 CONFLICTS=(
@@ -117,7 +146,13 @@ CONFLICTS=(
   ".agents"
 )
 
-if [[ "$VARIANT_ID" == "claude" ]]; then
+if [[ "$RESET" == "true" ]]; then
+  CONFLICTS+=(
+    "CLAUDE.md"
+    ".claude/settings.json"
+    ".opencode/opencode.json"
+  )
+elif [[ "$VARIANT_ID" == "claude" ]]; then
   CONFLICTS+=(
     "CLAUDE.md"
     ".claude/settings.json"
@@ -126,7 +161,11 @@ elif [[ "$VARIANT_ID" == "opencode" ]]; then
   CONFLICTS+=(".opencode/opencode.json")
 fi
 
-echo "This will archive existing Codex project files and reset the project Codex structure."
+if [[ "$RESET" == "true" ]]; then
+  echo "This will explicitly reset the project runtime structure."
+else
+  echo "This will initialize a new project runtime structure."
+fi
 echo "Target: $PROJECT_PATH"
 echo "Archive: $ARCHIVE_DIR"
 echo
@@ -169,7 +208,7 @@ cp "$TEMPLATE_DIR/PROJECT_CONFIG_PROMPT.md" "$PROJECT_PATH/.codex/prompts/fill-p
 if [[ "$VARIANT_ID" == "opencode" ]]; then
   mkdir -p "$PROJECT_PATH/.opencode"
   cp "$TEMPLATE_DIR/OPENCODE_PROJECT_CONFIG_EXAMPLE.json" "$PROJECT_PATH/.opencode/opencode.json"
-else
+elif [[ "$VARIANT_ID" == "codex" || "$VARIANT_ID" == "dolphin" ]]; then
   cp "$TEMPLATE_DIR/CODEX_CONFIG_EXAMPLE.toml" "$PROJECT_PATH/.codex/config.toml"
 fi
 if [[ "$VARIANT_ID" == "claude" ]]; then
@@ -182,7 +221,7 @@ fi
 echo "Created: $PROJECT_PATH/AGENTS.md"
 if [[ "$VARIANT_ID" == "opencode" ]]; then
   echo "Created: $PROJECT_PATH/.opencode/opencode.json"
-else
+elif [[ "$VARIANT_ID" == "codex" || "$VARIANT_ID" == "dolphin" ]]; then
   echo "Created: $PROJECT_PATH/.codex/config.toml"
 fi
 echo "Created: $PROJECT_PATH/.codex/prompts/fill-project-configuration.md"
