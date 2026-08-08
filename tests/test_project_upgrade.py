@@ -80,8 +80,8 @@ class ProjectUpgradeTests(unittest.TestCase):
         project = self.initialize("fresh", "dolphin")
         state = json.loads((project / ".codex/template-state.json").read_text())
 
-        self.assertEqual(state["schema_version"], 1)
-        self.assertEqual(state["variant"], "dolphin")
+        self.assertEqual(state["schema_version"], 2)
+        self.assertEqual(state["variants"], ["dolphin"])
         self.assertEqual(state["files"]["AGENTS.md"]["mode"], "merge")
         self.assertEqual(
             state["files"][".codex/config.toml"]["mode"], "managed"
@@ -99,7 +99,7 @@ class ProjectUpgradeTests(unittest.TestCase):
 
         self.assertEqual(bridge.strip(), "@AGENTS.md")
         self.assertEqual(settings, {"permissions": {"defaultMode": "default"}})
-        self.assertEqual(state["variant"], "claude")
+        self.assertEqual(state["variants"], ["claude"])
         self.assertEqual(state["files"]["CLAUDE.md"]["mode"], "managed")
         self.assertEqual(state["files"][".claude/settings.json"]["mode"], "managed")
 
@@ -437,8 +437,200 @@ class ProjectUpgradeTests(unittest.TestCase):
         self.assertTrue((project / ".opencode/opencode.json").is_file())
         self.assertFalse((project / ".codex/config.toml").exists())
         state = json.loads((project / ".codex/template-state.json").read_text())
-        self.assertEqual(state["variant"], "opencode")
+        self.assertEqual(state["variants"], ["opencode"])
         self.assertEqual(state["files"][".opencode/opencode.json"]["mode"], "managed")
+
+    def test_existing_project_init_adds_all_variants_without_resetting_shared_files(
+        self,
+    ) -> None:
+        project = self.initialize("multi-variant", "codex")
+        initial_archives = sorted((project / ".codex/archive").glob("init-*"))
+        agents = project / "AGENTS.md"
+        config = project / ".codex/config.toml"
+        prompt = project / ".codex/prompts/fill-project-configuration.md"
+        agents.write_text(
+            agents.read_text(encoding="utf-8") + "\nProject-specific instruction.\n",
+            encoding="utf-8",
+        )
+        shared_hashes = {
+            "AGENTS.md": sha256(agents),
+            ".codex/config.toml": sha256(config),
+            ".codex/prompts/fill-project-configuration.md": sha256(prompt),
+        }
+
+        for variant in ("dolphin", "claude", "opencode"):
+            result = self.run_command(
+                PROJECT_INIT, "--variant", variant, project, input_text="y\n"
+            )
+            self.assertIn("variant", result.stdout.lower())
+
+        self.assertEqual(sha256(agents), shared_hashes["AGENTS.md"])
+        self.assertEqual(sha256(config), shared_hashes[".codex/config.toml"])
+        self.assertEqual(
+            sha256(prompt),
+            shared_hashes[".codex/prompts/fill-project-configuration.md"],
+        )
+        self.assertTrue((project / "CLAUDE.md").is_file())
+        self.assertTrue((project / ".claude/settings.json").is_file())
+        self.assertTrue((project / ".opencode/opencode.json").is_file())
+        state = json.loads((project / ".codex/template-state.json").read_text())
+        self.assertEqual(state["schema_version"], 2)
+        self.assertEqual(
+            state["variants"], ["codex", "dolphin", "claude", "opencode"]
+        )
+        self.assertIn(".codex/config.toml", state["files"])
+        self.assertIn(".claude/settings.json", state["files"])
+        self.assertIn(".opencode/opencode.json", state["files"])
+        self.assertEqual(
+            sorted((project / ".codex/archive").glob("init-*")), initial_archives
+        )
+
+    def test_additive_init_migrates_schema_one_manifest(self) -> None:
+        project = self.initialize("schema-one-migration", "codex")
+        state_path = project / ".codex/template-state.json"
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        state["schema_version"] = 1
+        state["variant"] = "codex"
+        state.pop("variants", None)
+        state_path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n")
+        agents_hash = sha256(project / "AGENTS.md")
+        config_hash = sha256(project / ".codex/config.toml")
+
+        self.run_command(
+            PROJECT_INIT, "--variant", "opencode", project, input_text="y\n"
+        )
+
+        migrated = json.loads(state_path.read_text(encoding="utf-8"))
+        self.assertEqual(migrated["schema_version"], 2)
+        self.assertEqual(migrated["variants"], ["codex", "opencode"])
+        self.assertNotIn("variant", migrated)
+        self.assertEqual(sha256(project / "AGENTS.md"), agents_hash)
+        self.assertEqual(sha256(project / ".codex/config.toml"), config_hash)
+        self.assertTrue((project / ".opencode/opencode.json").is_file())
+
+    def test_upgrade_migrates_schema_one_without_adding_a_variant(self) -> None:
+        project = self.initialize("schema-one-upgrade", "codex")
+        state_path = project / ".codex/template-state.json"
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        state["schema_version"] = 1
+        state["variant"] = "codex"
+        state.pop("variants", None)
+        state_path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n")
+
+        result = self.run_command(PROJECT_UPGRADE, "--apply", "--force", project)
+
+        self.assertIn(".codex/template-state.json: UPDATE", result.stdout)
+        migrated = json.loads(state_path.read_text(encoding="utf-8"))
+        self.assertEqual(migrated["schema_version"], 2)
+        self.assertEqual(migrated["variants"], ["codex"])
+        self.assertNotIn("variant", migrated)
+
+    def test_additive_init_preserves_customized_variant_config(self) -> None:
+        project = self.initialize("customized-multi-variant", "opencode")
+        opencode_config = project / ".opencode/opencode.json"
+        opencode_config.write_text(
+            '{"$schema":"https://opencode.ai/config.json","theme":"local"}\n',
+            encoding="utf-8",
+        )
+        config_hash = sha256(opencode_config)
+
+        self.run_command(
+            PROJECT_INIT, "--variant", "codex", project, input_text="y\n"
+        )
+        self.run_command(
+            PROJECT_INIT, "--variant", "opencode", project, input_text="y\n"
+        )
+
+        self.assertEqual(sha256(opencode_config), config_hash)
+        self.assertTrue((project / ".codex/config.toml").is_file())
+        state = json.loads((project / ".codex/template-state.json").read_text())
+        self.assertEqual(state["variants"], ["codex", "opencode"])
+        self.assertEqual(state["files"][".opencode/opencode.json"]["mode"], "project")
+
+    def test_existing_project_requires_explicit_reset_to_replace_agents(self) -> None:
+        project = self.initialize("explicit-reset", "codex")
+        initial_archives = sorted((project / ".codex/archive").glob("init-*"))
+        agents = project / "AGENTS.md"
+        agents.write_text(
+            agents.read_text(encoding="utf-8") + "\nReset sentinel.\n",
+            encoding="utf-8",
+        )
+        sentinel_hash = sha256(agents)
+
+        self.run_command(
+            PROJECT_INIT, "--variant", "opencode", project, input_text="y\n"
+        )
+        self.assertEqual(sha256(agents), sentinel_hash)
+
+        self.run_command(
+            PROJECT_INIT,
+            "--reset",
+            "--variant",
+            "opencode",
+            project,
+            input_text="y\n",
+        )
+
+        self.assertNotEqual(sha256(agents), sentinel_hash)
+        archives = sorted((project / ".codex/archive").glob("init-*"))
+        new_archives = [archive for archive in archives if archive not in initial_archives]
+        self.assertEqual(len(new_archives), 1)
+        self.assertEqual(new_archives[0].stat().st_mode & 0o777, 0o700)
+        self.assertEqual(sha256(new_archives[0] / "AGENTS.md"), sentinel_hash)
+
+    def test_repeated_explicit_resets_use_distinct_private_archives(self) -> None:
+        project = self.initialize("repeated-reset", "codex")
+        initial_archives = sorted((project / ".codex/archive").glob("init-*"))
+        agents = project / "AGENTS.md"
+        agents.write_text(
+            agents.read_text(encoding="utf-8") + "\nFirst reset sentinel.\n",
+            encoding="utf-8",
+        )
+        sentinel_hash = sha256(agents)
+
+        self.run_command(
+            PROJECT_INIT,
+            "--reset",
+            "--variant",
+            "codex",
+            project,
+            input_text="y\n",
+        )
+        self.run_command(
+            PROJECT_INIT,
+            "--reset",
+            "--variant",
+            "codex",
+            project,
+            input_text="y\n",
+        )
+
+        archives = sorted((project / ".codex/archive").glob("init-*"))
+        new_archives = [archive for archive in archives if archive not in initial_archives]
+        self.assertEqual(len(new_archives), 2)
+        self.assertNotEqual(new_archives[0], new_archives[1])
+        self.assertEqual(new_archives[0].stat().st_mode & 0o777, 0o700)
+        self.assertEqual(new_archives[1].stat().st_mode & 0o777, 0o700)
+        self.assertEqual(sha256(new_archives[0] / "AGENTS.md"), sentinel_hash)
+
+    def test_guides_define_additive_multi_variant_init_and_explicit_reset(self) -> None:
+        for relative in ("README.md", "USAGE_GUIDE.md", "COMMAND_REFERENCE.md"):
+            text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+            normalized = " ".join(text.split())
+            with self.subTest(path=relative):
+                self.assertIn("additive", normalized.lower())
+                self.assertIn("multiple runtime variants", normalized.lower())
+                self.assertIn("--reset", normalized)
+                self.assertIn("preserves `AGENTS.md`", normalized)
+
+        turkish = (REPO_ROOT / "TURKCE_KURULUM_REHBERI.md").read_text(
+            encoding="utf-8"
+        )
+        turkish = " ".join(turkish.split())
+        self.assertIn("eklemeli", turkish.lower())
+        self.assertIn("birden fazla runtime varyantı", turkish.lower())
+        self.assertIn("--reset", turkish)
+        self.assertIn("`AGENTS.md` dosyasını korur", turkish)
 
     def test_opencode_customized_config_is_preserved(self) -> None:
         project = self.initialize("opencode-custom", "opencode")
