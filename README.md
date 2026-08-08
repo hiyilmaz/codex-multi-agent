@@ -71,11 +71,19 @@ agents default to `medium` reasoning. Passing tests alone do not prove
 completion; review also checks acceptance criteria, observable behavior, and
 test integrity.
 
+### Task Transition Gate
+
+After completing a distinct task, CMA gives a one- or two-sentence summary,
+states and briefly explains the next distinct task (or says that none is
+known), then requests explicit approval and waits. The gate does not interrupt
+steps within the same explicitly approved bounded task.
+
 Installable runtime variants live under `variants/`:
 
 - `variants/codex/home/` — Default Codex runtime template
 - `variants/dolphin/home/` — DolphinVersion runtime template
 - `variants/claude/home/` — Claude Agent native CLI runtime template
+- `variants/opencode/home/` — isolated OpenCode runtime template
 - `variants/config.toml` — default variant selection
 
 ---
@@ -94,6 +102,7 @@ Install a specific variant:
 bin/codex-user-install --variant codex
 bin/codex-user-install --variant dolphin
 bin/codex-user-install --variant claude
+bin/codex-user-install --variant opencode
 ```
 
 The installer rewrites installed template paths to the selected target
@@ -104,13 +113,23 @@ Default targets:
 - `codex` -> `$HOME/.codex`
 - `dolphin` -> `$HOME/.llm-runtimes/dolphin`
 - `claude` -> `$HOME/.claude`
+- `opencode` -> `$HOME/.llm-runtimes/opencode`
 
 Variant launchers are installed as:
 
 ```text
 <runtime-home>/bin/llm-dolphin
 <runtime-home>/bin/llm-claude
+<runtime-home>/bin/llm-opencode
 ```
+
+The OpenCode launcher sets `OPENCODE_CONFIG`, `OPENCODE_CONFIG_DIR`, and all
+XDG config/data/cache/state roots inside `~/.llm-runtimes/opencode`, then
+delegates to the native `opencode` binary. Symlinked state roots fail closed.
+This prevents native global settings and identity state from merging into CMA.
+It never writes `~/.config/opencode`, selects a model or provider, installs
+plugins, or performs authentication. Validate with `llm-opencode debug config`
+and `llm-opencode debug paths`.
 
 The default Claude installation uses its native user-global directory. It
 preserves existing `CLAUDE.md` content through a backed-up import overlay,
@@ -146,6 +165,8 @@ files, resets the project Codex structure, and creates a fresh project
 and managed-file hashes in `.codex/template-state.json`.
 For `--variant claude`, it also creates the minimal `CLAUDE.md` bridge importing
 `@AGENTS.md` and a conservative `.claude/settings.json`.
+For `--variant opencode`, it creates `.opencode/opencode.json` and preserves
+unrelated `.opencode` content such as local plugins and package metadata.
 
 After init, run the generated prompt:
 

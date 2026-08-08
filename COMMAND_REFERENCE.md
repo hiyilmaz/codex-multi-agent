@@ -25,6 +25,7 @@ Available runtime variants:
 | `codex` | `~/.codex` | Use the normal Codex command. |
 | `dolphin` | `~/.llm-runtimes/dolphin` | `~/.llm-runtimes/dolphin/bin/llm-dolphin` |
 | `claude` | `~/.claude` | `~/.claude/bin/llm-claude` |
+| `opencode` | `~/.llm-runtimes/opencode` | `~/.llm-runtimes/opencode/bin/llm-opencode` |
 
 ## Guided Setup
 
@@ -40,6 +41,7 @@ Select a variant explicitly:
 bin/codex-setup --variant codex
 bin/codex-setup --variant dolphin
 bin/codex-setup --variant claude
+bin/codex-setup --variant opencode
 ```
 
 Use a custom runtime home:
@@ -64,6 +66,7 @@ Install a specific variant:
 bin/codex-user-install --variant codex
 bin/codex-user-install --variant dolphin
 bin/codex-user-install --variant claude
+bin/codex-user-install --variant opencode
 ```
 
 Install to a custom runtime home:
@@ -94,7 +97,15 @@ Launch the default Dolphin or Claude installation:
 ```bash
 ~/.llm-runtimes/dolphin/bin/llm-dolphin
 ~/.claude/bin/llm-claude
+~/.llm-runtimes/opencode/bin/llm-opencode
 ```
+
+`llm-opencode` sets `OPENCODE_CONFIG`, `OPENCODE_CONFIG_DIR`, and all four XDG
+config/data/cache/state homes inside `~/.llm-runtimes/opencode`, rejecting
+symlinked state roots before delegating to native `opencode`. This excludes
+native configuration and identity state and leaves `~/.config/opencode`
+untouched. Verify without a model call using `llm-opencode debug config` and
+`llm-opencode debug paths`.
 
 The Claude launcher sets its native runtime as `CLAUDE_CONFIG_DIR` and then
 executes the native `claude` binary. Installation preserves existing
@@ -137,6 +148,8 @@ bin/codex-project-init \
 For Claude projects, replace `codex` with `claude`. The confirmed init adds a
 minimal `CLAUDE.md` bridge (`@AGENTS.md`) and `.claude/settings.json`; unrelated
 `.claude` files are not reset.
+For OpenCode projects, use `--variant opencode`; init manages only
+`.opencode/opencode.json` and preserves sibling `.opencode` content.
 
 Project initialization asks for confirmation, archives conflicting local Codex
 files, and recreates the standard project structure. Use project upgrade for an
@@ -226,6 +239,13 @@ git diff --check
 git status --short
 git diff --stat
 ```
+
+## Task Transition Gate
+
+After completing a distinct task, CMA gives a one- or two-sentence summary,
+states and briefly explains the next distinct task (or says that none is
+known), then requests explicit approval and waits. The gate does not interrupt
+steps within the same explicitly approved bounded task.
 
 ## Recommended Workflows
 

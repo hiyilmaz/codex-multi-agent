@@ -13,6 +13,7 @@ variants/
   codex/home/
   dolphin/home/
   claude/home/
+  opencode/home/
 
 ~/.codex/
   AGENTS.md
@@ -63,6 +64,7 @@ Belirli bir versiyonu kur:
 bin/codex-user-install --variant codex
 bin/codex-user-install --variant dolphin
 bin/codex-user-install --variant claude
+bin/codex-user-install --variant opencode
 ```
 
 Kurulum sırasında template içindeki kaynak pathler hedef `--runtime-home`
@@ -74,6 +76,7 @@ Varsayılan hedefler:
 codex   -> $HOME/.codex
 dolphin -> $HOME/.llm-runtimes/dolphin
 claude  -> $HOME/.claude
+opencode -> $HOME/.llm-runtimes/opencode
 ```
 
 Dolphin ve Claude launcher dosyaları kurulumdan sonra şurada olur:
@@ -81,7 +84,17 @@ Dolphin ve Claude launcher dosyaları kurulumdan sonra şurada olur:
 ```text
 <runtime-home>/bin/llm-dolphin
 <runtime-home>/bin/llm-claude
+<runtime-home>/bin/llm-opencode
 ```
+
+OpenCode varyantı `~/.llm-runtimes/opencode` altında izole çalışır.
+`llm-opencode`, native `opencode` komutunu çalıştırmadan önce
+`OPENCODE_CONFIG`, `OPENCODE_CONFIG_DIR` ile XDG config/data/cache/state
+değerlerini bu dizine sabitler ve symlink state köklerini reddeder. Böylece
+native global config ve kimlik durumu CMA runtime ile birleşmez.
+`~/.config/opencode` dosyalarını değiştirmez; provider/model seçmez, plugin veya
+bağımlılık kurmaz ve giriş yapmaz. Yapılandırmayı model çağrısı olmadan
+`llm-opencode debug config` ve `llm-opencode debug paths` ile doğrula.
 
 Claude kurulumu varsayılan olarak doğal kullanıcı-global `~/.claude` dizinine
 uygulanır. Mevcut `CLAUDE.md` yedeklenip tek CMA importu eklenerek korunur;
@@ -170,6 +183,10 @@ Komut onay ister. Onaydan sonra şunları oluşturur:
 Claude dosyaları onaydan önce listelenir; onaylanan reset sırasında arşivlenir.
 Diğer `.claude` içeriğine dokunulmaz.
 
+`--variant opencode` seçildiğinde `.codex/config.toml` yerine
+`.opencode/opencode.json` oluşturulur. Mevcut `.opencode/plugins`, paket
+metadata dosyaları ve diğer kardeş içerikler korunur.
+
 Eğer projede eski Codex dosyaları varsa, bunları şuraya arşivler:
 
 ```text
@@ -249,6 +266,13 @@ Geçerli değerler:
 - `run-chain`: proje veya kullanıcı açıkça yetki verdiyse ciddi işlerde zincir
   başlatılır; aktif tool politikası ayrıca onay istiyorsa önce onay alınır.
 
+### Görev Geçiş Kapısı
+
+CMA farklı bir görevi tamamladığında sonucu bir veya iki kısa cümleyle özetler,
+sıradaki farklı göreve geçmeden önce bu görevi kısaca açıklar, açık kullanıcı
+onayı ister ve bekler. Bu kapı, aynı açıkça onaylanmış sınırlı görevin zaten
+onaylanmış adımları arasında gereksiz duraklama oluşturmaz.
+
 `orchestration-gate` skill'i bu kararın verilmesi için kullanılır.
 `tdd-workflow` her runtime varyantında bulunur ve test-first geliştirme akışını
 uygular. `openai-docs` gibi göreve özel skill'ler yalnızca proje için ilgili ve
@@ -275,6 +299,7 @@ Kullanıcı ortamını belirli versiyonla kur:
 ```bash
 bin/codex-user-install --variant codex
 bin/codex-user-install --variant dolphin
+bin/codex-user-install --variant opencode
 ```
 
 Kullanıcı ortamını zorla yenile:

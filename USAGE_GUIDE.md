@@ -47,6 +47,7 @@ install a specific runtime variant:
 bin/codex-user-install --variant codex
 bin/codex-user-install --variant dolphin
 bin/codex-user-install --variant claude
+bin/codex-user-install --variant opencode
 ```
 
 Template paths are rewritten during installation so installed configs and
@@ -57,13 +58,24 @@ Default runtime homes:
 - `codex`: `$HOME/.codex`
 - `dolphin`: `$HOME/.llm-runtimes/dolphin`
 - `claude`: `$HOME/.claude`
+- `opencode`: `$HOME/.llm-runtimes/opencode`
 
 For Dolphin, the launcher is installed inside the runtime home:
 
 ```text
 <runtime-home>/bin/llm-dolphin
 <runtime-home>/bin/llm-claude
+<runtime-home>/bin/llm-opencode
 ```
+
+The OpenCode runtime is isolated at `~/.llm-runtimes/opencode`. Its
+`llm-opencode` launcher overrides inherited `OPENCODE_CONFIG`,
+`OPENCODE_CONFIG_DIR`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_CACHE_HOME`, and
+`XDG_STATE_HOME` values before delegating to the installed native binary. All
+XDG roots stay under the runtime and reject symlinks. This excludes native
+global config and identity state from the CMA runtime. It does not modify
+`~/.config/opencode`, choose a provider/model, install a plugin, or authenticate.
+Use `llm-opencode debug config` and `llm-opencode debug paths` for validation.
 
 The default Claude path is the native user-global surface. Activation preserves
 existing instructions with a backed-up CMA import overlay, does not rewrite an
@@ -140,6 +152,10 @@ With `--variant claude`, init additionally creates `CLAUDE.md` containing
 before confirmation and archived only when the reset is approved; unrelated
 `.claude` content is preserved.
 
+With `--variant opencode`, init creates `.opencode/opencode.json` instead of
+`.codex/config.toml`. It preserves sibling files and directories already under
+`.opencode`.
+
 ### Step 2 — Run the Project Configuration prompt
 
 After init, run this generated prompt with the AI:
@@ -191,6 +207,11 @@ DOMAIN_RULES:
 `orchestration-gate` and `tdd-workflow` are baseline skills packaged by every
 runtime variant. Add task-specific skills such as `openai-docs` only when they
 are relevant and available in the active Codex session.
+
+Declare only skills that resolve from an active project, user, admin, system,
+or session-provided surface. Entries found only in a disabled plugin or an
+inactive/on-demand registry are unavailable until they are activated and
+verified.
 
 The final block should contain no uncertainty placeholders. Unknown required
 values should be resolved by asking the user before editing.
@@ -281,6 +302,15 @@ project declaration > user-global in ~/.codex > unavailable/report
 
 If a declared item cannot be found, report it before doing work that depends on
 that item.
+
+---
+
+## Task Transition Gate
+
+After completing a distinct task, CMA gives a one- or two-sentence summary,
+states and briefly explains the next distinct task (or says that none is
+known), then requests explicit approval and waits. The gate does not interrupt
+steps within the same explicitly approved bounded task.
 
 ---
 
