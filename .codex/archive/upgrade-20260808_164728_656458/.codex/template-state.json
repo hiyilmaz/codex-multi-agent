@@ -8,18 +8,11 @@
       "mode": "managed",
       "template_sha256": "0963d9cc66eb4ba5b27baaa35ec5a5de1e6ebb8f39afe576bcbc7ed3b9e24ee6"
     },
-    ".opencode/opencode.json": {
-      "mode": "managed",
-      "template_sha256": "3a1689520689222b217d5107e8e7becc3fbbd2aae41dc086435cd6a941b650c1"
-    },
     "AGENTS.md": {
       "mode": "merge"
     }
   },
-  "schema_version": 2,
+  "schema_version": 1,
   "template_version": "2.2",
-  "variants": [
-    "codex",
-    "opencode"
-  ]
+  "variant": "codex"
 }
