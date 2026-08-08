@@ -561,3 +561,89 @@ ACCEPT
 Notes:
 The user approved Plan A and the mandatory orchestration chain. Commit and push
 remain outside scope.
+
+## EXP-20260808-003 - Additive Multi-Variant Project Initialization
+
+Date: 2026-08-08
+Status: ACCEPTED
+
+Problem:
+`codex-project-init --variant opencode` was applied to an already initialized
+project and reset shared project state. The command treats every variant
+selection as an exclusive new/reset initialization, so the same data-loss risk
+applies when adding Codex, Dolphin, Claude, or OpenCode to a project that
+already uses another runtime.
+
+Evidence:
+The init conflict list always archives `AGENTS.md`, `.codex/config.toml`, the
+shared prompt, and `.codex/template-state.json`, then copies a blank project
+template. Manifest schema 1 stores one `variant`; OpenCode replaces the Codex
+config entry instead of coexisting with it. The original project files remain
+recoverable in the private init archive and their hashes were captured before
+rollback.
+
+Hypothesis:
+If init distinguishes first/reset initialization from additive variant
+activation, preserves shared files byte-for-byte, and records an ordered set of
+active variants in a backward-compatible manifest migration, every supported
+runtime can coexist without resetting project configuration or customized
+variant files.
+
+Solution Attempt:
+Restore the exact pre-init project state, make existing-project init additive
+by default, require an explicit reset flag for destructive reinitialization,
+and evolve template state to represent multiple active variants plus the union
+of their managed files. Preserve customized and unrelated files.
+
+Test:
+Capture RED tests that initialize each variant after another variant and assert
+unchanged shared hashes, coexisting variant surfaces, manifest migration from
+schema 1, explicit reset behavior, customized-file preservation, symlink
+failure, and idempotency. Then run focused project-init/upgrade tests, the full
+regression suite, live additive OpenCode init on this repository, diff
+integrity, and security-oriented recovery checks.
+
+Success Criteria:
+- Adding any supported variant never replaces an existing `AGENTS.md` or
+  removes another variant's project files.
+- Codex, Dolphin, Claude, and OpenCode can all be represented as active in one
+  project manifest.
+- Schema 1 state migrates without losing file ownership or customization
+  evidence.
+- Destructive reset remains possible only through an explicit reset option and
+  keeps a private recovery archive.
+- The erroneous local init effects are fully reversed before the corrected
+  additive OpenCode activation is applied.
+- Relevant and complete tests pass without weakened assertions or skipped
+  cases.
+
+Result:
+The erroneous local init was reversed first: `AGENTS.md`, Codex config, the
+shared prompt, and schema-1 template state matched their captured pre-init
+hashes, the generated OpenCode project file was removed, and the private reset
+archive was moved into the external recovery backup. The valid global OpenCode
+runtime installation was retained.
+
+Meaningful RED tests reproduced blank `AGENTS.md` replacement, loss of other
+variant state, customized OpenCode config overwrite, the single-variant
+manifest limitation, absent explicit-reset behavior, incomplete standalone
+schema-1 migration, and same-second reset archive reuse. The implementation now
+uses additive existing-project init, ordered multi-variant schema 2 state,
+backward-compatible schema-1 migration, explicit `--reset`, and unique private
+init/upgrade archives.
+
+Focused project-init/upgrade tests passed 33/33 and the complete regression
+suite passed 152/152 without skips. Bash syntax, Python compilation, and diff
+integrity passed. Live additive OpenCode init on this repository preserved the
+exact `AGENTS.md`, `.codex/config.toml`, and shared-prompt hashes, produced
+`variants: [codex, opencode]`, kept the OpenCode config, used a `0700` recovery
+archive, and was idempotent on a second run. Security-oriented symlink,
+customized-config, secret-redaction, explicit-reset, and recovery tests passed.
+
+Decision:
+ACCEPT
+
+Notes:
+The user approved a direct implementation without an orchestration chain.
+Global OpenCode runtime installation is valid and remains in scope; only the
+project-reset behavior is being rolled back and redesigned.

@@ -2,6 +2,10 @@
 
 ## 2026-08-08
 
+- [FIX] EXP-20260808-003 made project init additive for Codex, Dolphin, Claude,
+  and OpenCode, migrated template state to a multi-variant schema, preserved
+  shared/customized project files, and restricted destructive reinitialization
+  to explicit `--reset` with collision-safe private recovery archives.
 - [POLICY] Added a global Task Transition Gate across the portable Codex,
   Dolphin, Claude, and OpenCode policies. Distinct completed tasks now require
   a short summary, the next task or an explicit statement that none is known,
