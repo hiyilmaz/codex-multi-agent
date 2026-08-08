@@ -1,7 +1,30 @@
 # Changelog
 
+## 2026-08-08
+
+- [POLICY] Added a global Task Transition Gate across the portable Codex,
+  Dolphin, Claude, and OpenCode policies. Distinct completed tasks now require
+  a short summary, the next task or an explicit statement that none is known,
+  and fresh user approval before work continues; already approved steps inside
+  the same bounded task remain uninterrupted. Synchronized only the stale
+  active policy files through private, permission-preserving backups and passed
+  145/145 regressions plus independent code and security review.
+- [FEAT] Added a provider-neutral OpenCode CMA variant with an isolated
+  `llm-opencode` launcher, eight Markdown agents, four workflow skills, lazy
+  registry modules, and preservation-aware project init/upgrade support.
+- [SECURITY] Isolated OpenCode config, data, cache, and state roots; rejected
+  symlinked state paths; approval-gated governor writes; omitted sensitive
+  project-config diffs; and protected init/upgrade archives with private modes.
+- [TEST] Captured runtime, isolation, secret-redaction, preservation, and custom
+  path RED states; passed 141/141 regressions plus live OpenCode 1.18.15 config,
+  path, agent, skill, and single-plugin pilot checks; final code and security
+  reviews passed.
+
 ## 2026-08-07
 
+- [DOCS] Aligned CMA project guidance and the managed configuration prompt so
+  active-skill declarations exclude disabled-plugin and inactive-registry
+  entries, and refreshed the project instruction version to template 2.2.
 - [INFRA] EXP-20260807-002 aligned the self-hosted CMA project with Codex
   template 2.2, created managed template state, and synchronized the selected
   active global policy, runtime README, and orchestration gate.
