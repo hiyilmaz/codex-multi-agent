@@ -342,8 +342,9 @@ install_tree_files() {
 rewrite_installed_variant_paths() {
   local source_home="$1"
   local target_home="$2"
-  local source_launcher="$3"
-  local target_launcher_name="$4"
+  local source_default_home="$3"
+  local source_launcher="$4"
+  local target_launcher_name="$5"
   local target_launcher=""
 
   if [[ -n "$source_launcher" ]]; then
@@ -355,11 +356,13 @@ rewrite_installed_variant_paths() {
 
     SOURCE_HOME="$source_home" \
     TARGET_HOME="$target_home" \
+    SOURCE_DEFAULT_HOME="$source_default_home" \
     SOURCE_LAUNCHER="$source_launcher" \
     TARGET_LAUNCHER="$target_launcher" \
     perl -0pi -e '
       my $source_home = $ENV{"SOURCE_HOME"};
       my $target_home = $ENV{"TARGET_HOME"};
+      my $source_default_home = $ENV{"SOURCE_DEFAULT_HOME"};
       my $source_launcher = $ENV{"SOURCE_LAUNCHER"};
       my $target_launcher = $ENV{"TARGET_LAUNCHER"};
 
@@ -368,6 +371,9 @@ rewrite_installed_variant_paths() {
       s/\Q$source_home\/registry\E/$target_home\/registry/g;
       s/\Q$source_home\/prompts\E/$target_home\/prompts/g;
       s/\Q$source_home\E/$target_home/g;
+      if ($source_default_home ne "") {
+        s/\Q$source_default_home\E/$target_home/g;
+      }
 
       if ($source_launcher ne "" && $target_launcher ne "") {
         s/\Q$source_launcher\E/$target_launcher/g;
@@ -409,7 +415,11 @@ install_tree_files "$SOURCE_DIR/registry" "$RUNTIME_HOME/registry"
 install_tree_files "$SOURCE_DIR/prompts" "$RUNTIME_HOME/prompts"
 install_variant_launcher "$VARIANT_LAUNCHER_RELATIVE" "$RUNTIME_HOME" "$VARIANT_LAUNCHER_NAME"
 
-rewrite_installed_variant_paths "$SOURCE_RELATIVE" "$RUNTIME_HOME" "$VARIANT_LAUNCHER_RELATIVE" "$VARIANT_LAUNCHER_NAME"
+DEFAULT_HOME_REWRITE=""
+if [[ "$VARIANT_ID" == "opencode" ]]; then
+  DEFAULT_HOME_REWRITE="$DEFAULT_RUNTIME_HOME"
+fi
+rewrite_installed_variant_paths "$SOURCE_RELATIVE" "$RUNTIME_HOME" "$DEFAULT_HOME_REWRITE" "$VARIANT_LAUNCHER_RELATIVE" "$VARIANT_LAUNCHER_NAME"
 
 echo "Variant installed: $VARIANT_ID"
 echo "Runtime home installed at: $RUNTIME_HOME"

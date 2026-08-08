@@ -12,9 +12,10 @@ Behavior:
   - asks for confirmation before writing
   - archives conflicting files under <project>/.codex/archive/init-YYYYMMDD_HHMMSS
   - writes <project>/AGENTS.md from PROJECT_AGENTS_TEMPLATE.md
-  - writes <project>/.codex/config.toml from CODEX_CONFIG_EXAMPLE.toml
+  - writes the selected variant's project settings file
   - writes <project>/.codex/prompts/fill-project-configuration.md
   - for the claude variant, writes CLAUDE.md and .claude/settings.json
+  - for the opencode variant, writes .opencode/opencode.json
   - records template version, runtime variant, and managed-file hashes
   - does not create project-local reusable rules/skills/agents directories
 EOF
@@ -87,6 +88,8 @@ PROJECT_DIRECTORIES=(
 )
 if [[ "$VARIANT_ID" == "claude" ]]; then
   PROJECT_DIRECTORIES+=("$PROJECT_PATH/.claude")
+elif [[ "$VARIANT_ID" == "opencode" ]]; then
+  PROJECT_DIRECTORIES+=("$PROJECT_PATH/.opencode")
 fi
 for directory in "${PROJECT_DIRECTORIES[@]}"; do
   if [[ -L "$directory" ]]; then
@@ -119,6 +122,8 @@ if [[ "$VARIANT_ID" == "claude" ]]; then
     "CLAUDE.md"
     ".claude/settings.json"
   )
+elif [[ "$VARIANT_ID" == "opencode" ]]; then
+  CONFLICTS+=(".opencode/opencode.json")
 fi
 
 echo "This will archive existing Codex project files and reset the project Codex structure."
@@ -145,6 +150,7 @@ case "$answer" in
 esac
 
 mkdir -p "$ARCHIVE_DIR"
+chmod 700 "$ARCHIVE_DIR"
 
 for item in "${CONFLICTS[@]}"; do
   source_path="$PROJECT_PATH/$item"
@@ -159,8 +165,13 @@ done
 mkdir -p "$PROJECT_PATH/.codex/prompts"
 
 cp "$TEMPLATE_DIR/PROJECT_AGENTS_TEMPLATE.md" "$PROJECT_PATH/AGENTS.md"
-cp "$TEMPLATE_DIR/CODEX_CONFIG_EXAMPLE.toml" "$PROJECT_PATH/.codex/config.toml"
 cp "$TEMPLATE_DIR/PROJECT_CONFIG_PROMPT.md" "$PROJECT_PATH/.codex/prompts/fill-project-configuration.md"
+if [[ "$VARIANT_ID" == "opencode" ]]; then
+  mkdir -p "$PROJECT_PATH/.opencode"
+  cp "$TEMPLATE_DIR/OPENCODE_PROJECT_CONFIG_EXAMPLE.json" "$PROJECT_PATH/.opencode/opencode.json"
+else
+  cp "$TEMPLATE_DIR/CODEX_CONFIG_EXAMPLE.toml" "$PROJECT_PATH/.codex/config.toml"
+fi
 if [[ "$VARIANT_ID" == "claude" ]]; then
   mkdir -p "$PROJECT_PATH/.claude"
   cp "$TEMPLATE_DIR/PROJECT_CLAUDE_TEMPLATE.md" "$PROJECT_PATH/CLAUDE.md"
@@ -169,7 +180,11 @@ fi
 "$TEMPLATE_DIR/bin/codex-project-upgrade" --record-initial-state --variant "$VARIANT_ID" "$PROJECT_PATH" >/dev/null
 
 echo "Created: $PROJECT_PATH/AGENTS.md"
-echo "Created: $PROJECT_PATH/.codex/config.toml"
+if [[ "$VARIANT_ID" == "opencode" ]]; then
+  echo "Created: $PROJECT_PATH/.opencode/opencode.json"
+else
+  echo "Created: $PROJECT_PATH/.codex/config.toml"
+fi
 echo "Created: $PROJECT_PATH/.codex/prompts/fill-project-configuration.md"
 if [[ "$VARIANT_ID" == "claude" ]]; then
   echo "Created: $PROJECT_PATH/CLAUDE.md"
@@ -179,7 +194,9 @@ echo "Created: $PROJECT_PATH/.codex/template-state.json"
 
 if [[ "$VARIANT_ID" == "claude" && ! -e "$HOME/.claude/registry/CMA_GLOBAL.md" ]]; then
   echo "Warning: the default Claude runtime is missing. Install it with codex-user-install --variant claude." >&2
-elif [[ "$VARIANT_ID" != "claude" && ! -e "$HOME/.codex/AGENTS.md" ]]; then
+elif [[ "$VARIANT_ID" == "opencode" && ! -e "$HOME/.llm-runtimes/opencode/AGENTS.md" ]]; then
+  echo "Warning: the default OpenCode runtime is missing. Install it with codex-user-install --variant opencode." >&2
+elif [[ "$VARIANT_ID" != "claude" && "$VARIANT_ID" != "opencode" && ! -e "$HOME/.codex/AGENTS.md" ]]; then
   echo "Warning: ~/.codex/AGENTS.md is missing. Create the user-global Codex surface first." >&2
 fi
 

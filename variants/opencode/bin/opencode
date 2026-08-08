@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RUNTIME_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+if [[ -d "$RUNTIME_ROOT/home" ]]; then
+  RUNTIME_HOME="$RUNTIME_ROOT/home"
+else
+  RUNTIME_HOME="$RUNTIME_ROOT"
+fi
+
+export OPENCODE_CONFIG="$RUNTIME_HOME/opencode.json"
+export OPENCODE_CONFIG_DIR="$RUNTIME_HOME"
+
+ensure_private_directory() {
+  local directory="$1"
+  if [[ -L "$directory" ]]; then
+    echo "FAILED: refusing symbolic link for isolated OpenCode state: $directory" >&2
+    exit 1
+  fi
+  if [[ -e "$directory" && ! -d "$directory" ]]; then
+    echo "FAILED: isolated OpenCode state path is not a directory: $directory" >&2
+    exit 1
+  fi
+  mkdir -p "$directory"
+  chmod 700 "$directory"
+}
+
+STATE_ROOT="$RUNTIME_HOME/runtime-state"
+ensure_private_directory "$STATE_ROOT"
+ensure_private_directory "$STATE_ROOT/config"
+ensure_private_directory "$STATE_ROOT/data"
+ensure_private_directory "$STATE_ROOT/cache"
+ensure_private_directory "$STATE_ROOT/state"
+
+export XDG_CONFIG_HOME="$STATE_ROOT/config"
+export XDG_DATA_HOME="$STATE_ROOT/data"
+export XDG_CACHE_HOME="$STATE_ROOT/cache"
+export XDG_STATE_HOME="$STATE_ROOT/state"
+
+NATIVE_OPENCODE="$(command -v opencode || true)"
+if [[ -z "$NATIVE_OPENCODE" || "$NATIVE_OPENCODE" == "$0" ]]; then
+  echo "FAILED: native opencode executable was not found in PATH." >&2
+  exit 127
+fi
+
+exec "$NATIVE_OPENCODE" "$@"

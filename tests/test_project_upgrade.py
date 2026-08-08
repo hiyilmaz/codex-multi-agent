@@ -422,6 +422,144 @@ class ProjectUpgradeTests(unittest.TestCase):
         )
         self.assertEqual(len(archived), 1)
 
+    def test_opencode_init_preserves_siblings_and_manages_project_config(self) -> None:
+        project = self.root / "opencode-init"
+        plugins = project / ".opencode/plugins"
+        plugins.mkdir(parents=True)
+        plugin = plugins / "local.js"
+        plugin.write_text("export default {}\n", encoding="utf-8")
+
+        self.run_command(
+            PROJECT_INIT, "--variant", "opencode", project, input_text="y\n"
+        )
+
+        self.assertEqual(plugin.read_text(encoding="utf-8"), "export default {}\n")
+        self.assertTrue((project / ".opencode/opencode.json").is_file())
+        self.assertFalse((project / ".codex/config.toml").exists())
+        state = json.loads((project / ".codex/template-state.json").read_text())
+        self.assertEqual(state["variant"], "opencode")
+        self.assertEqual(state["files"][".opencode/opencode.json"]["mode"], "managed")
+
+    def test_opencode_customized_config_is_preserved(self) -> None:
+        project = self.initialize("opencode-custom", "opencode")
+        config = project / ".opencode/opencode.json"
+        config.write_text('{"$schema":"https://opencode.ai/config.json","theme":"local"}\n')
+        before = sha256(config)
+
+        result = self.run_command(PROJECT_UPGRADE, "--dry-run", project)
+        self.assertIn("PRESERVE_CUSTOMIZED", result.stdout)
+        self.run_command(PROJECT_UPGRADE, "--apply", "--force", project)
+        self.assertEqual(sha256(config), before)
+
+    def test_opencode_customized_config_secrets_are_omitted_from_summaries(self) -> None:
+        project = self.initialize("opencode-secret", "opencode")
+        config = project / ".opencode/opencode.json"
+        secret = "TEST_SECRET_MUST_NOT_APPEAR"
+        config.write_text(
+            json.dumps(
+                {
+                    "$schema": "https://opencode.ai/config.json",
+                    "provider": {"example": {"options": {"apiKey": secret}}},
+                }
+            )
+            + "\n"
+        )
+
+        dry_run = self.run_command(PROJECT_UPGRADE, "--dry-run", project)
+        self.assertIn("PRESERVE_CUSTOMIZED", dry_run.stdout)
+        self.assertIn("Content diff omitted", dry_run.stdout)
+        self.assertNotIn(secret, dry_run.stdout)
+
+        applied = self.run_command(
+            PROJECT_UPGRADE, "--apply", "--force", project
+        )
+        self.assertNotIn(secret, applied.stdout)
+        summaries = list(
+            (project / ".codex/archive").glob("upgrade-*/UPGRADE_SUMMARY.md")
+        )
+        self.assertEqual(len(summaries), 1)
+        self.assertNotIn(secret, summaries[0].read_text(encoding="utf-8"))
+        self.assertEqual(summaries[0].stat().st_mode & 0o777, 0o600)
+        self.assertIn(secret, config.read_text(encoding="utf-8"))
+
+    def test_opencode_init_rejects_symlinked_config_directory(self) -> None:
+        project = self.root / "opencode-symlink"
+        outside = self.root / "outside-opencode"
+        project.mkdir()
+        outside.mkdir()
+        (project / ".opencode").symlink_to(outside, target_is_directory=True)
+
+        result = self.run_command(
+            PROJECT_INIT,
+            "--variant",
+            "opencode",
+            project,
+            input_text="y\n",
+            check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("symbolic link", result.stderr)
+        self.assertFalse((project / "AGENTS.md").exists())
+        self.assertEqual(list(outside.iterdir()), [])
+
+    def test_opencode_init_archives_secret_config_under_private_directory(self) -> None:
+        project = self.root / "opencode-secret-init"
+        config = project / ".opencode/opencode.json"
+        config.parent.mkdir(parents=True)
+        secret = "INIT_SECRET_MUST_NOT_APPEAR"
+        config.write_text(
+            json.dumps({"provider": {"example": {"apiKey": secret}}}) + "\n"
+        )
+        config.chmod(0o644)
+
+        result = self.run_command(
+            PROJECT_INIT, "--variant", "opencode", project, input_text="y\n"
+        )
+
+        self.assertNotIn(secret, result.stdout)
+        archives = list((project / ".codex/archive").glob("init-*"))
+        self.assertEqual(len(archives), 1)
+        self.assertEqual(archives[0].stat().st_mode & 0o777, 0o700)
+        archived = archives[0] / ".opencode/opencode.json"
+        self.assertIn(secret, archived.read_text(encoding="utf-8"))
+
+    def test_opencode_unchanged_config_updates_and_archives(self) -> None:
+        project = self.initialize("opencode-managed", "opencode")
+        config = project / ".opencode/opencode.json"
+        state_path = project / ".codex/template-state.json"
+        secret = "MANAGED_SECRET_MUST_NOT_APPEAR"
+        config.write_text(
+            '{"$schema":"https://opencode.ai/config.json","old":true,'
+            f'"apiKey":"{secret}"}}\n'
+        )
+        config.chmod(0o640)
+        state = json.loads(state_path.read_text())
+        state["files"][".opencode/opencode.json"]["template_sha256"] = sha256(config)
+        state_path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n")
+
+        result = self.run_command(PROJECT_UPGRADE, "--dry-run", project)
+        self.assertIn(".opencode/opencode.json: UPDATE", result.stdout)
+        self.assertIn("Content diff omitted", result.stdout)
+        self.assertNotIn(secret, result.stdout)
+        applied = self.run_command(PROJECT_UPGRADE, "--apply", "--force", project)
+        self.assertNotIn(secret, applied.stdout)
+
+        self.assertEqual(
+            config.read_bytes(),
+            (REPO_ROOT / "OPENCODE_PROJECT_CONFIG_EXAMPLE.json").read_bytes(),
+        )
+        self.assertEqual(config.stat().st_mode & 0o777, 0o640)
+        archived = list(
+            (project / ".codex/archive").glob(
+                "upgrade-*/.opencode/opencode.json"
+            )
+        )
+        self.assertEqual(len(archived), 1)
+        self.assertIn(secret, archived[0].read_text(encoding="utf-8"))
+        summary = archived[0].parents[1] / "UPGRADE_SUMMARY.md"
+        self.assertNotIn(secret, summary.read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

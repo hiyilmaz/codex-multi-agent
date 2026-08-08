@@ -27,9 +27,12 @@ class VariantInstallTests(unittest.TestCase):
                     current[key] = value[1:-1]
         return variants
 
-    def test_catalog_registers_three_complete_unique_variants(self) -> None:
+    def test_catalog_registers_four_complete_unique_variants(self) -> None:
         variants = self.variants()
-        self.assertEqual([item["id"] for item in variants], ["codex", "dolphin", "claude"])
+        self.assertEqual(
+            [item["id"] for item in variants],
+            ["codex", "dolphin", "claude", "opencode"],
+        )
         self.assertEqual(len({item["id"] for item in variants}), len(variants))
         required = {"name", "home", "default_home", "policy_file", "settings_file", "agent_format"}
         for variant in variants:
@@ -271,6 +274,25 @@ class VariantInstallTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue((runtime / "CLAUDE.md").is_file())
             self.assertTrue((runtime / "bin/llm-claude").is_file())
+
+    def test_setup_explicit_opencode_variant_installs_opencode(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            runtime = root / "opencode"
+            environment = {**os.environ, "HOME": str(root / "home")}
+            result = subprocess.run(
+                (str(SETUP), "--variant", "opencode", "--runtime-home", str(runtime)),
+                cwd=REPO_ROOT,
+                env=environment,
+                input="\ny\nn\nn\n\n\n\n\nn\n",
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((runtime / "AGENTS.md").is_file())
+            self.assertTrue((runtime / "opencode.json").is_file())
+            self.assertTrue((runtime / "bin/llm-opencode").is_file())
 
     def test_existing_provider_files_are_untouched_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

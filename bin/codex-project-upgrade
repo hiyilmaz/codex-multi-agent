@@ -18,22 +18,32 @@ from pathlib import Path
 
 SCHEMA_VERSION = 1
 MANIFEST_PATH = Path(".codex/template-state.json")
-MANAGED_TEMPLATES = {
-    Path(".codex/config.toml"): Path("CODEX_CONFIG_EXAMPLE.toml"),
+COMMON_MANAGED_TEMPLATES = {
     Path(".codex/prompts/fill-project-configuration.md"): Path(
         "PROJECT_CONFIG_PROMPT.md"
     ),
+}
+CODEX_MANAGED_TEMPLATES = {
+    Path(".codex/config.toml"): Path("CODEX_CONFIG_EXAMPLE.toml"),
 }
 CLAUDE_MANAGED_TEMPLATES = {
     Path("CLAUDE.md"): Path("PROJECT_CLAUDE_TEMPLATE.md"),
     Path(".claude/settings.json"): Path("CLAUDE_SETTINGS_EXAMPLE.json"),
 }
+OPENCODE_MANAGED_TEMPLATES = {
+    Path(".opencode/opencode.json"): Path("OPENCODE_PROJECT_CONFIG_EXAMPLE.json"),
+}
+SENSITIVE_DIFF_PATHS = {Path(".opencode/opencode.json")}
 
 
 def managed_templates(variant: str) -> dict[Path, Path]:
-    templates = dict(MANAGED_TEMPLATES)
+    templates = dict(COMMON_MANAGED_TEMPLATES)
+    if variant != "opencode":
+        templates.update(CODEX_MANAGED_TEMPLATES)
     if variant == "claude":
         templates.update(CLAUDE_MANAGED_TEMPLATES)
+    elif variant == "opencode":
+        templates.update(OPENCODE_MANAGED_TEMPLATES)
     return templates
 
 
@@ -383,18 +393,10 @@ def plan_lines(plan: dict) -> list[str]:
     for item in plan["managed"]:
         lines.append(f"{item['path'].as_posix()}: {item['status']}")
         if item["status"] == "UPDATE":
-            target = plan["agents_path"].parent / item["path"]
-            lines.append(
-                unified_diff(
-                    item["path"].as_posix(),
-                    target.read_text(encoding="utf-8"),
-                    item["source"].read_text(encoding="utf-8"),
-                )
-            )
-        elif item["status"] in {"PRESERVE_CUSTOMIZED", "PRESERVE_LEGACY"}:
-            target = plan["agents_path"].parent / item["path"]
-            if target.is_file():
-                lines.append("Local/template comparison (not applied):")
+            if item["path"] in SENSITIVE_DIFF_PATHS:
+                lines.append("Content diff omitted for sensitive managed configuration.")
+            else:
+                target = plan["agents_path"].parent / item["path"]
                 lines.append(
                     unified_diff(
                         item["path"].as_posix(),
@@ -402,6 +404,22 @@ def plan_lines(plan: dict) -> list[str]:
                         item["source"].read_text(encoding="utf-8"),
                     )
                 )
+        elif item["status"] in {"PRESERVE_CUSTOMIZED", "PRESERVE_LEGACY"}:
+            target = plan["agents_path"].parent / item["path"]
+            if target.is_file():
+                if item["path"] in SENSITIVE_DIFF_PATHS:
+                    lines.append(
+                        "Content diff omitted for sensitive managed configuration."
+                    )
+                else:
+                    lines.append("Local/template comparison (not applied):")
+                    lines.append(
+                        unified_diff(
+                            item["path"].as_posix(),
+                            target.read_text(encoding="utf-8"),
+                            item["source"].read_text(encoding="utf-8"),
+                        )
+                    )
     manifest_status = "CREATE" if plan["manifest_before"] is None else (
         "UPDATE" if plan["manifest_changed"] else "UNCHANGED"
     )
@@ -428,6 +446,7 @@ def apply_plan(plan: dict, force: bool) -> None:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     archive = project / ".codex/archive" / f"upgrade-{timestamp}"
     archive.mkdir(parents=True, exist_ok=False)
+    archive.chmod(0o700)
 
     changed_paths: list[Path] = []
     if plan["agents_before"] != plan["agents_after"]:
@@ -449,6 +468,7 @@ def apply_plan(plan: dict, force: bool) -> None:
         archive / "UPGRADE_SUMMARY.md",
         "# Upgrade Summary\n\n````text\n" + summary + "````\n",
     )
+    (archive / "UPGRADE_SUMMARY.md").chmod(0o600)
 
     if plan["agents_before"] != plan["agents_after"]:
         atomic_write(plan["agents_path"], plan["agents_after"])
