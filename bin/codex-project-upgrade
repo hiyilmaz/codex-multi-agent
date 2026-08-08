@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 MANIFEST_PATH = Path(".codex/template-state.json")
 COMMON_MANAGED_TEMPLATES = {
     Path(".codex/prompts/fill-project-configuration.md"): Path(
@@ -36,14 +36,23 @@ OPENCODE_MANAGED_TEMPLATES = {
 SENSITIVE_DIFF_PATHS = {Path(".opencode/opencode.json")}
 
 
-def managed_templates(variant: str) -> dict[Path, Path]:
-    templates = dict(COMMON_MANAGED_TEMPLATES)
-    if variant != "opencode":
+def variant_managed_templates(variant: str) -> dict[Path, Path]:
+    templates: dict[Path, Path] = {}
+    if variant in {"codex", "dolphin"}:
         templates.update(CODEX_MANAGED_TEMPLATES)
-    if variant == "claude":
+    elif variant == "claude":
         templates.update(CLAUDE_MANAGED_TEMPLATES)
     elif variant == "opencode":
         templates.update(OPENCODE_MANAGED_TEMPLATES)
+    return templates
+
+
+def managed_templates(variants: str | list[str]) -> dict[Path, Path]:
+    if isinstance(variants, str):
+        variants = [variants]
+    templates = dict(COMMON_MANAGED_TEMPLATES)
+    for variant in variants:
+        templates.update(variant_managed_templates(variant))
     return templates
 
 
@@ -65,12 +74,23 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help=argparse.SUPPRESS,
     )
+    parser.add_argument(
+        "--add-variant",
+        action="store_true",
+        help="Add the requested variant without migrating shared AGENTS.md content.",
+    )
     parser.add_argument("project_path")
     args = parser.parse_args()
     if args.force and not args.apply:
         parser.error("--force requires --apply")
     if args.record_initial_state and (args.apply or args.dry_run or args.force):
         parser.error("--record-initial-state cannot be combined with upgrade modes")
+    if args.add_variant and not args.variant:
+        parser.error("--add-variant requires --variant")
+    if args.add_variant and not args.apply:
+        parser.error("--add-variant requires --apply")
+    if args.add_variant and args.record_initial_state:
+        parser.error("--add-variant cannot be combined with --record-initial-state")
     return args
 
 
@@ -106,7 +126,9 @@ def require_contained_directory(project: Path, path: Path) -> None:
         raise ValueError(f"project directory escapes target: {path}") from error
 
 
-def validate_project_directories(project: Path, variant: str | None = None) -> None:
+def validate_project_directories(
+    project: Path, variant: str | list[str] | None = None
+) -> None:
     directories = {project / ".codex", project / ".codex/archive"}
     if variant is not None:
         for relative_path in managed_templates(variant):
@@ -145,6 +167,15 @@ def validate_variant(repo_root: Path, variant: str) -> None:
         raise ValueError(f"unknown variant {variant!r}; expected one of: {choices}")
 
 
+def ordered_variants(repo_root: Path, variants: list[str]) -> list[str]:
+    requested = set(variants)
+    ordered = [variant for variant in variant_ids(repo_root) if variant in requested]
+    if len(ordered) != len(requested):
+        unknown = sorted(requested - set(ordered))
+        raise ValueError(f"unknown variants in template state: {', '.join(unknown)}")
+    return ordered
+
+
 def manifest_text(manifest: dict) -> str:
     return json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 
@@ -162,7 +193,7 @@ def initial_manifest(repo_root: Path, project: Path, variant: str) -> dict:
     return {
         "schema_version": SCHEMA_VERSION,
         "template_version": template_version(repo_root),
-        "variant": variant,
+        "variants": [variant],
         "files": files,
     }
 
@@ -174,12 +205,31 @@ def load_manifest(path: Path) -> dict | None:
         manifest = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as error:
         raise ValueError(f"invalid template state {path}: {error}") from error
-    if manifest.get("schema_version") != SCHEMA_VERSION:
+    schema_version = manifest.get("schema_version")
+    if schema_version == 1:
+        variant = manifest.get("variant")
+        if not isinstance(variant, str) or not variant:
+            raise ValueError("schema 1 template state has no variant")
+        manifest = {
+            "schema_version": SCHEMA_VERSION,
+            "template_version": manifest.get("template_version"),
+            "variants": [variant],
+            "files": manifest.get("files"),
+        }
+    elif schema_version != SCHEMA_VERSION:
         raise ValueError(
-            f"unsupported template state schema: {manifest.get('schema_version')!r}"
+            f"unsupported template state schema: {schema_version!r}"
         )
     if not isinstance(manifest.get("files"), dict):
         raise ValueError("template state has no files mapping")
+    variants = manifest.get("variants")
+    if (
+        not isinstance(variants, list)
+        or not variants
+        or any(not isinstance(variant, str) or not variant for variant in variants)
+        or len(set(variants)) != len(variants)
+    ):
+        raise ValueError("template state has invalid variants")
     return manifest
 
 
@@ -268,27 +318,38 @@ def unified_diff(relative_path: str, before: str, after: str) -> str:
     )
 
 
-def build_plan(repo_root: Path, project: Path, requested_variant: str | None) -> dict:
+def build_plan(
+    repo_root: Path,
+    project: Path,
+    requested_variant: str | None,
+    additive: bool = False,
+) -> dict:
     manifest_path = project / MANIFEST_PATH
     previous_manifest = load_manifest(manifest_path)
     legacy = previous_manifest is None
-    variant = requested_variant or (
-        previous_manifest.get("variant") if previous_manifest else None
-    ) or default_variant(repo_root)
-    validate_variant(repo_root, variant)
-    validate_project_directories(project, variant)
+    existing_variants = previous_manifest.get("variants", []) if previous_manifest else []
+    variants = list(existing_variants)
+    if requested_variant:
+        validate_variant(repo_root, requested_variant)
+        variants.append(requested_variant)
+    if not variants:
+        variants = [default_variant(repo_root)]
+    variants = ordered_variants(repo_root, variants)
+    for variant in variants:
+        validate_variant(repo_root, variant)
+    validate_project_directories(project, variants)
 
     agents_path = project / "AGENTS.md"
     if not agents_path.is_file():
         raise ValueError(f"missing project AGENTS.md: {agents_path}")
     agents_before = agents_path.read_text(encoding="utf-8")
-    agents_after = migrate_agents(agents_before)
+    agents_after = agents_before if additive else migrate_agents(agents_before)
 
     files = dict(previous_manifest.get("files", {})) if previous_manifest else {}
     files["AGENTS.md"] = {"mode": "merge"}
     managed_plans: list[dict] = []
 
-    for relative_path, source_relative in managed_templates(variant).items():
+    for relative_path, source_relative in managed_templates(variants).items():
         key = relative_path.as_posix()
         target = project / relative_path
         source = repo_root / source_relative
@@ -303,10 +364,17 @@ def build_plan(repo_root: Path, project: Path, requested_variant: str | None) ->
             continue
 
         if legacy:
-            status = "PRESERVE_LEGACY" if target.exists() else "PRESERVE_MISSING"
-            files[key] = {"mode": "project"}
-            if target.is_file():
-                files[key]["observed_sha256"] = sha256(target)
+            if target.exists():
+                status = "PRESERVE_LEGACY"
+                files[key] = {"mode": "project"}
+                if target.is_file():
+                    files[key]["observed_sha256"] = sha256(target)
+            elif additive:
+                status = "CREATE"
+                files[key] = {"mode": "managed", "template_sha256": source_hash}
+            else:
+                status = "PRESERVE_MISSING"
+                files[key] = {"mode": "project"}
             managed_plans.append(
                 {"path": relative_path, "source": source, "status": status}
             )
@@ -356,18 +424,20 @@ def build_plan(repo_root: Path, project: Path, requested_variant: str | None) ->
     new_manifest = {
         "schema_version": SCHEMA_VERSION,
         "template_version": template_version(repo_root),
-        "variant": variant,
+        "variants": variants,
         "files": files,
     }
     previous_manifest_text = (
-        manifest_text(previous_manifest) if previous_manifest is not None else None
+        manifest_path.read_text(encoding="utf-8")
+        if previous_manifest is not None
+        else None
     )
     new_manifest_text = manifest_text(new_manifest)
     manifest_changed = previous_manifest_text != new_manifest_text
 
     return {
         "legacy": legacy,
-        "variant": variant,
+        "variants": variants,
         "agents_path": agents_path,
         "agents_before": agents_before,
         "agents_after": agents_after,
@@ -382,7 +452,7 @@ def build_plan(repo_root: Path, project: Path, requested_variant: str | None) ->
 def plan_lines(plan: dict) -> list[str]:
     lines = [
         f"Project upgrade target: {plan['agents_path'].parent}",
-        f"Variant: {plan['variant']}",
+        f"Variants: {', '.join(plan['variants'])}",
         f"State: {'legacy-safe bootstrap' if plan['legacy'] else 'managed'}",
         "",
     ]
@@ -431,7 +501,7 @@ def apply_plan(plan: dict, force: bool) -> None:
     summary = "\n".join(plan_lines(plan)).rstrip() + "\n"
     print(summary, end="")
     has_content_change = plan["agents_before"] != plan["agents_after"] or any(
-        item["status"] == "UPDATE" for item in plan["managed"]
+        item["status"] in {"CREATE", "UPDATE"} for item in plan["managed"]
     )
     if not has_content_change and not plan["manifest_changed"]:
         print("Already up to date.")
@@ -443,7 +513,7 @@ def apply_plan(plan: dict, force: bool) -> None:
             return
 
     project = plan["agents_path"].parent
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     archive = project / ".codex/archive" / f"upgrade-{timestamp}"
     archive.mkdir(parents=True, exist_ok=False)
     archive.chmod(0o700)
@@ -501,7 +571,7 @@ def main() -> int:
             print(f"Created: {project / MANIFEST_PATH}")
             return 0
 
-        plan = build_plan(repo_root, project, args.variant)
+        plan = build_plan(repo_root, project, args.variant, additive=args.add_variant)
         if args.apply:
             apply_plan(plan, args.force)
         else:
