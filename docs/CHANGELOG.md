@@ -1,5 +1,105 @@
 # Changelog
 
+## 2026-08-10
+
+- [ROLLBACK] EXP-20260810-001 moved the inactive ARK and CMA-ARK implementation, adapter, hook, evidence, and test surfaces into a private checksum-bound external recovery backup; the repository now retains only a non-executable planning proposal and historical audit records.
+
+## 2026-08-09
+
+- [CHANGED] Removed ARK's nested Git boundary and adopted it into the CMA monorepo.
+- [DOCS] Consolidated ARK's ignore rules, instructions, changelog, experiment,
+  and integration status under authoritative CMA records and policies.
+- [TEST] Added a fail-closed ARK monorepo contract covering functional-file
+  hashes, record preservation, experiment-ID uniqueness, and removed metadata.
+- [FIX] EXP-20260809-001 made ARK unittest discovery monorepo-safe with explicit
+  `-t ARK`; all 33 tests passed from the CMA root with 85% branch coverage.
+- [FIX] EXP-20260809-002 made root-relative ARK CLI examples executable by
+  requiring `--config ARK/ark.json` and verifying the documented doctor command.
+- [DOCS] Made ARK coverage validation use an isolated temporary data file so
+  root-level coverage state is not created by documented monorepo commands.
+- [PILOT] Completed the isolated Phase 2 CMA–ARK read-only compatibility pilot:
+  single-tool text and stale-graph routes passed, unavailable `ast-grep` stayed
+  fail-closed, 9/9 contract and 33/33 ARK tests passed, and pre/post state was
+  byte-identical; network activity, token usage, and tool provenance remain unverified.
+- [DESIGN] EXP-20260809-003 approved the passive Phase 3 CMA–ARK adapter API:
+  explicit activation, a three-intent allowlist, canonical plan-digest approval,
+  bound provenance, deterministic POSIX/macOS exit origins, rollback, and future
+  TDD gates; implementation was later separately approved while activation remains unapproved.
+- [FEAT] Added the passive stdlib CMA–ARK v1 process adapter with a fixed
+  repo-owned ARK boundary, three-intent allowlist, plan-digest approval handshake,
+  bound executable provenance, fail-closed protocol normalization, and no activation.
+- [TEST] Added RED-first unit, subprocess, real fixed-ARK black-box, and passive
+  footprint contracts; 29 adapter tests passed with 82.81% branch coverage.
+- [SECURITY] Revalidated fixed ARK resources and selected-tool PATH/content/stat
+  identity immediately before execution; independent code and security reviews passed.
+- [RECORDS] Rotated five older terminal experiments after the ARK migrations
+  reached the deterministic archive threshold; post-check returned below threshold.
+- [DESIGN] EXP-20260809-005 defined a repo-local, explicit-only CMA-ARK
+  activation boundary with a plan-only text-search pilot, trusted host approval
+  gate, isolated bootstrap, outer identity binding, atomic replay/rate control,
+  sensitive-output controls, staged Graphify coordination, manifest-bound
+  rollback, and no runtime activation.
+- [FEAT] Added the inactive EXP-20260809-006 CMA-ARK skill candidate with
+  explicit-only metadata, fixed isolated bootstrap, strict query framing, a
+  bounded real passive-adapter plan boundary, digest-only query reporting, and
+  no discovery or execution authority; future activation remains blocked on
+  adapter launcher/interpreter and writable-PATH identity pinning.
+- [SECURITY] EXP-20260809-007 pinned CMA-ARK launchers to isolated system Python,
+  bound adapter/ARK/interpreter/target/tool identities, and hardened the
+  disposable skill pilot against import injection, writable ancestors,
+  concurrent state races, symlink and inode drift, and false commit status.
+- [TEST] Passed 58/58 adapter and pilot tests with 80% pilot and 91% combined
+  branch coverage, 33/33 ARK tests, 14/14 root ARK contracts, skill validation,
+  and independent code and security reviews; no real activation occurred.
+- [ROLLBACK] EXP-20260809-008 exercised governed repo-local CMA-ARK activation,
+  direct plan-only verification, rollback, and fresh-host discovery, then
+  removed the discovery surface after three host sessions produced no usable
+  plan. Canonical activation operations and the unproven bootstrap revision
+  were removed; global and repo-local activation remain absent.
+- [FIX] Made disposable pilot rollback use its validated installer-recorded
+  manifest so later candidate-source edits cannot strand an unchanged installed
+  copy; installed file and directory drift still fails closed.
+- [FEAT] EXP-20260809-009 added an inactive repo-local `UserPromptSubmit`
+  transport candidate and descriptor-anchored disposable hook lifecycle pilot,
+  replacing the failed model-driven skill stdin path without activating hook
+  trust, canonical config, skill discovery, or tool execution.
+- [SECURITY] Bounded encoded hook config before publication, preserved
+  unrelated hook entries, rejected unsafe descriptor/path state, and made
+  residual pre/post-commit cleanup failures report their actual mutation state;
+  final code and security re-reviews passed.
+- [TEST] Passed 18/18 focused hook tests with 85% branch coverage, 78/78 adapter
+  tests, a real zero-execution hook-to-ARK plan, disposable CLI install/rollback,
+  33/33 ARK tests, 5/5 CMA-ARK root contracts, and 166/166 root regressions.
+- [FEAT] EXP-20260809-010 split the CMA-ARK hook pilot into a thin isolated CLI
+  and private descriptor lifecycle, then added fixed no-target canonical hook
+  install and rollback operations without reactivating the failed repo skill.
+- [TEST] Added copied-layout canonical lifecycle, idempotency, rollback,
+  reinstall, drift, module-identity, and truthful cleanup-state coverage;
+  final 27/27 focused tests passed with 80.47% combined branch coverage,
+  alongside 87/87 adapter, 33/33 ARK, and 166/166 root regressions.
+- [SECURITY] Closed temp-unlink, descriptor-close, and outer-descriptor cleanup
+  paths that could misreport residual or committed hook state; final code and
+  security re-reviews passed.
+- [ROLLBACK] Installed the canonical prompt hook, restored the exact original
+  config during rehearsal, reinstalled and trusted only its displayed
+  definition, then removed it after the first fresh-host trace returned a
+  generic `rg` plan without required bound digests or explicit zero-execution
+  evidence. The original config SHA-256 is restored; no hook or skill is active.
+- [DESIGN] EXP-20260809-011 accepted a deterministic same-run CMA-ARK evidence
+  contract with independent candidate and Codex lanes, semantic session/thread
+  binding, exact fail-closed schemas, stable three-run comparison, and private
+  cleanup; wrapper implementation and activation remain separately gated.
+- [TEST] Passed 8/8 evidence-design, 6/6 plan-only hook candidate, and 3/3
+  passive adapter contract tests; Draft 2020-12 negative validation and final
+  independent code/security re-reviews passed without activating any hook.
+- [FEAT] EXP-20260809-012 added a disposable deterministic host-evidence
+  wrapper/harness with independent candidate and JSONL lanes, reviewed source
+  manifest binding, private cleanup, and no canonical activation.
+- [SECURITY] Unified the plan-only subprocess tree under one wrapper-owned
+  process group, closed timeout/reap and semantic-failure escape paths, and
+  passed 27/27 focused tests at 84% combined branch coverage plus 115/115
+  adapter tests and final independent code/security reviews.
+
 ## 2026-08-08
 
 - [FIX] EXP-20260808-003 made project init additive for Codex, Dolphin, Claude,
@@ -23,6 +123,14 @@
   path RED states; passed 141/141 regressions plus live OpenCode 1.18.15 config,
   path, agent, skill, and single-plugin pilot checks; final code and security
   reviews passed.
+- [CHANGED] Relocated the independent ARK repository under `Codex-Multi-Agent/ARK`.
+- [ADDED] Created the independent ARK repository with a strict JSON configuration contract.
+- [ADDED] Added narrowest-sufficient-tool planning for Graphify, rg, ast-grep, conditional OSV, Serena, GitHub MCP, Opengrep, Betterleaks, cplt, DeepWiki, and Context7.
+- [ADDED] Added argv-only execution, fail-closed target containment, private cplt runtime roots, credential stripping, output redaction, and truthful result statuses.
+- [TEST] Added RED-first unit and integration coverage for configuration, routing, execution, CLI behavior, injection resistance, and runtime isolation.
+- [FIX] Enforced fail-closed configuration types, `.ark/runtime` containment, exact GitHub identities, nonzero no-execution exits, nonempty security evidence, and explicit docs providers (`EXP-20260808-004`).
+- [FIX] Rejected non-string Serena mode values with a controlled configuration error (`EXP-20260808-004`).
+- [SECURITY] Isolated cplt behind a minimal repo-local environment, suppressed sensitive scanner output, bounded subprocess duration/output while draining streams, terminated timed-out process groups, and rejected Graphify output symlink escapes (`EXP-20260808-004`).
 
 ## 2026-08-07
 

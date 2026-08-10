@@ -2,6 +2,514 @@
 
 [Terminal experiment archive](EXPERIMENTS_ARCHIVE.md)
 
+## EXP-20260810-001 - Selective CMA-ARK Rollback
+
+Date: 2026-08-10
+Status: ROLLED_BACK
+
+Problem:
+The CMA-ARK work expanded a simple lazy-tool integration into a large inactive
+adapter, hook, lifecycle, and host-evidence stack. The implementation adds
+substantial maintenance and review cost while no CMA-ARK hook, skill, or managed
+runtime path is active.
+
+Evidence:
+The ARK and CMA-ARK implementation surfaces are entirely untracked at the
+current Git HEAD, while tracked changelog and experiment ledgers contain mixed
+ARK and unrelated CMA changes. The approved assessment found roughly 7,500
+lines in the CMA-ARK integration layer versus roughly 1,400 lines in ARK, with
+115 adapter tests but no active integration surface.
+
+Hypothesis:
+A selective, recoverable rollback can return ARK to one planning-only proposal
+without losing audit history or changing unrelated dirty CMA work. Moving the
+implementation to a private checksum-bound external backup and applying exact
+preimage transforms to mixed tracked files should be safer than a repository
+reset or broad patch reversal.
+
+Solution Attempt:
+Create an external private rollback manifest and RED-first acceptance checker,
+move only approved ARK/CMA-ARK implementation artifacts into its payload, remove
+only the four ARK ignore rules, transition the thirteen historical ARK
+experiment statuses to `ROLLED_BACK`, add one truthful changelog entry, and
+retain exactly one non-executable planning proposal.
+
+Test:
+Require meaningful RED before mutation, exact source-to-backup hash and metadata
+parity, planning-only repository surface, deterministic tracked-file postimages,
+anti-hardcoded-success mutation probes, full remaining root regressions,
+read-only record checks, diff integrity, and independent code and security
+reviews.
+
+Success Criteria:
+- Every approved implementation artifact is absent from the repository and
+  recoverable from a private verified external backup.
+- Exactly one CMA-ARK planning proposal remains and grants no implementation,
+  runtime, activation, tool-execution, commit, or push authority.
+- All thirteen historical ARK experiment records occur once and have current
+  status `ROLLED_BACK` without rewriting their historical evidence or decisions.
+- All unrelated tracked and non-ignored untracked CMA state remains
+  byte-identical; generated ignored files are outside this rollback claim.
+- RED, GREEN, mutation probes, remaining regressions, record validation, and
+  independent reviews pass.
+
+Result:
+The approved ARK and CMA-ARK implementation surfaces were moved to a private
+checksum-bound recovery backup, leaving one non-executable planning proposal.
+Meaningful RED, final acceptance, all nine mutation probes, 152 remaining root
+regressions under Python 3.10, record checks, diff integrity, and independent
+code and security reviews passed. An initial Python 3.9 run failed on existing
+Python 3.10 union-type syntax and was not counted as success.
+
+Decision:
+ROLLBACK
+
+Notes:
+The user explicitly approved the selective rollback and mandatory orchestration
+chain. Commit, push, backup deletion, global runtime changes, and any future ARK
+implementation or activation remain outside scope.
+
+## EXP-20260809-012 - Disposable CMA-ARK Host Evidence Wrapper
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+EXP-20260809-011 accepted a deterministic same-run evidence contract, but no
+test-only wrapper or disposable host harness implements it. The accepted design
+therefore cannot yet prove that real hook/candidate evidence and a paired Codex
+JSONL lane are bound, non-compensating, private, and truthfully cleaned up.
+
+Evidence:
+The inactive hook candidate can already produce a real plan-only artifact, and
+its focused tests prove zero routed-tool execution. The repository has no host
+evidence wrapper or harness, canonical `UserPromptSubmit` activation remains
+absent, and the accepted schema has not yet been exercised by a same-child
+disposable boundary.
+
+Hypothesis:
+A fixed isolated wrapper plus a three-pair disposable host harness can implement
+the accepted contract without widening runtime authority. Executing the real
+candidate/coordinator path inside each fake-host child and independently
+validating exact artifacts, JSONL, identity, hashes, cleanup, and final status
+will reject missing, altered, dirty, or hardcoded evidence.
+
+Solution Attempt:
+Add separate bounded wrapper, contract-validation, and harness modules plus a
+disposable fake Codex host fixture and RED-first tests. Keep the canonical hook,
+candidate, coordinator, adapter, ARK, trust configuration, dependencies, and
+routed-tool authority unchanged. If truthful missing-artifact failure cannot be
+represented by the accepted schema, stop before implementation and request a
+narrow contract correction instead of fabricating evidence.
+
+Test:
+Capture meaningful RED from absent wrapper/harness behavior. Then run focused
+positive, negative, boundary, cleanup, same-child binding, hardcoded-success,
+three-run stability, and branch-coverage checks followed by relevant hook,
+adapter, ARK, root-governance, code-review, and security-review regressions.
+
+Success Criteria:
+- Every disposable pair invokes the real wrapper and real inactive candidate
+  exactly once while executing no routed tool.
+- Candidate and Codex lanes are independently required and bound to the same
+  run, session/thread identity, fixed query, prompt, reviewed files, and hashes.
+- Three fresh pairs pass without retry or replacement and share one normalized
+  candidate hash.
+- Private artifacts are exact, bounded, mode-safe, hashed before deletion, and
+  absent after successful cleanup; cleanup failure cannot report success.
+- Missing hook execution, dirty JSONL, identity/hash drift, timeout, stderr,
+  nonzero exit, malformed input, or hardcoded success fails closed.
+- Focused branch coverage is at least 80%, relevant regressions pass, and
+  independent code and security reviews have no blocking findings.
+- No canonical activation, trust action, real Codex session, global change,
+  dependency, routed-tool execution, commit, or push occurs.
+
+Result:
+Planner and TDD review independently confirmed a blocking contract gap before
+implementation began. When the hook does not run, the accepted
+contract correctly leaves both pass-only candidate artifacts absent. A valid
+assessment cannot then provide their required raw hashes or normalized candidate
+hash, while `final_result` still requires `assessment_sha256`. Hashing a sentinel
+or fabricating passing-shaped failure artifacts would violate the contract.
+The minimum truthful correction retains the field but permits
+`assessment_sha256=null` only in a failed or unverified final result when no
+valid assessment could be constructed; a passing final still requires a
+lowercase 64-character assessment hash. The user approved that correction; its
+meaningful RED failed 1/9 on the old schema and the corrected design passed 9/9.
+
+The wrapper/harness RED then failed because the three implementation modules
+were absent. The first implementation slice passes 5/5 contract tests and 2/2
+real wrapper-to-candidate tests. The disposable harness passes 5/6 tests, but
+three clean real candidate runs produce different normalized hashes even though
+their query hashes are identical. Source inspection confirms that
+`plan_sha256` covers the coordinator-generated UUID request ID, so it is
+intentionally different on every invocation. The accepted empty volatile-field
+allowlist is therefore incompatible with the real candidate. Excluding
+`plan_sha256` only from cross-run normalization, while retaining and validating
+every raw per-run plan hash, is the narrowest feasible correction; changing the
+real coordinator request identity would exceed this test-only scope. The user
+approved that correction. The resulting focused suite reached 19/19 with 84%,
+81%, and 84% branch coverage for wrapper, contract, and harness sources.
+
+The approved containment correction gives the candidate one wrapper-owned
+process group and makes the candidate, coordinator, adapter, and plan-only ARK
+boundary inherit it. Timeout and semantic-failure paths now terminate the full
+group and reap direct children. A checked-in reviewed manifest binds the exact
+hook-definition bytes plus wrapper, candidate, coordinator, contract, and
+schema hashes before contract import; ownership, permission, path, type, and
+bytes-only drift checks fail closed.
+
+Final verification passed 27/27 focused host-evidence tests with 84% combined
+branch coverage (wrapper 89%, contract 81%, harness 84%), 115/115 adapter tests,
+and the previously completed 55/55 relevant root contracts. Independent code
+and security re-reviews returned PASS with no blocking findings. Canonical hook
+activation, trust, real Codex sessions, global changes, dependencies, routed
+tool execution, commit, and push did not occur.
+
+Decision:
+ACCEPTED
+
+Notes:
+This experiment owns only the test-only wrapper/harness implementation and its
+focused tests and records. Real activation and three fresh Codex sessions remain
+separate approval gates.
+
+## EXP-20260809-011 - Deterministic CMA-ARK Host Evidence Contract
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+EXP-20260809-010 correctly rolled back canonical hook activation after the
+first fresh Codex session omitted bound plan fields from its final response and
+JSONL trace. Later diagnosis established that the acceptance gate conflated
+hook `additionalContext`, which is model context, with deterministic final or
+JSONL evidence.
+
+Evidence:
+The inactive hook candidate directly returns the exact target, query and plan
+digests, `success=true`, and `execution_performed=false` in the documented
+`UserPromptSubmit` envelope. Official OpenAI documentation defines that output
+as extra developer context, defines `codex exec --json` as an emitted event
+stream, and recommends `--output-schema` for stable final-response fields; it
+does not define the model response as canonical hook evidence.
+
+Hypothesis:
+A same-run two-lane acceptance contract will provide deterministic evidence
+without widening runtime authority: a test-only external wrapper will be the
+actual hook command, validate the candidate/coordinator plan artifact, and bind
+it to its paired ephemeral read-only Codex JSONL behavior. Neither lane may
+rescue a failure in the other, and model output will remain non-authoritative.
+
+Solution Attempt:
+Define same-host identity binding, a machine-readable schema bundle for the
+external evidence artifacts and final result, three-run stability, private
+temporary lifecycle, independent gating, failure rules, and future TDD contract
+in the CMA-ARK design. Keep production hook/coordinator code, canonical
+activation, trust, App Server, dependencies, and routed-tool behavior unchanged.
+
+Test:
+Capture meaningful RED failures from new documentation-contract tests before
+updating the design. Then run the focused design test, relevant adapter and root
+regressions, `git diff --check`, independent code review, and security review.
+
+Success Criteria:
+- Canonical candidate evidence and Codex behavioral events are separate,
+  independently required lanes bound to the same host run and reviewed hook.
+- Four private temporary artifacts have exact schemas, hashes, normalization,
+  cleanup, and fail-closed assessment rules.
+- Three candidate runs and three Codex runs are required; no later run can
+  replace a failed required run.
+- Final model text and `--output-schema` output are presentation only and never
+  authenticate plan identity, digest binding, or zero execution.
+- App Server remains deferred and production hook/coordinator code, activation,
+  trust, dependencies, and routed-tool authority remain unchanged.
+- New tests fail against the pre-change design, then focused and relevant
+  regressions pass with no blocking code or security review findings.
+
+Result:
+The documentation contract produced the required meaningful RED: the existing
+two tests passed while all four initial evidence-contract tests failed on
+absent design requirements. The first bounded design then passed 6/6 focused
+tests after a whitespace-only harness correction for Markdown wrapping. Code
+review exposed missing same-host identity binding, narrative-only artifact
+schemas, and phrase-only test weakness. The remediated contract added a parsed
+machine-readable schema test; code re-review passed. Security review then found
+that contradictory success/lane/cleanup states remained schema-valid and that
+embedding a fresh run ID in the candidate query made the three-run stability
+rule unsatisfiable. The remediated contract uses conditional result variants, a
+single post-comparison session/thread identity, and a fixed candidate query with
+the run ID outside it. The current focused suite passes 8/8, alongside 6/6
+plan-only hook candidate tests and 3/3 passive CMA-ARK contract tests. Direct
+Draft 2020-12 validation accepts the coherent assessment and rejects both a
+failed-lane passing assessment and failed-cleanup passing final result.
+`git diff --check` also passes. Independent code and security re-reviews passed
+with both security blockers closed. No wrapper, fresh Codex session, hook
+activation, trust change, routed tool, dependency, commit, or push occurred.
+Final governance regressions passed 11/11 orchestration, 7/7 hypothesis, and
+19/19 record-archive tests. The terminal-record check reported every managed
+record below its archive threshold, so no archive apply was required.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment is documentation and test-contract scope only. Wrapper
+implementation and real three-session validation require a distinct approval.
+
+## EXP-20260809-010 - Canonical CMA-ARK Hook Activation
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+EXP-20260809-009 proved a deterministic plan-only `UserPromptSubmit` transport
+and a descriptor-anchored disposable lifecycle, but the canonical CMA repository
+still has no active prompt hook. The existing pilot intentionally rejects the
+canonical root, so the approved activation cannot be installed or rolled back
+through the reviewed lifecycle.
+
+Evidence:
+The canonical `.codex/hooks.json` contains only empty `SessionStart` and `Stop`
+events, `.codex/cma-ark-user-prompt.py` is absent, and the pilot accepts only
+`install|rollback --target` against a marked disposable repository. Codex CLI
+0.147.0 reports stable hook support. Official OpenAI documentation requires
+review and trust of the exact non-managed hook definition through `/hooks` and
+records trust against its current hash.
+
+Hypothesis:
+Fixed no-target `repo-install` and `repo-rollback` operations, built on the
+existing descriptor-relative lifecycle and separated from the bounded CLI,
+will permit exact canonical activation and recovery without reactivating the
+failed repo skill or granting execution authority. A user-reviewed exact hook
+definition should then produce deterministic fresh-session plans with
+`execution_performed=false` and no routed tool execution.
+
+Solution Attempt:
+Split the lifecycle primitives into one adjacent private module, keep the pilot
+as a thin isolated CLI/router, and add fixed canonical operations that derive
+only their own repository root. Prove the lifecycle first in copied layouts,
+then rehearse canonical install and rollback, reinstall exact bytes, use the
+supported `/hooks` trust flow without bypass, and run three fresh plan-only
+sessions.
+
+Test:
+Capture RED evidence for the absent repo operations. Verify copied-layout
+install, idempotency, exact preservation, rollback, reinstall, path and content
+drift refusal, atomic failure reporting, hostile environment isolation, and
+anti-hardcoded-success behavior. Run focused branch coverage, adapter, ARK,
+and root regressions before canonical rehearsal. Verify the exact live hook in
+three fresh Codex sessions after trust.
+
+Success Criteria:
+- Repo operations derive one fixed canonical root and reject all caller targets.
+- Disposable operations retain their marker and canonical-refusal behavior.
+- Install and rollback mutate only the exact owned hook entry and script,
+  preserve unrelated config, and truthfully report committed cleanup failures.
+- The installed script is byte-identical to the reviewed candidate and mode
+  `0600`; no skill activation, global skill, dependency, MCP/cplt, or Graphify
+  execution is added.
+- Exact trust uses the supported `/hooks` review only; no trust bypass, manual
+  trust-state edit, or unrelated hook approval occurs.
+- Three fresh sessions return usable matching CMA-ARK plans with
+  `execution_performed=false`, no routed tool execution, retry, or fallback.
+- Focused branch coverage is at least 80%, relevant regressions pass, and code
+  plus security review have no blocking findings.
+
+Result:
+The missing canonical operations produced the expected initial RED: all three
+copied-layout tests failed because the existing parser rejected `repo-install`
+with exit 2. The bounded implementation then passed 23/23 focused tests with
+80.70% combined CLI/lifecycle branch coverage, 83/83 adapter tests, 33/33 ARK
+tests, and 166/166 root regressions. Code and security review both passed after
+three false-state cleanup paths were found and closed. The real canonical
+lifecycle installed, restored the original config SHA-256 exactly on rollback,
+and reinstalled the byte-identical mode-`0600` hook with no lock/temp residue.
+Exact trust was then granted only to the displayed project hook through
+`/hooks`; no broad trust or bypass was used. The first fresh ephemeral
+read-only Codex session exited 0 and returned a five-step generic `rg` plan with
+no tool calls, but its JSONL trace omitted the required target/query/plan
+digests, `success=true`, and literal `execution_performed=false` fields. It was
+therefore not a usable bound CMA-ARK plan. The remaining two sessions were not
+executed. The governed rollback removed the hook entry and script, restored the
+original config SHA-256
+`49ebbad6f600dbb37355f63e80bde9457a77023891a6bbca4157dee381abd071`,
+and left no lock/temp or skill surface.
+
+Decision:
+ROLLBACK
+
+Notes:
+The hook lifecycle implementation remains as a tested inactive recovery tool,
+but canonical activation is rejected by the fresh-host acceptance gate. The
+Codex-owned exact-definition trust record is inert after config removal and was
+not manually edited. Commit, push, deployment, global skill changes, routed
+tool execution, and the remaining two fresh sessions did not occur.
+
+## EXP-20260809-009 - Deterministic CMA-ARK Hook Transport
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+The rolled-back repo-local skill activation depended on a model-generated
+subprocess call carrying request JSON on stdin. Three fresh Codex sessions
+discovered the skill, but none produced a usable host plan; the final attempt
+omitted stdin and failed closed with `invalid_request`.
+
+Evidence:
+EXP-20260809-008 records the three failed host attempts and governed rollback.
+The active Codex CLI reports stable hook support, and the official
+`UserPromptSubmit` contract supplies the user prompt to a repo-local command
+hook as JSON on stdin. The repository already contains one tracked private
+`.codex/hooks.json` with no active prompt hook.
+
+Hypothesis:
+A repo-local `UserPromptSubmit` hook that recognizes only the existing literal
+`$cma-ark <query>` grammar can translate the host event into the coordinator's
+compact JSON request exactly once without placing the raw query in argv or new
+persistent state. Descriptor-anchored install and rollback in a disposable
+copy can bound config/script mutations without claiming protection from a
+malicious process running as the same user.
+
+Solution Attempt:
+Build an inactive hook candidate and a separate disposable-only hook pilot.
+The handler validates the exact host event, invokes the existing plan-only
+coordinator through fixed literal argv and stdin, and emits only bounded
+sanitized hook context. The pilot uses Python 3.9 `dir_fd`, `O_NOFOLLOW`,
+relative atomic operations, and exact owned-content checks to add or remove one
+hook entry and script in a disposable repository. It does not activate the
+canonical repository.
+
+Test:
+Capture meaningful RED failures for missing hook transport and descriptor
+operations. Then verify exact invocation grammar, input boundaries, one
+coordinator delivery, query non-disclosure, hostile environment isolation,
+protocol failure handling, config preservation, idempotency, drift refusal,
+path-swap rejection, atomic cleanup, and anti-hardcoded-success behavior.
+
+Success Criteria:
+- Only an exact whole-prompt `$cma-ark <query>` event reaches the coordinator.
+- The raw query appears only in the coordinator stdin inherited from the host
+  prompt and never in argv, hook output, environment, or new files/state.
+- A valid request invokes the coordinator once and returns plan-only evidence
+  with `execution_performed=false`; invalid or contradictory evidence fails
+  closed without fallback or retry.
+- Disposable install and rollback preserve unrelated hooks, are idempotent,
+  refuse drift/symlinks/path replacement, and truthfully report committed
+  cleanup failures.
+- Focused branch coverage is at least 80%, relevant regressions pass, and an
+  always-success dummy fails the acceptance tests.
+- No canonical hook trust/activation, skill activation, global config,
+  dependency, MCP, cplt, Graphify, tool execution, commit, push, or deployment
+  occurs.
+
+Result:
+The initial existence tests failed as expected because neither hook candidate
+nor hook pilot existed. The completed handler accepted only the exact literal
+invocation, delivered the compact coordinator request through stdin once,
+rejected malformed and hardcoded-success responses, and returned digest-only
+plan context. A real handler-to-coordinator-to-adapter-to-ARK black-box plan
+returned `success=true`, `execution_performed=false`, and selected `rg` without
+executing it. The disposable CLI installed and rolled back its exact hook entry
+and script while restoring unrelated hook configuration.
+
+Independent code review found and closed one swallowed combined
+publish/cleanup failure; the final branch reports
+`not_applied_cleanup_failed` when a residual staged script remains. Independent
+security review found and closed compact-to-pretty JSON size expansion that
+could strand an unreadable active config; encoded size is now rejected before
+publication and staged state is removed. Final focused tests passed 18/18 with
+85% combined branch coverage, the complete adapter suite passed 78/78, CMA-ARK
+root contracts passed 5/5, ARK passed 33/33, and the broader root suite passed
+166/166. Code and security re-reviews both returned PASS. The canonical hook
+config, hook trust, repo/global skill discovery, dependencies, and execution
+authority remained unchanged.
+
+Decision:
+ACCEPT. Retain the inactive hook candidate and descriptor-anchored disposable
+pilot as the verified replacement transport design. Keep canonical hook trust
+and activation as a distinct future task requiring explicit approval.
+
+Notes:
+Codex hook trust remains a separate user-controlled activation gate. This
+experiment proved the candidate and disposable lifecycle only; it did not
+silently trust or activate a repository hook.
+
+## EXP-20260809-008 - Repo-Local CMA-ARK Plan Activation
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+The reviewed CMA-ARK skill remains outside Codex discovery, so the repository
+cannot use its explicit-only, plan-only routing boundary. The disposable pilot
+correctly refuses the canonical repository and therefore cannot safely express
+the separately approved real activation.
+
+Evidence:
+EXP-20260809-007 accepted the hardened launcher, identity binding, and atomic
+disposable install/rollback pilot while reserving real repo-local activation
+for a separate explicit approval. That approval is now present, and the real
+`.agents/skills/cma-ark` path is absent.
+
+Hypothesis:
+Adding fixed `repo-install` and `repo-rollback` operations that derive the
+canonical source root internally, while leaving disposable target validation
+unchanged, will permit a bounded repo-local activation without adding global or
+execution authority.
+
+Solution Attempt:
+Reuse the existing exact manifest, private state, exclusive operation lock,
+atomic publication, identity-bound idempotency, drift-refusing rollback, and
+truthful committed-failure reporting. The new operations accept no target
+argument and can act only on the pilot's canonical repository root.
+
+Test:
+Capture copied-layout RED evidence for the missing operations, then verify
+exact install, idempotency, rollback, drift refusal, pre-commit cleanup, and
+target-argument rejection. After GREEN regressions, execute the approved real
+install, verify plan-only zero-execution behavior, rehearse rollback, reinstall,
+and leave only the repo-local explicit skill active.
+
+Success Criteria:
+- Disposable operations continue rejecting the canonical repository.
+- Repo operations derive one fixed target and accept no `--target` input.
+- The installed surface equals the reviewed three-file candidate byte-for-byte
+  and retains `allow_implicit_invocation: false`.
+- Installed-path planning returns `execution_performed=false` and never invokes
+  routed `rg` or adapter `run` behavior.
+- Rollback removes only unchanged installer-owned state and final reinstall is
+  exact.
+- No global skill, dependency, MCP/cplt, Graphify, commit, push, or deployment
+  change occurs.
+
+Result:
+Copied-layout repo operations passed exact install, idempotency, rollback,
+reinstall, drift refusal, target rejection, and pre-publication cleanup tests.
+The real lifecycle installed, verified a direct `success=true` plan with
+`execution_performed=false`, rolled back cleanly, and reinstalled exact files.
+Three fresh Codex sessions discovered the repo skill and never executed routed
+search, but none returned a usable plan: two failed under the macOS
+`/usr/bin/python3` shim, and the revised pinned-interpreter attempt omitted the
+required JSON stdin and returned fail-closed `invalid_request`. The governed
+installer then removed the repo-local discovery surface and state.
+
+Decision:
+ROLLBACK. Remove the canonical repo operations and the unproven bootstrap
+revision, preserve only the inactive EXP-20260809-007 candidate, and require a
+separately approved deterministic host input and descriptor-safe installation
+design before another activation attempt.
+
+Notes:
+Fresh Codex discovery loaded the repo-local skill, but both read-only and
+workspace-write host sessions returned fail-closed `process_failed` because the
+outer `/usr/bin/python3` developer-tool shim attempted a denied temporary cache
+write. The attempt was revised to invoke the coordinator through its already
+identity-pinned root-owned real interpreter binary; adapter and ARK child
+boundaries remained unchanged. That revision also failed host validation and
+was removed with the activation-only repo operations.
+
 ## EXP-20260806-003 - PTY Package Install Stdin Continuation
 
 Date: 2026-08-06
@@ -51,599 +559,3 @@ REVISE
 Notes:
 This experiment addresses only stdin continuation after the already completed
 approved package transaction.
-
-## EXP-20260806-010 - Portable Codex Subagent Restoration Prompt
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-The current Codex runtime has a verified token-conscious 12-agent matrix, but
-there is no installed CMA prompt for restoring that matrix without embedding a
-specific user's absolute home path or re-generating the full agent bodies.
-
-Evidence:
-The managed Codex variant and active runtime contain eight default agent TOMLs
-plus four conditional Sol variants, all at medium reasoning. The portable
-installer rewrites a selected runtime home but does not currently install a
-`prompts/` tree or prefer an active `CODEX_HOME` when no explicit target is
-provided.
-
-Hypothesis:
-A concise restoration prompt derived from the authoritative agent TOMLs,
-installed through a dynamically resolved runtime home, will make recovery
-portable while preserving the current model quality and reducing repeated
-discovery, generated output, and reasoning-token pressure.
-
-Solution Attempt:
-Add a Codex-only restoration prompt, teach the shared variant installer to
-manage optional prompt trees and prefer an explicit target, then `CODEX_HOME`,
-then the selected variant's current-user default. Preserve no-overwrite and
-symlink protections. Validate source before narrowly synchronizing only the
-prompt into the active Codex home.
-
-Test:
-Add RED contracts for the prompt's exact live TOML-derived inventory, portable
-runtime resolution, real installer output, no-overwrite preservation, and
-prompt-directory symlink rejection. Then run focused, related, and complete
-regressions, shell syntax and diff checks, active source-target hashes, and
-independent code and security reviews.
-
-Success Criteria:
-- No fixed username or `/Users/.../.codex` path appears in the prompt.
-- Exactly eight default roles and four conditional Sol variants retain their
-  current friendly identities, models, medium reasoning, and sandboxes.
-- The mandatory chain remains unchanged and no high-reasoning role is added.
-- Installer resolution is explicit target, active `CODEX_HOME`, then the
-  selected current-user default.
-- Existing prompt files are preserved without force and prompt-directory
-  symlink escapes fail before outside mutation.
-- Source tests pass before a narrow, hash-verified active prompt sync.
-- Config, auth, agent TOMLs, registries, skills, other providers, commit, push,
-  and deployment remain unchanged.
-
-Result:
-The initial five-test RED run produced four failures and one missing-file
-error for the absent prompt, missing installer transport, ignored
-`CODEX_HOME`, and missing prompt-directory preflight. The first implementation
-then passed the focused 5/5 checks, related suites at 17/17, 21/21, and 11/11,
-and the complete 111/111 regression suite. Shell syntax and diff checks passed.
-
-The approved narrow activation installed only the new prompt into the resolved
-active Codex home. Its SHA-256 matched the managed source and the protected
-runtime surface hash remained unchanged. Independent code review then found
-that the symlink test did not yet prove fail-before-write behavior. A second
-meaningful RED test reproduced policy overwrite before the symlink failure.
-Adding `prompts` to the pre-write managed-directory validation made that test
-and the focused 5/5 checks pass while preserving both target and outside
-sentinels.
-
-After remediation, the installer suite passed 17/17 and the complete suite
-passed 111/111. Shell syntax and diff checks passed. Code re-review and security
-review both passed with no remaining blocking finding; security review
-confirmed fail-before-write path containment, no-overwrite behavior, quoted
-runtime resolution, and no credential, auth, dependency, external-service, or
-destructive-operation change.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved Codex source, tests, records, and narrow active prompt
-synchronization. Claude adaptation is planning-only after Codex closure.
-
-## EXP-20260806-011 - Portable Claude Subagent Restoration Prompt
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-The portable Claude CMA variant has the verified 12-agent Sonnet/Opus matrix
-but lacks an installed recovery prompt that derives the current Markdown/YAML
-definitions without embedding a machine-specific user path or duplicating full
-agent bodies.
-
-Evidence:
-The Claude source contains eight canonical agents and four conditional Opus
-variants, all at medium effort. The shared installer now transports optional
-prompt trees safely, but the Claude package has no prompt to install and its
-exact manifest remains 34 files.
-
-Hypothesis:
-A Claude-native restoration prompt derived from authoritative frontmatter and
-installed only into an explicitly selected isolated runtime will provide
-portable recovery with bounded token use while preserving models, effort,
-tools, permissions, orchestration, and active native Claude isolation.
-
-Solution Attempt:
-Add one Claude prompt and document it. Reuse the existing provider-neutral
-installer prompt transport without changing installer behavior unless RED
-evidence requires it. Validate source and an isolated installation before
-narrowly synchronizing the prompt to the current user's isolated CMA Claude
-runtime, never the active native Claude home.
-
-Test:
-Add RED contracts for the 35-file manifest, actual frontmatter-derived role
-rows, target-resolution order, token/model rules, exact chain, explicit-runtime
-installation, no-overwrite preservation, and provider-neutral symlink
-preflight. Run focused Claude and installer suites, complete regressions,
-syntax/diff checks, isolated source-target hashes, and independent reviews.
-
-Success Criteria:
-- The prompt contains no fixed username or machine-specific absolute path.
-- Exactly 12 roles preserve their actual identity, model, medium effort, tools,
-  and permission mode, including four conditional Opus replacements.
-- Target resolution is explicit target, non-empty `CLAUDE_CONFIG_DIR`, then
-  the current user's `${HOME}/.claude`.
-- No Codex agent format, Codex model identifier, `-sol` role, unsupported token
-  field, extra chain stage, or broad escalation is introduced.
-- The installer copies the prompt to an explicit isolated runtime, preserves
-  existing prompts without force, and rejects prompt symlinks before writes.
-- Source validation precedes a narrow hash-verified sync to the isolated CMA
-  Claude runtime; `${HOME}/.claude` remains unchanged.
-- Settings, credentials, native Claude, SDK, dependencies, commit, push, and
-  deployment remain unchanged.
-
-Result:
-The initial source RED produced one manifest failure and one missing-file error:
-the package had 34 files and no Claude restoration prompt. The installer RED
-kept the Codex, no-overwrite, and symlink cases green while the Claude explicit
-install subcase failed because no source or installed prompt existed.
-
-After adding only the Claude-native prompt and README entry, the focused source
-checks passed 2/2 and provider-neutral installer checks passed 3/3. The Claude
-suite passed 17/17, installer suite 17/17, orchestration suite 11/11, and the
-complete suite 112/112. Shell syntax and diff checks passed. No shared installer
-implementation change was required.
-
-The isolated CMA Claude runtime did not previously exist, so broad installation
-was avoided. Only its `prompts/` directory and the approved prompt were created.
-The source and isolated prompt SHA-256 values match, the isolated runtime
-contains no other file, and the native `${HOME}/.claude` prompt path remains
-absent.
-
-Code review found a high-severity cross-runtime delegation risk: an explicit
-target could differ from the active `CLAUDE_CONFIG_DIR` while Sam remained
-scoped to the active runtime. After explicit user approval, a meaningful RED
-contract required fail-closed target equality, isolated-process continuation,
-and governor use only after the effective config directory equals the resolved
-target. The corrected contract passed and the prior isolated prompt was saved
-in a hash-verified recoverable backup before narrow replacement.
-
-After remediation, the Claude suite passed 17/17, installer suite 17/17, and
-complete suite 112/112; shell syntax and diff checks passed. Code re-review and
-security review both passed. The updated source and isolated prompt SHA-256 is
-`b6e1b926d4f47e8bd5d886eb450378792f4d12fbe05e4fa6ec326978334e17e8`,
-and native Claude state remains unchanged.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved source, tests, records, and isolated CMA Claude prompt
-synchronization only.
-
-## EXP-20260807-001 - Native Claude Global CMA Activation
-
-Date: 2026-08-07
-Status: ACCEPTED
-
-Problem:
-The Claude variant defaults to `${HOME}/.llm-runtimes/claude`, so the portable
-CMA package is isolated from Claude Code's native user-global `${HOME}/.claude`
-surface and is not available to normal Claude sessions.
-
-Evidence:
-The variant catalog and launcher select the isolated runtime. The current
-user's native `${HOME}/.claude` already contains `CLAUDE.md`, `settings.json`,
-skills, and runtime state, while the isolated CMA directory contains only the
-restoration prompt. Official Claude Code documentation defines
-`${HOME}/.claude` as user scope and `CLAUDE_CONFIG_DIR` as an override.
-
-Hypothesis:
-A dedicated native activation overlay can make CMA available to normal Claude
-Code sessions while preserving existing instructions, settings, credentials,
-history, plugins, and unrelated files. A separate managed policy plus one
-idempotent import avoids replacing the existing global `CLAUDE.md`.
-
-Solution Attempt:
-Change the Claude default home to `${HOME}/.claude`. Delegate only native-home
-installs to a transactional activation helper that validates all source and
-target paths before writes, preserves existing settings byte-for-byte, backs
-up and appends one `@registry/CMA_GLOBAL.md` import to existing instructions,
-installs missing CMA-owned files, rejects conflicts, and rolls back partial
-activation. Keep explicit non-native installs portable and leave the legacy
-isolated directory unchanged.
-
-Test:
-Add RED contracts for native default resolution, complete preservation-aware
-activation, idempotency, functional import detection, conflict and symlink
-rejection, rollback after copy failure, and incomplete source rejection. Run
-focused Claude activation, installer, runtime, and complete regression suites,
-shell syntax, JSON, diff, source-target parity, live native state preservation,
-and independent code and security reviews.
-
-Success Criteria:
-- Default Claude installation resolves to `${HOME}/.claude`; explicit alternate
-  runtime homes continue to use portable isolated installation behavior.
-- Existing `CLAUDE.md` content and mode are preserved with exactly one
-  functional CMA import and a byte-identical recoverable backup.
-- Existing `settings.json` bytes and mode never change.
-- Missing CMA agents, skills, registry, prompt, README, and launcher files are
-  installed; differing CMA-owned files fail before mutation.
-- Symlink, unsafe-type, incomplete-source, backup, and late-copy failures do
-  not leave partial activation or touch unrelated native Claude state.
-- Repeated activation is byte- and path-idempotent.
-- The legacy `${HOME}/.llm-runtimes/claude` tree remains unchanged.
-- Focused and complete tests, syntax, diff, live hashes, and independent code
-  and security reviews pass before acceptance.
-
-Result:
-The initial native-activation contract produced seven intended failures: the
-catalog still selected the isolated home, no preserved import or backup was
-created, force and differing managed files did not fail closed, incomplete
-sources reported success, and a symlinked native home could be followed.
-
-The first implementation passed 8/8 focused checks, both related suites at
-17/17, and the then-complete 120/120 suite. Live activation created a
-byte-identical policy backup, preserved existing policy and settings modes,
-preserved the settings and legacy-runtime hashes, installed the complete CMA
-surface with source parity, and remained idempotent on a second run.
-
-Independent code review then found an equivalent-path force bypass and two
-partial-backup cleanup gaps. New RED cases reproduced trailing, dot, and
-symlink-alias bypasses plus partial copy and post-move hash failures. Canonical
-native routing, non-native root-symlink rejection, atomic backup writes, and
-explicit incomplete-backup tracking resolved them. The durable plan was also
-updated to reflect the approved activation.
-
-Security review found insecure first-install permissions under an open umask.
-The new regression reproduced `0777` directories and a `0666` instruction
-bridge. Applying `umask 077` before creation made new directories `0700`, new
-files `0600`, and the launcher `0700` without changing existing file modes.
-Task-created live directory trees were narrowed from `0755` to `0700`.
-
-Final activation checks passed 10/10, installer and Claude runtime suites each
-passed 17/17, and the complete suite passed 122/122. Bash syntax and diff
-checks passed; ShellCheck was unavailable. Final code review and security
-review both passed with no blocking findings. No credentials, sessions,
-plugins, authenticated Claude request, legacy deletion, commit, push, or
-deployment were involved.
-
-Decision:
-ACCEPT
-
-Notes:
-The user explicitly approved active native Claude CMA activation with a
-preservation-first merge. Credential use, authenticated Claude requests,
-legacy deletion, commit, push, and deployment remain outside scope.
-
-## EXP-20260807-002 - CMA Self-Hosted Codex Runtime Alignment
-
-Date: 2026-08-07
-Status: ACCEPTED
-
-Problem:
-The CMA repository uses its own project instructions and user-global Codex
-runtime, but the project remains a legacy-safe bootstrap without
-`.codex/template-state.json`. Its project config and configuration prompt are
-older than the current templates, while selected active `${HOME}/.codex` CMA
-policy files differ from the current Codex variant.
-
-Evidence:
-The read-only project upgrade reports `State: legacy-safe bootstrap`, preserves
-both legacy managed files, and would create template state. Direct comparison
-shows the active global policy, runtime README, and orchestration gate are
-older than their packaged sources. Other differing global files contain user
-preferences, runtime audit history, or stricter record/archive behavior and
-must not be overwritten as ordinary template drift.
-
-Hypothesis:
-A preservation-first, targeted alignment can make the CMA repository use the
-current project templates and selected current Codex policy surfaces without
-weakening stronger active overrides or changing user configuration, secrets,
-sessions, audit history, or unrelated runtime state.
-
-Solution Attempt:
-Back up every file that will change. Align the project config and generated
-configuration prompt with their current templates, then create managed Codex
-template state. Synchronize only the active global policy, runtime README, and
-orchestration gate that are demonstrably older than source. Preserve
-`config.toml`, setup preferences, status messages, audit history, record
-contracts, archive implementation, credentials, sessions, and extra files.
-
-Test:
-Verify pre-change backups and hashes, project-template byte parity, valid TOML
-and JSON, managed-state ownership, a clean second project upgrade dry-run,
-source parity for the three approved global files, unchanged hashes for every
-explicitly preserved global file, focused upgrade/orchestration tests, the
-complete regression suite, and final Git diff integrity.
-
-Success Criteria:
-- Project config and configuration prompt match the current templates.
-- `.codex/template-state.json` records variant `codex`, schema version 1,
-  current template version, and matching managed hashes.
-- A second project upgrade dry-run reports managed `UNCHANGED` state.
-- The approved active global policy, README, and orchestration gate match their
-  packaged sources byte-for-byte.
-- Global config, preferences, status messages, audit history, record contracts,
-  archive implementation, and unrelated runtime files remain byte-identical.
-- Every changed pre-update file has a recoverable hash-recorded backup.
-- Focused and complete regressions pass without weakened assertions or skipped
-  checks.
-
-Result:
-The legacy baseline reproduced the expected drift: both project-managed files
-differed from their templates, template state was absent, and the selected
-global policy files differed from source. A restricted backup captured all
-five changed pre-update files with verified SHA-256 manifests under
-`/Users/iyilmaz/CodexBackups/cma-self-update-20260807T100340Z-qg3IdP/`.
-
-The project config and configuration prompt now match their templates
-byte-for-byte. Template state records schema version 1, template version 2.2,
-variant `codex`, merge ownership for `AGENTS.md`, and managed hashes for both
-project template files. A second upgrade dry-run reports managed state with
-`UNCHANGED` for every path.
-
-The active global policy, runtime README, and orchestration gate match their
-packaged sources. Hash verification confirms the global config, audit log,
-setup preferences, status messages, stricter records module, record archive
-skill, modular archive scripts, and unrelated runtime state were preserved.
-
-Project upgrade, orchestration, and lazy-runtime focused suites passed 52/52;
-the complete regression suite passed 122/122. Backup manifests, TOML and JSON
-parsing, source parity, preserved hashes, idempotency, and `git diff --check`
-passed. The first TOML validation command selected Python 3.10 without
-`tomllib`; rerunning the same parse with the installed Python 3.13 completed
-successfully and did not require a product change.
-
-Decision:
-ACCEPT
-
-Notes:
-The user selected the full safe update and retained the prior instruction to
-work without the orchestration chain. Commit and push are not authorized.
-
-## EXP-20260808-001 - Provider-Neutral OpenCode Runtime Variant
-
-Date: 2026-08-08
-Status: ACCEPTED
-
-Problem:
-The CMA runtime catalog supports Codex, Dolphin, and Claude, but it has no
-OpenCode-native package. Reusing a Codex or Claude runtime would expose the
-wrong settings and agent formats, while writing directly into the active
-`~/.config/opencode` tree could overwrite provider, model, permission, plugin,
-or user-preference state.
-
-Evidence:
-The catalog lists three variants and the installer has no OpenCode entry. The
-installed OpenCode 1.18.15 runtime uses JSON/JSONC configuration, Markdown
-agents, lazy skills, `OPENCODE_CONFIG`, and `OPENCODE_CONFIG_DIR`. The Browser
-Renderer pilot also resolves its Graphify plugin twice because its explicit
-path is interpreted relative to `.opencode` while the same plugin is
-auto-discovered from `.opencode/plugins`.
-
-Hypothesis:
-An isolated provider-neutral runtime under
-`${HOME}/.llm-runtimes/opencode`, launched through `llm-opencode`, can expose
-the Core CMA policy, Markdown agents, skills, registry, and prompts without
-changing the native OpenCode configuration or hardcoding a provider/model. A
-variant-aware project template can preserve unrelated `.opencode` content and
-remove the pilot's redundant explicit plugin path without weakening existing
-Codex, Dolphin, or Claude behavior.
-
-Solution Attempt:
-Add an `opencode` catalog entry, stable-schema runtime config, neutral launcher,
-Markdown CMA agents, portable skills and registry, provider-aware project
-init/upgrade ownership, regression tests, and user documentation. Validate the
-source in temporary runtime homes before the approved Browser Renderer pilot;
-do not install or activate the variant in the native global runtime.
-
-Test:
-Capture meaningful RED failures for the missing catalog, runtime package,
-launcher, agent contracts, and project preservation behavior. Then run focused
-OpenCode, installer, project-upgrade, and Claude regression suites; the complete
-unittest suite; JSON and Bash validation; source/install parity; prohibited
-provider/V2 scans; Browser Renderer OpenCode discovery checks; diff integrity;
-and independent code and security reviews.
-
-Success Criteria:
-- `opencode` installs to an explicit or isolated runtime with an executable
-  launcher and no writes under native `~/.config/opencode`.
-- Runtime policy and agents preserve truthful reporting and the exact
-  `planner -> tdd-guide -> code-reviewer -> security-reviewer` chain.
-- Runtime configuration contains no model, provider, credential, plugin, or
-  beta V2 settings and validates against the stable OpenCode schema surface.
-- Project init and upgrade preserve unrelated `.opencode` files, customized
-  managed files, modes, symlink protections, and dry-run behavior.
-- Browser Renderer loads Graphify exactly once through automatic discovery
-  after removing only the redundant explicit path.
-- All focused and complete tests pass without skips, weakened assertions,
-  hardcoded success, or regressions in existing variants.
-
-Result:
-The initial RED suite exposed the missing catalog, package, launcher,
-init/upgrade ownership, and documentation behavior. A later live check showed
-that `OPENCODE_CONFIG*` alone still merged native provider/model configuration;
-the launcher therefore also isolates config, data, cache, and state through
-symlink-protected XDG roots. Independent review then found and drove fixes for
-sensitive OpenCode config diffs, private init/upgrade archives, governor write
-approval, per-root symlink coverage, and custom runtime path rewriting.
-
-The final complete regression suite passed 141/141 without skips. Bash syntax,
-Python compile, JSON parsing, prohibited provider/model/agent scans, manifest
-parity, and diff integrity passed. The installed OpenCode 1.18.15 runtime
-reported no selected model or providers, eight provider-neutral CMA agents,
-approval-gated governor writes, and config/data/cache/state paths entirely
-inside `${HOME}/.llm-runtimes/opencode/runtime-state`. The Browser Renderer
-pilot resolved Graphify exactly once from `.opencode/plugins/graphify.js` after
-removing only the redundant explicit plugin entry. Final independent code and
-security reviews returned PASS.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved implementation, isolated runtime installation, and the
-Browser Renderer pilot. Native `~/.config/opencode`, provider/model/auth state,
-dependencies, commits, pushes, and deployments were not changed. Expected low
-residual risk remains: the native `opencode` executable is resolved from the
-user's `PATH`, and existing project-local plugins execute with user authority.
-
-## EXP-20260808-002 - Task Transition Gate Synchronization
-
-Date: 2026-08-08
-Status: ACCEPTED
-
-Problem:
-The active Codex global policy already stops at distinct task boundaries, but
-the portable Codex, Dolphin, Claude, and OpenCode policy sources do not all
-carry the same rule. A newly installed or refreshed runtime can therefore
-resume automatic task progression or interpret approval inconsistently.
-
-Evidence:
-`~/.codex/AGENTS.md` contains the complete Task Transition Gate, while
-`GLOBAL_AGENTS_TEMPLATE.md` and the four portable variant policies do not share
-that complete block. Active Dolphin, OpenCode, and native Claude CMA policy
-surfaces also lack it.
-
-Hypothesis:
-Adding one canonical semantic gate to every portable global policy and safely
-synchronizing only the three stale active runtime policy files will make task
-boundaries consistent without pausing the already approved steps inside one
-bounded task or overwriting unrelated runtime state.
-
-Solution Attempt:
-Add the canonical gate after Scope Lock in all five source policies, document
-the behavior, and update only stale active policies through targeted,
-permission-preserving backups. Preserve the already-correct active Codex file
-and the user-owned native Claude loader byte-for-byte.
-
-Test:
-Capture RED semantic policy, portable-install, and documentation tests; then
-verify focused and complete regressions, exact source/install contracts,
-targeted active-runtime parity, backup hashes, preserved modes, unchanged
-Codex and Claude loader hashes, diff integrity, and independent code/security
-review.
-
-Success Criteria:
-- Every portable policy enforces the six task-transition obligations.
-- The rule distinguishes a next distinct task from steps inside the same
-  explicitly approved bounded task.
-- Portable installs for Codex, Dolphin, Claude, and OpenCode expose the gate.
-- Active Codex and the Claude loader remain byte-identical to their pre-update
-  state; every changed active policy has an exact recoverable backup.
-- User documentation and changelog match verified behavior.
-- All tests and independent reviews pass without weakened assertions.
-
-Result:
-The initial semantic, portable-install, and documentation run produced 13
-expected RED subtest failures. The canonical gate was then added to all five
-source policies and the four user guides. A code-review finding exposed that
-the first negative fixture failed only because positive markers were absent;
-the replacement fixture kept the complete valid policy and added a conflicting
-every-step approval rule, reproduced the false pass, and now fails through an
-explicit conflict check.
-
-The focused suite passed 4/4 and the complete suite passed 145/145 without
-skips; `git diff --check` passed. Portable installs for all four variants expose
-the gate. Active Dolphin, OpenCode, and Claude CMA policies differ from their
-verified pre-state backups only by the canonical block, retain modes `0644`,
-`0644`, and `0600`, and have exact backups under the private `0700` recovery
-directory. Active Codex and the user-owned Claude loader retained their
-pre-update hashes and modes. Final independent code and security reviews
-returned PASS.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved Plan A and the mandatory orchestration chain. Commit and push
-remain outside scope.
-
-## EXP-20260808-003 - Additive Multi-Variant Project Initialization
-
-Date: 2026-08-08
-Status: ACCEPTED
-
-Problem:
-`codex-project-init --variant opencode` was applied to an already initialized
-project and reset shared project state. The command treats every variant
-selection as an exclusive new/reset initialization, so the same data-loss risk
-applies when adding Codex, Dolphin, Claude, or OpenCode to a project that
-already uses another runtime.
-
-Evidence:
-The init conflict list always archives `AGENTS.md`, `.codex/config.toml`, the
-shared prompt, and `.codex/template-state.json`, then copies a blank project
-template. Manifest schema 1 stores one `variant`; OpenCode replaces the Codex
-config entry instead of coexisting with it. The original project files remain
-recoverable in the private init archive and their hashes were captured before
-rollback.
-
-Hypothesis:
-If init distinguishes first/reset initialization from additive variant
-activation, preserves shared files byte-for-byte, and records an ordered set of
-active variants in a backward-compatible manifest migration, every supported
-runtime can coexist without resetting project configuration or customized
-variant files.
-
-Solution Attempt:
-Restore the exact pre-init project state, make existing-project init additive
-by default, require an explicit reset flag for destructive reinitialization,
-and evolve template state to represent multiple active variants plus the union
-of their managed files. Preserve customized and unrelated files.
-
-Test:
-Capture RED tests that initialize each variant after another variant and assert
-unchanged shared hashes, coexisting variant surfaces, manifest migration from
-schema 1, explicit reset behavior, customized-file preservation, symlink
-failure, and idempotency. Then run focused project-init/upgrade tests, the full
-regression suite, live additive OpenCode init on this repository, diff
-integrity, and security-oriented recovery checks.
-
-Success Criteria:
-- Adding any supported variant never replaces an existing `AGENTS.md` or
-  removes another variant's project files.
-- Codex, Dolphin, Claude, and OpenCode can all be represented as active in one
-  project manifest.
-- Schema 1 state migrates without losing file ownership or customization
-  evidence.
-- Destructive reset remains possible only through an explicit reset option and
-  keeps a private recovery archive.
-- The erroneous local init effects are fully reversed before the corrected
-  additive OpenCode activation is applied.
-- Relevant and complete tests pass without weakened assertions or skipped
-  cases.
-
-Result:
-The erroneous local init was reversed first: `AGENTS.md`, Codex config, the
-shared prompt, and schema-1 template state matched their captured pre-init
-hashes, the generated OpenCode project file was removed, and the private reset
-archive was moved into the external recovery backup. The valid global OpenCode
-runtime installation was retained.
-
-Meaningful RED tests reproduced blank `AGENTS.md` replacement, loss of other
-variant state, customized OpenCode config overwrite, the single-variant
-manifest limitation, absent explicit-reset behavior, incomplete standalone
-schema-1 migration, and same-second reset archive reuse. The implementation now
-uses additive existing-project init, ordered multi-variant schema 2 state,
-backward-compatible schema-1 migration, explicit `--reset`, and unique private
-init/upgrade archives.
-
-Focused project-init/upgrade tests passed 33/33 and the complete regression
-suite passed 152/152 without skips. Bash syntax, Python compilation, and diff
-integrity passed. Live additive OpenCode init on this repository preserved the
-exact `AGENTS.md`, `.codex/config.toml`, and shared-prompt hashes, produced
-`variants: [codex, opencode]`, kept the OpenCode config, used a `0700` recovery
-archive, and was idempotent on a second run. Security-oriented symlink,
-customized-config, secret-redaction, explicit-reset, and recovery tests passed.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved a direct implementation without an orchestration chain.
-Global OpenCode runtime installation is valid and remains in scope; only the
-project-reset behavior is being rolled back and redesigned.
