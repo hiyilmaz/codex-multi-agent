@@ -1,70 +1,94 @@
-# CMA-ARK Planning Proposal
+# CMA Repository Tool Router Plan
 
 Status: PROPOSED — planning only
+Decision: Option A approved — policy-only lazy routing
 
 ## Problem And Intended Value
 
-CMA needs a small, optional way to select the narrowest sufficient repository
-tool without lengthening the normal task path. ARK is retained only as a concept
-for lazy CLI routing of existing tools. No implementation is approved.
+CMA needs a small way to select the narrowest sufficient repository tool
+without adding another runtime. ARK remains only historical context; the
+approved direction is a compact policy module that routes existing tools.
+
+## Approved Minimal Shape
+
+A future implementation is limited to these repository source changes:
+
+1. Add `variants/codex/home/registry/modules/CMA_REPO_TOOLS.md`.
+2. Add one lazy-router row to `variants/codex/home/AGENTS.md`.
+3. Record the completed mutation in the existing changelog.
+
+The module will contain only this decision table:
+
+| Need | Tool |
+|---|---|
+| Exact text or path | `rg` |
+| Architecture or cross-file dependency | Graphify |
+| Structural AST pattern | `ast-grep` |
+| Symbol references or refactor radius | Serena, explicit and lazy |
+| Dependency vulnerability | OSV-Scanner |
+| SAST or secret scan | Opengrep or Betterleaks, security-triggered |
+| GitHub source, release, or advisory | GitHub MCP, gated read-only |
+| Public-repo or versioned-doc fallback | DeepWiki or Context7, explicit |
+
+Mandatory routing rules:
+
+- Use the narrowest sufficient tool.
+- Do not query multiple discovery tools for the same question.
+- Stop discovery when sufficient evidence exists.
+- Keep MCP providers and scanners outside the default task path.
+- Report unavailable tools; never silently widen the route.
+
+## Fast Execution Plan
+
+1. Read-only: verify which listed tools are available; install nothing.
+2. RED: prove the Codex variant has no repository-tool module or router row.
+3. Add only the module and router row listed above.
+4. Validate the reference, Markdown structure, existing CMA tests, and diff.
+5. Stop. Active `~/.codex` synchronization requires separate approval.
+
+## Acceptance Criteria
+
+- No executable, dependency, adapter, hook, skill, daemon, or state directory.
+- No default MCP connection, scanner run, graph build, or network request.
+- Normal tasks remain unchanged unless a listed trigger applies.
+- Repository implementation changes stay within two CMA source files; the
+  changelog is the only additional record mutation.
+- Codex-only repository scope; other variants remain unchanged unless separately
+  approved.
 
 ## Explicit Non-Goals
 
-- No adapter, hook, skill, installer, evidence wrapper, daemon, or second runtime.
-- No automatic tool installation, MCP ownership, credential handling, or sandbox.
-- No global Codex changes and no repo-local activation or discovery surface.
-- No implementation, dependency addition, commit, push, or deployment.
+- No ARK repository or CLI.
+- No adapter, hook, installer, evidence wrapper, sandbox, or second runtime.
+- No automatic tool installation, MCP ownership, or credential handling.
+- No active global Codex change, commit, push, deployment, or activation.
 
 ## Questions Requiring Validation
 
-- Can direct `rg`, Graphify, and `ast-grep` usage cover the normal discovery path
-  without a custom router?
-- Is a small explicit CLI materially better than a documented decision table?
-- Which security scanners are already available and useful on real projects?
-- Can optional MCP providers remain entirely outside the default CMA context?
-- What measurable maintenance or token reduction would justify implementation?
+- Which tools are currently available without installation?
+- Do direct routing rules cover real tasks without a wrapper?
+- Does measured use justify adding any future tool or transport?
 
 ## Future Approval Gates
 
-Each stage requires a separate plan and explicit approval:
+1. Implement the two repository source changes and focused validation.
+2. Synchronize the verified module to active `~/.codex`.
+3. Install or configure any unavailable tool.
 
-1. Read-only tool availability and overlap assessment.
-2. Minimal architecture decision: documentation-only router or explicit CLI.
-3. Any implementation and its focused tests.
-4. Any adapter boundary.
-5. Any hook or skill candidate.
-6. Any host-evidence mechanism.
-7. Any activation, global runtime change, or deployment.
-
-Failure at one stage does not authorize a wider replacement. The default
-recommendation is documentation-only routing until measured evidence proves a
-small CLI is necessary.
+Failure at one gate grants no authority for the next. A CLI may be reconsidered
+only after measured failures show that policy-only routing is insufficient.
 
 ## Historical Rollback Scope
 
-The following implementation experiments remain in the audit ledgers with
-current status `ROLLED_BACK`:
+The prior implementation remains rolled back under `EXP-20260808-004` and
+`EXP-20260809-001`, `EXP-20260809-002`, `EXP-20260809-003`,
+`EXP-20260809-004`, `EXP-20260809-005`, `EXP-20260809-006`,
+`EXP-20260809-007`, `EXP-20260809-008`, `EXP-20260809-009`,
+`EXP-20260809-010`, `EXP-20260809-011`, and `EXP-20260809-012`.
 
-- `EXP-20260808-004`
-- `EXP-20260809-001`
-- `EXP-20260809-002`
-- `EXP-20260809-003`
-- `EXP-20260809-004`
-- `EXP-20260809-005`
-- `EXP-20260809-006`
-- `EXP-20260809-007`
-- `EXP-20260809-008`
-- `EXP-20260809-009`
-- `EXP-20260809-010`
-- `EXP-20260809-011`
-- `EXP-20260809-012`
-
-Their former source, tests, and generated artifacts are recoverable from a
-private checksum-bound external recovery backup. That backup is inert and is
-not an installation source without a separate restore approval and validation.
+Former source and tests remain recoverable from the private checksum-bound external recovery backup. The backup is inert and is not an installation source.
 
 ## Authority Boundary
 
-This proposal grants no runtime or tool-execution authority. It is not an
-implementation plan approval, activation record, trust decision, or permission
-to modify global or project runtime configuration.
+This plan grants no runtime or tool-execution authority. It does not approve
+implementation, installation, active synchronization, commit, or push.

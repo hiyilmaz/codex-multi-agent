@@ -134,6 +134,7 @@ for simple answers or unrelated tasks.
 | SSH, root, deployment, services, remote backup | `~/.codex/registry/modules/CMA_REMOTE_ADMIN.md` |
 | Prior decisions, workspace history, memory citations | `~/.codex/registry/modules/CMA_MEMORY_ROUTING.md` |
 | Current APIs, releases, standards, primary-source research | `~/.codex/registry/modules/CMA_DOCS_RESEARCH.md` |
+| Repository text/path, architecture, AST, symbols, dependency, security, or public-source discovery | `~/.codex/registry/modules/CMA_REPO_TOOLS.md` |
 | UI, browser, screenshot, responsive or accessibility work | `~/.codex/registry/modules/CMA_FRONTEND.md` |
 | Changelog, evidence, deferred findings, experiments, archive | `~/.codex/registry/modules/CMA_RECORDS.md` |
 

@@ -1,5 +1,6 @@
 import os
 import re
+import stat
 import subprocess
 import tempfile
 import unittest
@@ -13,15 +14,50 @@ except ModuleNotFoundError:  # Python 3.10 compatibility
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CHAIN = "planner -> tdd-guide -> code-reviewer -> security-reviewer"
-MODULES = (
-    "CMA_ORCHESTRATION.md",
-    "CMA_TDD.md",
-    "CMA_SECURITY.md",
-    "CMA_REMOTE_ADMIN.md",
-    "CMA_MEMORY_ROUTING.md",
-    "CMA_DOCS_RESEARCH.md",
-    "CMA_FRONTEND.md",
-    "CMA_RECORDS.md",
+COMMON_MODULES = (
+    "CMA_ORCHESTRATION.md", "CMA_TDD.md",
+    "CMA_SECURITY.md", "CMA_REMOTE_ADMIN.md",
+    "CMA_MEMORY_ROUTING.md", "CMA_DOCS_RESEARCH.md",
+    "CMA_FRONTEND.md", "CMA_RECORDS.md",
+)
+CODEX_ONLY_MODULES = ("CMA_REPO_TOOLS.md",)
+CODEX_MODULES = COMMON_MODULES + CODEX_ONLY_MODULES
+REPOSITORY_TOOL_ROWS = (
+    "| Exact text or path | `rg` |", "| Architecture or cross-file dependency | Graphify |",
+    "| Structural AST pattern | `ast-grep` |", "| Symbol references or refactor radius | Serena, explicit and lazy |",
+    "| Dependency vulnerability | OSV-Scanner |", "| SAST or secret scan | Opengrep or Betterleaks, security-triggered |",
+    "| GitHub source, release, or advisory | GitHub MCP, gated read-only |", "| Public-repo or versioned-doc fallback | DeepWiki or Context7, explicit |",
+)
+REPOSITORY_TOOL_RULES = (
+    "Use the narrowest sufficient tool.", "Do not query multiple discovery tools for the same question.",
+    "Stop discovery when sufficient evidence exists.", "Keep MCP providers and scanners outside the default task path.",
+    "Report unavailable tools; never silently widen the route.",
+)
+REPOSITORY_TOOL_BOUNDARY_RULES = (
+    "Source-check Graphify output before treating it as evidence.", "Load `CMA_SECURITY.md` in addition to this module for security scans.",
+    "Load `CMA_DOCS_RESEARCH.md` in addition to this module for current or", "version-specific external claims.",
+)
+REPOSITORY_TOOL_AUTHORITY_DENIAL = (
+    "Routing only selects a candidate tool. It grants no authority to execute, "
+    "install, configure, connect, scan, build a graph, access the network, handle "
+    "credentials, mutate state, or synchronize active `~/.codex`."
+)
+REPOSITORY_TOOL_ROUTER_ROW = (
+    "| Repository text/path, architecture, AST, symbols, dependency, security, "
+    "or public-source discovery | `~/.codex/registry/modules/CMA_REPO_TOOLS.md` |"
+)
+EXPECTED_REPOSITORY_TOOL_LINES = (
+    "# CMA Repository Tools Module", "## Load When",
+    "Load for repository text or path search, architecture, structural AST patterns,", "symbol references, dependency vulnerabilities, security scans, or external",
+    "repository and documentation discovery.", "## Do Not Load When",
+    "Do not load for simple answers or tasks that already have sufficient local", "evidence. Do not load multiple discovery providers for the same question.",
+    "## Tool Selection", "| Need | Tool |", "|---|---|",
+    *REPOSITORY_TOOL_ROWS,
+    "## Rules",
+    *(f"- {rule}" for rule in REPOSITORY_TOOL_RULES),
+    f"- {REPOSITORY_TOOL_BOUNDARY_RULES[0]}", f"- {REPOSITORY_TOOL_BOUNDARY_RULES[1]}",
+    f"- {REPOSITORY_TOOL_BOUNDARY_RULES[2]}", f"  {REPOSITORY_TOOL_BOUNDARY_RULES[3]}",
+    REPOSITORY_TOOL_AUTHORITY_DENIAL,
 )
 AGENTS = {
     "planner": ("Pete", "gpt-5.6-terra", "medium"),
@@ -93,6 +129,23 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
         self.assertNotIn("## Acceptance Criteria", text)
         self.assertNotIn("Acceptance Criteria ID", text)
         self.assertNotIn("acceptance mapping table", text.lower())
+
+    def assert_repository_tool_contract(self, text: str) -> None:
+        required = (
+            "# CMA Repository Tools Module",
+            "## Load When",
+            "## Do Not Load When",
+            "## Tool Selection",
+            "## Rules",
+            REPOSITORY_TOOL_AUTHORITY_DENIAL,
+            *REPOSITORY_TOOL_ROWS,
+            *REPOSITORY_TOOL_RULES,
+            *REPOSITORY_TOOL_BOUNDARY_RULES,
+        )
+        for marker in required:
+            self.assertIn(marker, text)
+        observed = tuple(line for line in text.splitlines() if line)
+        self.assertEqual(observed, EXPECTED_REPOSITORY_TOOL_LINES)
 
     def test_records_module_defines_evidence_validator_claim_contract(self) -> None:
         self.assert_evidence_validator_claim_contract(
@@ -169,21 +222,75 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
         self.assertIn("Load only the minimum relevant module", text)
         self.assertIn("file-list-first", text)
         self.assertIn("index-first", text)
-        for module in MODULES:
+        for module in COMMON_MODULES:
             with self.subTest(module=module):
                 self.assertIn(f"registry/modules/{module}", text)
+        self.assertEqual(text.count(REPOSITORY_TOOL_ROUTER_ROW), 1)
 
     def test_managed_modules_have_bounded_load_contracts(self) -> None:
         root = REPO_ROOT / "variants/codex/home/registry/modules"
         self.assertEqual(
-            sorted(path.name for path in root.glob("*.md")), sorted(MODULES)
+            sorted(path.name for path in root.glob("*.md")), sorted(CODEX_MODULES)
         )
-        for module in MODULES:
+        for module in CODEX_MODULES:
             text = (root / module).read_text(encoding="utf-8")
             with self.subTest(module=module):
                 self.assertIn("## Load When", text)
                 self.assertIn("## Do Not Load When", text)
                 self.assertIn("## Rules", text)
+
+    def test_codex_repository_tool_module_matches_approved_policy_contract(self) -> None:
+        module = REPO_ROOT / "variants/codex/home/registry/modules/CMA_REPO_TOOLS.md"
+        self.assertTrue(stat.S_ISREG(module.lstat().st_mode))
+        self.assert_repository_tool_contract(module.read_text(encoding="utf-8"))
+
+    def test_repository_tool_router_is_codex_only(self) -> None:
+        reference = "~/.codex/registry/modules/CMA_REPO_TOOLS.md"
+        global_template = self.read("GLOBAL_AGENTS_TEMPLATE.md")
+        codex = self.read("variants/codex/home/AGENTS.md")
+        self.assertEqual(global_template.count(REPOSITORY_TOOL_ROUTER_ROW), 1)
+        self.assertEqual(codex.count(REPOSITORY_TOOL_ROUTER_ROW), 1)
+        self.assertEqual(global_template, codex)
+        for relative in (
+            "variants/dolphin/home/AGENTS.md",
+            "variants/claude/home/CLAUDE.md",
+            "variants/opencode/home/AGENTS.md",
+        ):
+            with self.subTest(relative=relative):
+                self.assertNotIn("CMA_REPO_TOOLS.md", self.read(relative))
+        for runtime in ("dolphin", "claude", "opencode"):
+            module = REPO_ROOT / f"variants/{runtime}/home/registry/modules/CMA_REPO_TOOLS.md"
+            self.assertFalse(module.exists())
+
+    def test_repository_tool_contract_rejects_table_only_policy(self) -> None:
+        with self.assertRaises(AssertionError):
+            self.assert_repository_tool_contract("\n".join(REPOSITORY_TOOL_ROWS))
+
+    def test_repository_tool_contract_rejects_missing_additive_boundaries(self) -> None:
+        module = self.read(
+            "variants/codex/home/registry/modules/CMA_REPO_TOOLS.md"
+        )
+        weakened = module.replace(
+            "- Source-check Graphify output before treating it as evidence.\n",
+            "",
+        ).replace(
+            "- Load `CMA_SECURITY.md` in addition to this module for security scans.\n",
+            "",
+        ).replace(
+            "- Load `CMA_DOCS_RESEARCH.md` in addition to this module for current or\n"
+            "  version-specific external claims.\n",
+            "",
+        )
+        with self.assertRaises(AssertionError):
+            self.assert_repository_tool_contract(weakened)
+
+    def test_repository_tool_contract_rejects_execution_authority(self) -> None:
+        module = self.read(
+            "variants/codex/home/registry/modules/CMA_REPO_TOOLS.md"
+        )
+        unsafe = module + "\nQuery GitHub MCP whenever external discovery is requested.\n"
+        with self.assertRaises(AssertionError):
+            self.assert_repository_tool_contract(unsafe)
 
     def test_agent_metadata_and_model_matrix_are_supported(self) -> None:
         for role, (identity, model, effort) in AGENTS.items():
@@ -352,7 +459,7 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            for module in MODULES:
+            for module in CODEX_MODULES:
                 with self.subTest(module=module):
                     self.assertTrue((runtime / "registry/modules" / module).is_file())
             self.assert_evidence_validator_claim_contract(
