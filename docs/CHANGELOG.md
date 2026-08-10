@@ -2,9 +2,10 @@
 
 ## 2026-08-10
 
-- [POLICY] Added a Codex-only lazy repository-tool module and one router entry;
-  tool execution, installation, other variants, and active synchronization
-  remain separately gated.
+- [POLICY] EXP-20260810-002 added the Codex-only lazy repository-tool module,
+  created a private verified recoverable rollback point, and synchronized the
+  approved policy and module into the active local runtime; tool use remains a
+  separate evaluation step.
 - [ROLLBACK] EXP-20260810-001 moved the inactive ARK and CMA-ARK implementation, adapter, hook, evidence, and test surfaces into a private checksum-bound external recovery backup; the repository now retains only a non-executable planning proposal and historical audit records.
 
 ## 2026-08-09

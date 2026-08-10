@@ -2,6 +2,82 @@
 
 [Terminal experiment archive](EXPERIMENTS_ARCHIVE.md)
 
+## EXP-20260810-002 - Active Repository Tool Router Pilot
+
+Date: 2026-08-10
+Status: ACCEPTED
+
+Problem:
+The approved repository-tool router exists only in the managed Codex source.
+The active local `~/.codex` runtime cannot be evaluated until its policy and
+module are synchronized, but activation must preserve the current runtime and
+provide a verified rollback point.
+
+Evidence:
+The active policy differs from the approved template by exactly the missing
+router row, and the active `CMA_REPO_TOOLS.md` module is absent. The active
+runtime contains 7.8 GB of recoverable files plus one live IPC socket. A live
+copy cannot be an atomic point-in-time snapshot, and macOS `ditto` intentionally
+excludes sockets and pipes.
+
+Hypothesis:
+A private, verified backup of all recoverable active runtime state followed by
+preimage-bound atomic publication of only the module and router row will enable
+a reversible usage pilot without widening runtime authority.
+
+Solution Attempt:
+Create a unique external `0700` backup with source-before, payload, and
+source-after manifests, explicitly classify volatile and excluded special
+entries, validate stable parity, and write the completion marker last. Direct
+`ditto` was rejected after a socket error/FIFO hang; `rsync` and `bsdtar`
+attempts were then rejected for macOS metadata drift. The final method builds a
+simplified BOM containing only recoverable paths and applies BOM-filtered
+`ditto`, preventing special-file access while preserving required metadata.
+Then publish the module and policy atomically, with the policy as the activation
+point and fixture-proven rollback on partial failure.
+
+Test:
+Capture active RED drift, run disposable backup/corruption/unique-name and
+partial-sync rollback fixtures, validate the real backup and active source
+parity, run focused and full CMA tests, and complete independent code and
+security reviews.
+
+Success Criteria:
+- The experiment record predates the first backup attempt.
+- A private external backup contains every recoverable stable entry with
+  verified content and metadata parity.
+- Live sockets, pipes, and changing files are truthfully classified rather than
+  reported as stable backup parity.
+- Active policy and module match their approved repository sources exactly.
+- No unrelated active surface, tool installation, tool execution, fresh-session
+  claim, commit, or push occurs.
+- Rollback fixtures, focused/full tests, and independent reviews pass.
+
+Result:
+The approved planner and TDD stages completed. Active RED was captured. The
+first disposable backup fixture rejected direct `ditto`; subsequent real
+`rsync` and `bsdtar` staging attempts were rejected for xattr/creation-metadata
+drift and preserved without completion markers. A BOM-filtered `ditto` fixture
+preserved content, symlink target, mode, xattr, and ACL while excluding
+socket/FIFO objects; corruption and destination collision were also rejected.
+The atomic sync fixture passed wrong-preimage, symlink, both partial-publication
+rollback, target-drift rejection, and positive postimage checks. The private
+recoverable backup completed with an explicit special-file and system-metadata
+boundary. Active policy and module hashes now match their approved repository
+sources. The hardened fixture passed both partial-publication rollback cases and
+target-drift rejection. Focused 26-test and full 157-test suites passed, and
+independent code and security reviews returned PASS. No repository tool or
+fresh Codex session was executed; runtime usefulness and cost remain a separate
+usage evaluation.
+
+Decision:
+ACCEPT
+
+Notes:
+The user approved a live recoverable backup and accepted explicit exclusion of
+ephemeral socket/FIFO objects. A complete runtime restore remains separately
+gated and requires quiescence.
+
 ## EXP-20260810-001 - Selective CMA-ARK Rollback
 
 Date: 2026-08-10
