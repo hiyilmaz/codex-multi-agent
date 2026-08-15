@@ -1,9 +1,5 @@
 {
   "files": {
-    ".claude/settings.json": {
-      "mode": "managed",
-      "template_sha256": "6f0bfdb7a445b4000beaf125c62e249b82698881d97b266d6939e75014388804"
-    },
     ".codex/config.toml": {
       "mode": "managed",
       "template_sha256": "bf20cff7f9361c5ca955249b8580be6ce089f39b1bed65f8ccf20c50b7825559"
@@ -18,17 +14,12 @@
     },
     "AGENTS.md": {
       "mode": "merge"
-    },
-    "CLAUDE.md": {
-      "mode": "managed",
-      "template_sha256": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49"
     }
   },
   "schema_version": 2,
   "template_version": "2.2",
   "variants": [
     "codex",
-    "claude",
     "opencode"
   ]
 }
