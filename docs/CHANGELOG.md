@@ -1,7 +1,113 @@
 # Changelog
 
+## 2026-08-15
+
+- [FEAT] Added the official Claude project projection to the CMA repository:
+  `CLAUDE.md`, `.claude/settings.json`, and the schema-2 manifest now declare
+  the ordered `codex`, `claude`, and `opencode` variants. Existing Codex and
+  OpenCode project files were preserved; the operation is idempotent and its
+  pre-change manifest is retained in an owner-only archive.
+- [FEAT] Added the approved user-global MCP parity helper for Codex, Claude,
+  and OpenCode. It gates exact supported CLI versions and required environment
+  references, applies the four managed identities (`serena`, `deepwiki`,
+  `github`, `context7`) with native schemas, removes `xcodebuildmcp` from
+  Claude/OpenCode, preserves unmanaged settings, writes owner-only backups,
+  and rolls both target files back on a late write failure. Focused parity
+  tests, native activation regressions, and live connection checks passed.
+- [FEAT] Retired the Dolphin source variant from the install catalog while
+  preserving existing user-owned Dolphin runtime directories; new installs now
+  expose only Codex, Claude, and OpenCode. Added official-layout native skill
+  activators for Claude and OpenCode, including the ten protected CMA tool
+  projections and narrow `claude-docs` / `opencode-docs` documentation skills.
+  Activation preserves unmanaged configuration and fails closed on conflicting
+  managed files or symlinks; it does not add credentials, providers, plugins,
+  MCP endpoints, or xcodebuildmcp.
+- [MAINT] Reconciled the active global Graphify runtime with the protected
+  Codex projection after preserving the legacy ten-file tree in an owner-only
+  timestamped backup. Source and active manifests now match with no symlinks;
+  the other nine protected skills and enabled/disabled MCP state were verified
+  unchanged by code and security review.
+- [FEAT] Native Codex installer and setup delegation now run the protected
+  core-tool activation only after a successful install to `$HOME/.codex`;
+  alternate targets and other variants remain isolated. The Codex template
+  declares the four managed MCP entries without credentials, and installation
+  guides now document Context7, cplt, xcodebuildmcp, restart, and portability
+  boundaries; 24/24 focused and 334/334 full tests passed.
+- [FEAT] EXP-20260815-001 activated the ten protected Codex repository-tool
+  skills globally with Context7 required, nine conditionally implicit routes,
+  cplt explicit-only, local-first single-provider routing, private rollback,
+  additive MCP configuration, and xcodebuildmcp kept disabled; 19/19 focused
+  and 328/328 full tests passed with 80% activator branch coverage, final code
+  and security review, live MCP calls, and fresh-session discovery. Actual
+  token-cost reduction remains unverified without a comparable baseline.
+
+## 2026-08-11
+
+- [FEAT] EXP-20260811-005 added the protected instruction-only cplt core skill
+  with inactive Codex, Claude, and OpenCode projections, an orthogonal
+  execution-isolation route, fail-closed structured authority gates, no host
+  fallback, and evidence-based isolation reporting; 16/16 focused and 309/309
+  full tests passed with 81% branch coverage, final code/security review, and
+  unchanged active runtime manifests without executing cplt.
+- [FEAT] EXP-20260811-004 added protected instruction-only GitHub, DeepWiki,
+  and optional Context7 core skills with inactive Codex, Claude, and OpenCode
+  projections, local-first single-provider routing, untrusted external-content
+  boundaries, fail-closed unavailable behavior, semantic parity validation,
+  and prompt-injection regressions; 14/14 focused and 293/293 full tests passed
+  with 84% branch coverage, final code/security review, and unchanged active
+  runtime manifests.
+- [FEAT] EXP-20260811-003 added protected instruction-only Opengrep,
+  OSV-Scanner, and Betterleaks core skills with inactive Codex, Claude, and
+  OpenCode projections, distinct conditional routing, fail-closed unavailable
+  behavior, redacted secret findings, semantic/overlap validation, and hardened
+  malformed-input handling; 40/40 focused and 279/279 full tests passed with
+  85% branch coverage, final code/security review, and unchanged active runtime
+  manifests.
+- [FEAT] EXP-20260811-002 added protected instruction-only Graphify, Serena,
+  and ast-grep core skills with inactive native Codex, Claude, and OpenCode
+  projections, compact repository-tool routing, fail-closed unavailable-tool
+  behavior, semantic-parity validation, and hardened independent trigger and
+  authority checks; 20/20 focused and 239/239 full tests passed with 85% branch
+  coverage, final code/security review, and unchanged active runtime manifests.
+- [DESIGN] EXP-20260811-001 added the inactive stable-V1 OpenCode core-skill
+  profile and fail-closed read-only validator for native `SKILL.md` discovery,
+  canonical semantic mapping, protected registry authority, lazy skill-tool
+  loading, truthful explicit-only limitations, unavailable-tool behavior, and
+  agent/plugin/MCP/config isolation; 14/14 focused, 62/62 Phase 2-5, and
+  219/219 full tests passed with 89% branch coverage and final code/security
+  review, without projecting skills or changing active OpenCode state.
+- [DESIGN] EXP-20260810-011 added the inactive, official-Anthropic-backed
+  Claude core-skill profile and read-only validator for native `SKILL.md`
+  projection semantics, explicit-only lazy activation, protected registry
+  authority, unavailable-tool behavior, routing-only `CLAUDE.md` guidance,
+  plugin/MCP/agent boundaries, and active-runtime isolation; 14/14 focused,
+  48/48 core-skill, and 205/205 full tests passed with 92% branch coverage and
+  final code/security review.
+
 ## 2026-08-10
 
+- [DESIGN] EXP-20260810-010 added the inactive, official-doc-backed Codex core
+  skill profile and a read-only validator for canonical field mapping,
+  explicit-only lazy activation, native discovery, semantic parity,
+  unavailable-tool behavior, AGENTS routing, and active-runtime isolation;
+  19/19 focused and 191/191 full tests passed with final code/security review.
+- [GOVERNANCE] EXP-20260810-009 added the canonical ten-entry CMA core-skill
+  registry and a read-only validator for protected removal, missing entries,
+  drift, semantic parity, custom separation, and no-prune enforcement; 15/15
+  focused and 172/172 full tests passed with 83% validator branch coverage and
+  independent code/security review, without skill projections or runtime changes.
+- [DOCS] Added CMA Core Skill Standard v1 as the provider-neutral semantic
+  contract for protected, lazy Codex, Claude, and OpenCode core skills; no
+  tool-specific skill, variant, runtime, automation, or TDD change was made.
+- [DESIGN] Added a planning-only CMA Tool Intelligence and TDD optimization
+  architecture covering structured shared evidence, deterministic freshness,
+  lazy specialized-tool escalation, reviewer independence, benchmark gates,
+  and a minimal planner-to-TDD handoff candidate; no implementation or
+  activation was performed.
+- [DOCS] Added a source- and runtime-trace-backed Graphify trigger problem
+  investigation packet covering acceptance criteria, EXP-003 through EXP-007,
+  repository-read and process surfaces, observability gaps, and security
+  boundaries without proposing a new solution.
 - [POLICY] EXP-20260810-002 added the Codex-only lazy repository-tool module,
   created a private verified recoverable rollback point, and synchronized the
   approved policy and module into the active local runtime; tool use remains a

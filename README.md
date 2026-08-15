@@ -1,7 +1,7 @@
 # Codex Template V2
 
-**Version:** 2.5
-**Updated:** 2026-05-22
+**Version:** 2.6
+**Updated:** 2026-08-15
 
 ---
 
@@ -81,9 +81,8 @@ steps within the same explicitly approved bounded task.
 Installable runtime variants live under `variants/`:
 
 - `variants/codex/home/` — Default Codex runtime template
-- `variants/dolphin/home/` — DolphinVersion runtime template
 - `variants/claude/home/` — Claude Agent native CLI runtime template
-- `variants/opencode/home/` — isolated OpenCode runtime template
+- `variants/opencode/home/` — OpenCode native CLI runtime template
 - `variants/config.toml` — default variant selection
 
 ---
@@ -100,7 +99,6 @@ Install a specific variant:
 
 ```bash
 bin/codex-user-install --variant codex
-bin/codex-user-install --variant dolphin
 bin/codex-user-install --variant claude
 bin/codex-user-install --variant opencode
 ```
@@ -108,28 +106,56 @@ bin/codex-user-install --variant opencode
 The installer rewrites installed template paths to the selected target
 `--runtime-home`.
 
+When the Codex target resolves exactly to `$HOME/.codex`, the installer then
+runs `bin/codex-native-activate`. It additively enables the ten protected core
+tools, makes Context7 required but lazy, keeps cplt explicit-only, and preserves
+an existing Graphify installation. It enables only Serena, DeepWiki, GitHub,
+and Context7 MCP entries; xcodebuildmcp remains disabled. Custom runtime homes
+and custom runtime homes remain portable. Native Claude and OpenCode activation
+projects the same ten skills into their official user skill locations.
+Restart Codex or begin a new session after native activation.
+
 Default targets:
 
 - `codex` -> `$HOME/.codex`
-- `dolphin` -> `$HOME/.llm-runtimes/dolphin`
 - `claude` -> `$HOME/.claude`
-- `opencode` -> `$HOME/.llm-runtimes/opencode`
+- `opencode` -> `$HOME/.config/opencode`
 
 Variant launchers are installed as:
 
 ```text
-<runtime-home>/bin/llm-dolphin
 <runtime-home>/bin/llm-claude
 <runtime-home>/bin/llm-opencode
 ```
 
-The OpenCode launcher sets `OPENCODE_CONFIG`, `OPENCODE_CONFIG_DIR`, and all
-XDG config/data/cache/state roots inside `~/.llm-runtimes/opencode`, then
-delegates to the native `opencode` binary. Symlinked state roots fail closed.
-This prevents native global settings and identity state from merging into CMA.
-It never writes `~/.config/opencode`, selects a model or provider, installs
-plugins, or performs authentication. Validate with `llm-opencode debug config`
-and `llm-opencode debug paths`.
+OpenCode activation uses its official `~/.config/opencode/skills` location and
+preserves unrelated configuration, identity state, and skills. It installs no
+plugin, provider, credential, or MCP server without a separately verified
+official schema. Validate with `opencode mcp list` and `opencode debug config`.
+
+The user-global Codex surface also provides `claude-docs` and `opencode-docs`.
+They are narrow official-documentation skills: Claude guidance uses only
+`code.claude.com/docs` or `docs.anthropic.com`; OpenCode guidance uses only
+`opencode.ai/docs`. The matching native runtime receives only its own vendor
+skill, and unavailable official evidence is reported as unverified rather than
+guessed.
+
+## Global MCP Contract
+
+All three supported runtimes use the same four user-global MCP identities:
+`serena`, `deepwiki`, `github`, and `context7`. The parity helper first checks
+the installed Codex, Claude Code, and OpenCode versions, then performs an
+additive, backup-backed merge using only `GITHUB_PAT_TOKEN` and
+`CONTEXT7_API_KEY` references; it never writes their values. OpenCode 1.18 uses
+its legacy top-level `mcp.<name>` configuration shape. `xcodebuildmcp` remains
+disabled and cplt is not an MCP server.
+
+```bash
+bin/cma-mcp-parity
+codex mcp list
+claude mcp list
+opencode mcp list
+```
 
 The default Claude installation uses its native user-global directory. It
 preserves existing `CLAUDE.md` content through a backed-up import overlay,
@@ -165,7 +191,7 @@ variant surface. On an existing project, init is additive: it preserves
 adding only the requested surface. Multiple runtime variants can coexist and
 are recorded in `.codex/template-state.json`.
 
-Codex and Dolphin share `.codex/config.toml`; Claude adds `CLAUDE.md` and
+Codex uses `.codex/config.toml`; Claude adds `CLAUDE.md` and
 `.claude/settings.json`; OpenCode adds `.opencode/opencode.json`. Use `--reset`
 only for an intentional destructive reinitialization; it displays and privately
 archives conflicting files before recreating the project structure.

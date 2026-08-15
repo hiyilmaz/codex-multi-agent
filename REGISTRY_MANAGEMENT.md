@@ -44,7 +44,8 @@ Portable runtime variants:
 variants/
   config.toml
   codex/home/
-  dolphin/home/
+  claude/home/
+  opencode/home/
 ```
 
 Install the default variant or choose one explicitly:
@@ -52,7 +53,8 @@ Install the default variant or choose one explicitly:
 ```bash
 bin/codex-user-install
 bin/codex-user-install --variant codex
-bin/codex-user-install --variant dolphin
+bin/codex-user-install --variant claude
+bin/codex-user-install --variant opencode
 ```
 
 ---

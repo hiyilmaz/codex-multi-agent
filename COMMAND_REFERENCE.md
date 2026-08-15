@@ -23,9 +23,8 @@ Available runtime variants:
 | Variant | Default runtime home | Launcher |
 |---|---|---|
 | `codex` | `~/.codex` | Use the normal Codex command. |
-| `dolphin` | `~/.llm-runtimes/dolphin` | `~/.llm-runtimes/dolphin/bin/llm-dolphin` |
 | `claude` | `~/.claude` | `~/.claude/bin/llm-claude` |
-| `opencode` | `~/.llm-runtimes/opencode` | `~/.llm-runtimes/opencode/bin/llm-opencode` |
+| `opencode` | `~/.config/opencode` | Native `opencode` command. |
 
 ## Guided Setup
 
@@ -39,7 +38,6 @@ Select a variant explicitly:
 
 ```bash
 bin/codex-setup --variant codex
-bin/codex-setup --variant dolphin
 bin/codex-setup --variant claude
 bin/codex-setup --variant opencode
 ```
@@ -51,6 +49,12 @@ bin/codex-setup --variant codex --runtime-home "/absolute/runtime/path"
 ```
 
 `--codex-home` is a compatibility alias for `--runtime-home`.
+
+For the native Codex target only (`$HOME/.codex`), setup delegates to
+`bin/codex-native-activate` after template installation. It installs the ten
+protected core tools additively, makes Context7 required/lazy, keeps cplt
+explicit-only, and leaves xcodebuildmcp disabled. Custom runtime homes and
+other variants remain isolated; restart Codex after installation.
 
 ## Runtime Installation
 
@@ -64,7 +68,6 @@ Install a specific variant:
 
 ```bash
 bin/codex-user-install --variant codex
-bin/codex-user-install --variant dolphin
 bin/codex-user-install --variant claude
 bin/codex-user-install --variant opencode
 ```
@@ -77,11 +80,16 @@ bin/codex-user-install \
   --runtime-home "/absolute/runtime/path"
 ```
 
+Inspect the native activation command directly:
+
+```bash
+bin/codex-native-activate --help
+```
+
 Refresh template-managed runtime files intentionally:
 
 ```bash
 bin/codex-user-install --variant codex --force
-bin/codex-user-install --variant dolphin --force
 ```
 
 `--force` overwrites existing files managed by the runtime template. Review or
@@ -92,20 +100,16 @@ For guided Claude setup, answer `no` when asked whether existing
 template-managed files should be overwritten. Selecting `yes` passes `--force`,
 which native Claude activation intentionally rejects.
 
-Launch the default Dolphin or Claude installation:
+Launch the default Claude installation:
 
 ```bash
-~/.llm-runtimes/dolphin/bin/llm-dolphin
 ~/.claude/bin/llm-claude
-~/.llm-runtimes/opencode/bin/llm-opencode
 ```
 
-`llm-opencode` sets `OPENCODE_CONFIG`, `OPENCODE_CONFIG_DIR`, and all four XDG
-config/data/cache/state homes inside `~/.llm-runtimes/opencode`, rejecting
-symlinked state roots before delegating to native `opencode`. This excludes
-native configuration and identity state and leaves `~/.config/opencode`
-untouched. Verify without a model call using `llm-opencode debug config` and
-`llm-opencode debug paths`.
+OpenCode activation uses `~/.config/opencode/skills`, preserves unrelated
+configuration and identity state, and refuses symlinked or conflicting managed
+targets. Verify without a model call using `opencode mcp list` and
+`opencode debug config`.
 
 The Claude launcher sets its native runtime as `CLAUDE_CONFIG_DIR` and then
 executes the native `claude` binary. Installation preserves existing
@@ -126,7 +130,7 @@ following an unsafe symlink. A copy or backup failure triggers rollback so a
 partial native overlay is not reported as active. It does not remove or modify
 the legacy isolated Claude runtime.
 
-Restart the active Codex, Dolphin, or Claude session after changing runtime files so the
+Restart the active Codex, Claude, or OpenCode session after changing runtime files so the
 new instructions, skills, and registry entries are loaded.
 
 ## Initialize, Add A Variant, Or Reset
@@ -147,7 +151,7 @@ bin/codex-project-init \
 
 For existing projects, init is additive: it preserves `AGENTS.md`, shared
 prompts, customized files, and other variant surfaces. Multiple runtime
-variants can coexist in one project. Codex and Dolphin share
+variants can coexist in one project. Codex uses
 `.codex/config.toml`; Claude adds its bridge/settings; OpenCode adds
 `.opencode/opencode.json` and preserves sibling `.opencode` content.
 
@@ -204,7 +208,7 @@ Record a different runtime variant while upgrading:
 ```bash
 bin/codex-project-upgrade \
   --apply \
-  --variant dolphin \
+  --variant opencode \
   "/absolute/path/to/project"
 ```
 

@@ -1,7 +1,7 @@
 # Codex Template V2 — Usage Guide
 
-**Version:** 2.5
-**Updated:** 2026-05-22
+**Version:** 2.6
+**Updated:** 2026-08-15
 
 ---
 
@@ -45,7 +45,6 @@ install a specific runtime variant:
 
 ```bash
 bin/codex-user-install --variant codex
-bin/codex-user-install --variant dolphin
 bin/codex-user-install --variant claude
 bin/codex-user-install --variant opencode
 ```
@@ -53,29 +52,31 @@ bin/codex-user-install --variant opencode
 Template paths are rewritten during installation so installed configs and
 registry docs point at the selected `--runtime-home`.
 
+Native Codex installation to exactly `$HOME/.codex` also runs
+`bin/codex-native-activate` after the template succeeds. This additively makes
+the ten protected tools available; Context7 is required but lazy, cplt remains
+explicit-only, and xcodebuildmcp stays disabled. Alternate runtime homes and
+non-Codex variants do not receive this activation. Restart Codex afterwards.
+
 Default runtime homes:
 
 - `codex`: `$HOME/.codex`
-- `dolphin`: `$HOME/.llm-runtimes/dolphin`
 - `claude`: `$HOME/.claude`
-- `opencode`: `$HOME/.llm-runtimes/opencode`
+- `opencode`: `$HOME/.config/opencode`
 
-For Dolphin, the launcher is installed inside the runtime home:
+For Claude, the launcher is installed inside the runtime home:
 
 ```text
-<runtime-home>/bin/llm-dolphin
 <runtime-home>/bin/llm-claude
 <runtime-home>/bin/llm-opencode
 ```
 
-The OpenCode runtime is isolated at `~/.llm-runtimes/opencode`. Its
-`llm-opencode` launcher overrides inherited `OPENCODE_CONFIG`,
-`OPENCODE_CONFIG_DIR`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_CACHE_HOME`, and
-`XDG_STATE_HOME` values before delegating to the installed native binary. All
-XDG roots stay under the runtime and reject symlinks. This excludes native
-global config and identity state from the CMA runtime. It does not modify
-`~/.config/opencode`, choose a provider/model, install a plugin, or authenticate.
-Use `llm-opencode debug config` and `llm-opencode debug paths` for validation.
+OpenCode uses its official user-global skill location,
+`~/.config/opencode/skills`. Native activation installs the approved skills
+additively, preserves unrelated configuration and identity state, and refuses
+symlinked or conflicting managed paths. It does not choose a provider/model,
+install a plugin, authenticate, or write credentials. Use `opencode mcp list`
+and `opencode debug config` for validation.
 
 The default Claude path is the native user-global surface. Activation preserves
 existing instructions with a backed-up CMA import overlay, does not rewrite an
@@ -119,7 +120,7 @@ files:
 bin/codex-user-install --force
 ```
 
-This overwrite flow applies to Codex and Dolphin. Native Claude activation
+This overwrite flow applies to Codex. Native Claude activation
 rejects `--force`; in guided Claude setup, decline the overwrite prompt.
 
 ---
@@ -148,7 +149,7 @@ Reset conflicts are listed before confirmation and privately archived under
 `<project>/.codex/archive/init-YYYYMMDD_HHMMSS-PID/`. Normal additive init does not
 archive or replace shared files.
 
-A fresh Codex or Dolphin project creates:
+A fresh Codex project creates:
 
 ```text
 <project>/AGENTS.md
@@ -160,7 +161,7 @@ With `--variant claude`, init adds `CLAUDE.md` containing `@AGENTS.md` and
 `.claude/settings.json` while preserving existing project surfaces.
 
 With `--variant opencode`, init adds `.opencode/opencode.json`. It preserves
-Codex/Dolphin configuration plus sibling files and directories under
+Codex configuration plus sibling files and directories under
 `.opencode`.
 
 ### Step 2 — Run the Project Configuration prompt
@@ -326,7 +327,7 @@ steps within the same explicitly approved bounded task.
 ```text
 Run codex-setup for guided installation
         ↓
-or install a runtime with codex-user-install [--variant codex|dolphin]
+or install a runtime with codex-user-install [--variant codex|claude|opencode]
         ↓
 For existing projects, run codex-project-upgrade
         ↓

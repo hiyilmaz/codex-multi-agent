@@ -11,7 +11,6 @@ Aktif yapı basittir:
 variants/
   config.toml
   codex/home/
-  dolphin/home/
   claude/home/
   opencode/home/
 
@@ -62,7 +61,6 @@ Belirli bir versiyonu kur:
 
 ```bash
 bin/codex-user-install --variant codex
-bin/codex-user-install --variant dolphin
 bin/codex-user-install --variant claude
 bin/codex-user-install --variant opencode
 ```
@@ -70,31 +68,35 @@ bin/codex-user-install --variant opencode
 Kurulum sırasında template içindeki kaynak pathler hedef `--runtime-home`
 dizinine göre yazılır.
 
+Hedef tam olarak `$HOME/.codex` ise kurulum template tamamlandıktan sonra
+`bin/codex-native-activate` komutunu çalıştırır. Bu işlem 10 korumalı aracı
+eklemeli olarak etkinleştirir; Context7 required fakat lazy kalır, cplt
+explicit-only kalır ve xcodebuildmcp kapalı tutulur. Özel runtime hedefleri ile
+Native Claude ve OpenCode aynı 10 skill'i kendi resmi kullanıcı dizinlerine
+eklemeli olarak projekte eder. Ardından ilgili istemciyi yeniden başlat veya yeni
+bir oturum aç.
+
 Varsayılan hedefler:
 
 ```text
 codex   -> $HOME/.codex
-dolphin -> $HOME/.llm-runtimes/dolphin
 claude  -> $HOME/.claude
-opencode -> $HOME/.llm-runtimes/opencode
+opencode -> $HOME/.config/opencode
 ```
 
-Dolphin ve Claude launcher dosyaları kurulumdan sonra şurada olur:
+Claude launcher dosyası kurulumdan sonra şurada olur:
 
 ```text
-<runtime-home>/bin/llm-dolphin
 <runtime-home>/bin/llm-claude
 <runtime-home>/bin/llm-opencode
 ```
 
-OpenCode varyantı `~/.llm-runtimes/opencode` altında izole çalışır.
-`llm-opencode`, native `opencode` komutunu çalıştırmadan önce
-`OPENCODE_CONFIG`, `OPENCODE_CONFIG_DIR` ile XDG config/data/cache/state
-değerlerini bu dizine sabitler ve symlink state köklerini reddeder. Böylece
-native global config ve kimlik durumu CMA runtime ile birleşmez.
-`~/.config/opencode` dosyalarını değiştirmez; provider/model seçmez, plugin veya
-bağımlılık kurmaz ve giriş yapmaz. Yapılandırmayı model çağrısı olmadan
-`llm-opencode debug config` ve `llm-opencode debug paths` ile doğrula.
+OpenCode, resmi kullanıcı skill dizini olan `~/.config/opencode/skills`
+üzerinden etkinleşir. İlgisiz yapılandırma ve kimlik durumunu korur; yönetilen
+skill hedefinde symlink veya farklı içerik varsa fail-closed davranır.
+Provider/model seçmez, plugin veya bağımlılık kurmaz ve giriş yapmaz.
+Yapılandırmayı model çağrısı olmadan `opencode mcp list` ve
+`opencode debug config` ile doğrula.
 
 Claude kurulumu varsayılan olarak doğal kullanıcı-global `~/.claude` dizinine
 uygulanır. Mevcut `CLAUDE.md` yedeklenip tek CMA importu eklenerek korunur;
@@ -136,7 +138,7 @@ Mevcut dosyaları bilinçli olarak template ile değiştirmek istersen:
 bin/codex-user-install --force
 ```
 
-Bu seçenek Codex ve Dolphin içindir. Native Claude aktivasyonunda `--force`
+Bu seçenek Codex içindir. Native Claude aktivasyonunda `--force`
 bilerek reddedilir. Etkileşimli Claude kurulumunda “Mevcut template-managed
 dosyalar ezilsin mi?” sorusuna `n` yanıtını ver.
 
@@ -155,8 +157,7 @@ Sonra:
 bin/codex-user-install
 ```
 
-Bu kadar. `codex` runtime `~/.codex` altında çalışır. `dolphin` runtime
-varsayılan olarak `~/.llm-runtimes/dolphin`, `claude` runtime ise
+Bu kadar. `codex` runtime `~/.codex` altında, `claude` runtime ise
 doğal kullanıcı-global `~/.claude` altında çalışır. Repo içindeki
 `variants/` dizini sadece taşınabilir kurulum kaynaklarını ve varsayılan
 versiyon config dosyasını taşır.
@@ -182,7 +183,7 @@ bin/codex-project-init --reset --variant codex /path/to/project
 ```
 
 Reset, çakışan dosyaları onaydan önce listeler ve özel arşive taşır. Yeni Codex
-veya Dolphin projesi şunları oluşturur:
+projesi şunları oluşturur:
 
 ```text
 <project>/AGENTS.md
@@ -195,7 +196,7 @@ veya Dolphin projesi şunları oluşturur:
 ve `.claude` içeriğine dokunulmaz.
 
 `--variant opencode` seçildiğinde `.opencode/opencode.json` eklenir. Mevcut
-Codex/Dolphin yapılandırması, `.opencode/plugins`, paket metadata dosyaları ve
+Codex yapılandırması, `.opencode/plugins`, paket metadata dosyaları ve
 diğer kardeş içerikler korunur.
 
 Yalnız `--reset` sırasında çakışan dosyalar şuraya arşivlenir:
@@ -309,7 +310,7 @@ Kullanıcı ortamını belirli versiyonla kur:
 
 ```bash
 bin/codex-user-install --variant codex
-bin/codex-user-install --variant dolphin
+bin/codex-user-install --variant opencode
 bin/codex-user-install --variant opencode
 ```
 
