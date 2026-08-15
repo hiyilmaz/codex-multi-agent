@@ -1,13 +1,13 @@
 # OpenCode Runtime Variant
 
 This directory is the portable, provider-neutral CMA template for OpenCode.
-Its default target is the isolated `~/.llm-runtimes/opencode` directory.
+Its default target is the isolated `~/.config/opencode` directory.
 
 Install and launch it with:
 
 ```bash
 bin/codex-user-install --variant opencode
-~/.llm-runtimes/opencode/bin/llm-opencode
+~/.config/opencode/bin/llm-opencode
 ```
 
 The launcher sets `OPENCODE_CONFIG`, `OPENCODE_CONFIG_DIR`, and all XDG config,

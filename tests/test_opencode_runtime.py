@@ -185,7 +185,7 @@ class OpenCodeRuntimeTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_default_install_does_not_touch_native_global_config(self) -> None:
+    def test_default_install_preserves_native_config_and_activates_skills(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             native = root / "home/.config/opencode/opencode.json"
@@ -201,7 +201,9 @@ class OpenCodeRuntimeTests(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(native.read_text(encoding="utf-8"), "native\n")
-            self.assertTrue((root / "home/.llm-runtimes/opencode/AGENTS.md").is_file())
+            self.assertTrue(
+                (root / "home/.config/opencode/skills/opencode-docs/SKILL.md").is_file()
+            )
 
     def test_installed_runtime_manifest_matches_packaged_source(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -264,7 +266,7 @@ class OpenCodeRuntimeTests(unittest.TestCase):
                     self.assertNotIn("~/.llm-runtimes/opencode", text)
                     self.assertIn(str(runtime), text)
 
-    def test_runtime_docs_describe_isolation_and_debug_validation(self) -> None:
+    def test_runtime_docs_describe_native_activation_and_validation(self) -> None:
         for relative in (
             "README.md",
             "USAGE_GUIDE.md",
@@ -273,9 +275,6 @@ class OpenCodeRuntimeTests(unittest.TestCase):
         ):
             text = (REPO_ROOT / relative).read_text(encoding="utf-8")
             with self.subTest(path=relative):
-                self.assertIn("llm-opencode", text)
-                self.assertIn("OPENCODE_CONFIG", text)
-                self.assertIn("~/.llm-runtimes/opencode", text)
                 self.assertIn("~/.config/opencode", text)
 
 

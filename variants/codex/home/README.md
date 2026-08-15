@@ -24,6 +24,12 @@ Included:
 - `registry/`
 - `prompts/`
 
+When installed to the native `$HOME/.codex` target, `bin/codex-user-install`
+then runs `bin/codex-native-activate`. It additively activates ten protected
+core tools; Context7 is required/lazy, cplt is explicit-only, and
+xcodebuildmcp remains disabled. Custom targets remain portable and do not run
+native activation; restart Codex after a native installation.
+
 The template includes `orchestration-gate` for project-level
 `ORCHESTRATION_MODE` decisions:
 

@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
+
+usage() {
+  cat <<'EOF'
+Usage: opencode-native-activate [--runtime-home <path>] [--user-home <path>] [--source-root <path>]
+
+Projects the approved CMA OpenCode skills into the official user skill location.
+Existing unmanaged files are preserved; conflicting managed targets fail closed.
+EOF
+}
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+USER_HOME="$HOME"
+RUNTIME_HOME=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --runtime-home) RUNTIME_HOME="$2"; shift 2 ;;
+    --user-home) USER_HOME="$2"; shift 2 ;;
+    --source-root) SOURCE_ROOT="$2"; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "FAILED: unknown option: $1" >&2; exit 1 ;;
+  esac
+done
+
+NATIVE_HOME="$USER_HOME/.config/opencode"
+RUNTIME_HOME="${RUNTIME_HOME:-$NATIVE_HOME}"
+resolve() { python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$1"; }
+if [[ -L "$USER_HOME" || ( -e "$USER_HOME" && ! -d "$USER_HOME" ) ||
+      -L "$USER_HOME/.config" || ( -e "$USER_HOME/.config" && ! -d "$USER_HOME/.config" ) ]]; then
+  echo "FAILED: unsafe OpenCode user-home ancestor" >&2; exit 1
+fi
+if [[ "$(resolve "$RUNTIME_HOME")" != "$(resolve "$NATIVE_HOME")" ]]; then
+  echo "FAILED: native OpenCode activation target must be $NATIVE_HOME" >&2
+  exit 1
+fi
+if [[ -L "$RUNTIME_HOME" || ( -e "$RUNTIME_HOME" && ! -d "$RUNTIME_HOME" ) ]]; then
+  echo "FAILED: unsafe native OpenCode home" >&2
+  exit 1
+fi
+
+SOURCE_SKILLS="$SOURCE_ROOT/core-skills/projections/opencode"
+VENDOR_SKILL="$SOURCE_ROOT/variants/opencode/home/skills/opencode-docs/SKILL.md"
+SKILL_IDS=(ast-grep betterleaks context7 cplt deepwiki github graphify opengrep osv-scanner serena opencode-docs)
+for id in "${SKILL_IDS[@]}"; do
+  source="$SOURCE_SKILLS/$id/SKILL.md"
+  [[ "$id" == "opencode-docs" ]] && source="$VENDOR_SKILL"
+  if [[ ! -f "$source" || -L "$source" ]]; then
+    echo "FAILED: incomplete or unsafe OpenCode source: $id" >&2; exit 1
+  fi
+done
+
+if [[ -L "$RUNTIME_HOME/skills" || ( -e "$RUNTIME_HOME/skills" && ! -d "$RUNTIME_HOME/skills" ) ]]; then
+  echo "FAILED: unsafe managed skills directory" >&2; exit 1
+fi
+for id in "${SKILL_IDS[@]}"; do
+  source="$SOURCE_SKILLS/$id/SKILL.md"; [[ "$id" == "opencode-docs" ]] && source="$VENDOR_SKILL"
+  target="$RUNTIME_HOME/skills/$id/SKILL.md"
+  parent="$(dirname "$target")"
+  if [[ -L "$parent" || ( -e "$parent" && ! -d "$parent" ) || -L "$target" || ( -e "$target" && ! -f "$target" ) ]]; then
+    echo "FAILED: unsafe managed target: $target" >&2; exit 1
+  fi
+  if [[ -e "$target" ]] && ! cmp -s "$source" "$target"; then
+    echo "FAILED: existing CMA-managed file differs: $target" >&2; exit 1
+  fi
+done
+
+if [[ -d "$RUNTIME_HOME" ]]; then
+  for id in "${SKILL_IDS[@]}"; do
+    target="$RUNTIME_HOME/skills/$id/SKILL.md"
+    [[ -f "$target" ]] || break
+  done
+fi
+ALL_PRESENT="true"
+for id in "${SKILL_IDS[@]}"; do
+  [[ -f "$RUNTIME_HOME/skills/$id/SKILL.md" ]] || { ALL_PRESENT="false"; break; }
+done
+if [[ "$ALL_PRESENT" == "true" ]]; then
+  echo "OpenCode CMA already active at: $RUNTIME_HOME"; exit 0
+fi
+
+mkdir -p "$RUNTIME_HOME/skills" "$RUNTIME_HOME/backups"
+BACKUP="$(mktemp -d "$RUNTIME_HOME/backups/cma-activation-$(date -u +%Y%m%dT%H%M%SZ)-XXXXXX")"
+CREATED_FILES=()
+rollback() {
+  local status="$?" file
+  trap - ERR
+  for file in "${CREATED_FILES[@]}"; do rm -f "$file"; done
+  echo "FAILED: native OpenCode activation rolled back" >&2
+  exit "$status"
+}
+trap rollback ERR
+for id in "${SKILL_IDS[@]}"; do
+  source="$SOURCE_SKILLS/$id/SKILL.md"; [[ "$id" == "opencode-docs" ]] && source="$VENDOR_SKILL"
+  target="$RUNTIME_HOME/skills/$id/SKILL.md"
+  if [[ ! -e "$target" ]]; then
+    mkdir -p "$(dirname "$target")"
+    tmp="$(mktemp "$(dirname "$target")/.cma.XXXXXX")"
+    cp "$source" "$tmp" && mv "$tmp" "$target"
+    CREATED_FILES+=("$target")
+    printf '%s\n' "${target#$RUNTIME_HOME/}" >> "$BACKUP/created-files.txt"
+  fi
+done
+chmod 700 "$BACKUP"
+trap - ERR
+echo "OpenCode CMA activated at: $RUNTIME_HOME"
+echo "Recovery record: $BACKUP"

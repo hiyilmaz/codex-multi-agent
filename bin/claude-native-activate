@@ -16,6 +16,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SOURCE_HOME="$REPO_ROOT/variants/claude/home"
 SOURCE_LAUNCHER="$REPO_ROOT/variants/claude/bin/claude"
+CORE_SKILLS_HOME="$REPO_ROOT/core-skills/projections/claude"
+VENDOR_SKILL="$SOURCE_HOME/skills/claude-docs/SKILL.md"
+CORE_SKILL_IDS=(ast-grep betterleaks context7 cplt deepwiki github graphify opengrep osv-scanner serena claude-docs)
 NATIVE_HOME="${HOME}/.claude"
 RUNTIME_HOME="$NATIVE_HOME"
 FORCE="false"
@@ -108,6 +111,7 @@ registry/modules/CMA_RECORDS.md
 registry/modules/CMA_REMOTE_ADMIN.md
 registry/modules/CMA_SECURITY.md
 registry/modules/CMA_TDD.md
+registry/modules/CMA_REPO_TOOLS.md
 prompts/recreate-global-subagents.md
 EOF
 }
@@ -122,6 +126,14 @@ if [[ ! -f "$SOURCE_LAUNCHER" || -L "$SOURCE_LAUNCHER" ]]; then
   echo "FAILED: missing or unsafe Claude launcher" >&2
   exit 1
 fi
+for core_skill in "${CORE_SKILL_IDS[@]}"; do
+  core_source="$CORE_SKILLS_HOME/$core_skill/SKILL.md"
+  [[ "$core_skill" == "claude-docs" ]] && core_source="$VENDOR_SKILL"
+  if [[ ! -f "$core_source" || -L "$core_source" ]]; then
+    echo "FAILED: incomplete or unsafe Claude core skill source: $core_skill" >&2
+    exit 1
+  fi
+done
 
 target_for_source() {
   local relative="$1"
@@ -229,6 +241,20 @@ while IFS= read -r relative; do
     NEEDS_MUTATION="true"
   fi
 done < <(required_source_files)
+for core_skill in "${CORE_SKILL_IDS[@]}"; do
+  core_source="$CORE_SKILLS_HOME/$core_skill/SKILL.md"
+  [[ "$core_skill" == "claude-docs" ]] && core_source="$VENDOR_SKILL"
+  core_target="$RUNTIME_HOME/skills/$core_skill/SKILL.md"
+  assert_safe_target "$core_target"
+  if [[ -e "$core_target" ]]; then
+    if ! cmp -s "$core_source" "$core_target"; then
+      echo "FAILED: existing CMA-managed core skill differs: $core_target" >&2
+      exit 1
+    fi
+  else
+    NEEDS_MUTATION="true"
+  fi
+done
 
 LAUNCHER_TARGET="$RUNTIME_HOME/bin/llm-claude"
 assert_safe_target "$LAUNCHER_TARGET"
@@ -346,6 +372,11 @@ while IFS= read -r relative; do
   fi
   install_missing_file "$SOURCE_HOME/$relative" "$target"
 done < <(required_source_files)
+for core_skill in "${CORE_SKILL_IDS[@]}"; do
+  core_source="$CORE_SKILLS_HOME/$core_skill/SKILL.md"
+  [[ "$core_skill" == "claude-docs" ]] && core_source="$VENDOR_SKILL"
+  install_missing_file "$core_source" "$RUNTIME_HOME/skills/$core_skill/SKILL.md"
+done
 if [[ -e "$LAUNCHER_TARGET" && ! -x "$LAUNCHER_TARGET" ]]; then
   echo "FAILED: existing CMA-managed launcher is not executable: $LAUNCHER_TARGET" >&2
   false

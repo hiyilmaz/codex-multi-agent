@@ -218,9 +218,13 @@ if [[ -n "$VARIANT_LAUNCHER_RELATIVE" && ! -f "$REPO_ROOT/$VARIANT_LAUNCHER_RELA
   exit 1
 fi
 
-if [[ "$VARIANT_ID" == "claude" ]]; then
+if [[ "$VARIANT_ID" == "claude" || "$VARIANT_ID" == "opencode" ]]; then
   RESOLVED_RUNTIME_HOME="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$RUNTIME_HOME")"
-  RESOLVED_NATIVE_CLAUDE_HOME="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$HOME/.claude")"
+  if [[ "$VARIANT_ID" == "claude" ]]; then
+    RESOLVED_NATIVE_CLAUDE_HOME="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$HOME/.claude")"
+  else
+    RESOLVED_NATIVE_CLAUDE_HOME="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$HOME/.config/opencode")"
+  fi
 else
   RESOLVED_RUNTIME_HOME=""
   RESOLVED_NATIVE_CLAUDE_HOME=""
@@ -237,6 +241,14 @@ if [[ "$VARIANT_ID" == "claude" && "$RESOLVED_RUNTIME_HOME" == "$RESOLVED_NATIVE
     NATIVE_ARGS+=(--force)
   fi
   exec "$NATIVE_ACTIVATOR" "${NATIVE_ARGS[@]}"
+fi
+if [[ "$VARIANT_ID" == "opencode" && "$RESOLVED_RUNTIME_HOME" == "$RESOLVED_NATIVE_CLAUDE_HOME" ]]; then
+  NATIVE_ACTIVATOR="$REPO_ROOT/bin/opencode-native-activate"
+  if [[ ! -x "$NATIVE_ACTIVATOR" ]]; then
+    echo "FAILED: missing executable native OpenCode activator: $NATIVE_ACTIVATOR" >&2
+    exit 1
+  fi
+  exec "$NATIVE_ACTIVATOR" --runtime-home "$HOME/.config/opencode" --user-home "$HOME" --source-root "$REPO_ROOT"
 fi
 
 if [[ -L "$RUNTIME_HOME" ]]; then
@@ -420,6 +432,22 @@ if [[ "$VARIANT_ID" == "opencode" ]]; then
   DEFAULT_HOME_REWRITE="$DEFAULT_RUNTIME_HOME"
 fi
 rewrite_installed_variant_paths "$SOURCE_RELATIVE" "$RUNTIME_HOME" "$DEFAULT_HOME_REWRITE" "$VARIANT_LAUNCHER_RELATIVE" "$VARIANT_LAUNCHER_NAME"
+
+if [[ "$VARIANT_ID" == "codex" ]]; then
+  RESOLVED_RUNTIME_HOME="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$RUNTIME_HOME")"
+  RESOLVED_NATIVE_CODEX_HOME="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$HOME/.codex")"
+  if [[ "$RESOLVED_RUNTIME_HOME" == "$RESOLVED_NATIVE_CODEX_HOME" ]]; then
+    NATIVE_ACTIVATOR="$REPO_ROOT/bin/codex-native-activate"
+    if [[ ! -x "$NATIVE_ACTIVATOR" ]]; then
+      echo "FAILED: missing executable native Codex activator: $NATIVE_ACTIVATOR" >&2
+      exit 1
+    fi
+    "$NATIVE_ACTIVATOR" \
+      --runtime-home "$RUNTIME_HOME" \
+      --user-home "$HOME" \
+      --source-root "$REPO_ROOT"
+  fi
+fi
 
 echo "Variant installed: $VARIANT_ID"
 echo "Runtime home installed at: $RUNTIME_HOME"

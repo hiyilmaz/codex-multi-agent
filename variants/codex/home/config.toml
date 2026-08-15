@@ -8,6 +8,21 @@ status_line = ["model-with-reasoning", "current-dir", "context-used", "task-prog
 [features]
 memories = true
 
+[mcp_servers.serena]
+command = "serena"
+args = ["start-mcp-server", "--context=codex", "--project-from-cwd"]
+
+[mcp_servers.deepwiki]
+url = "https://mcp.deepwiki.com/mcp"
+
+[mcp_servers.github]
+url = "https://api.githubcopilot.com/mcp/"
+bearer_token_env_var = "GITHUB_PAT_TOKEN"
+
+[mcp_servers.context7]
+url = "https://mcp.context7.com/mcp"
+bearer_token_env_var = "CONTEXT7_API_KEY"
+
 # Portable Codex home template.
 # Project trust entries, hook hashes, sessions, logs, caches, memories, and
 # machine-local paths should be added on the target machine, not stored here.

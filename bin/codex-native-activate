@@ -1,0 +1,779 @@
+#!/usr/bin/env python3
+"""Safely activate the protected CMA core-tool skills for one Codex user."""
+
+from __future__ import annotations
+
+import argparse
+import ctypes
+import fcntl
+import hashlib
+import json
+import os
+import re
+import stat
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+SKILLS = (
+    "graphify", "serena", "ast-grep", "deepwiki", "github", "opengrep",
+    "osv-scanner", "betterleaks", "context7", "cplt",
+)
+MCP_FLAGS = {
+    "mcp_servers.serena": {"enabled": True},
+    "mcp_servers.deepwiki": {"enabled": True},
+    "mcp_servers.github": {"enabled": True},
+    "mcp_servers.context7": {"enabled": True, "required": True},
+}
+MCP_SECTION_DEFAULTS = {
+    "mcp_servers.serena": (
+        'command = "serena"\n',
+        'args = ["start-mcp-server", "--context=codex", "--project-from-cwd"]\n',
+    ),
+    "mcp_servers.deepwiki": ('url = "https://mcp.deepwiki.com/mcp"\n',),
+    "mcp_servers.github": (
+        'url = "https://api.githubcopilot.com/mcp/"\n',
+        'bearer_token_env_var = "GITHUB_PAT_TOKEN"\n',
+    ),
+    "mcp_servers.context7": (
+        'url = "https://mcp.context7.com/mcp"\n',
+        'bearer_token_env_var = "CONTEXT7_API_KEY"\n',
+    ),
+}
+TABLE = re.compile(r"^\s*\[([^\]]+)]\s*(?:#.*)?$")
+KEY = re.compile(r"^(\s*)([A-Za-z0-9_-]+)\s*=.*$")
+QUOTED_MANAGED_KEY = re.compile(r"^\s*['\"](?:enabled|required)['\"]\s*=")
+ESCAPED_QUOTED_KEY = re.compile(r"^\s*(['\"]).*\\.*\1\s*=")
+NON_TABLE_XCODE = re.compile(r"xcodebuildmcp", re.IGNORECASE)
+XCODE_SECTION = re.compile(
+    r"(?:^|\.)\s*(?P<prefix>mcp_servers|['\"]mcp_servers['\"])\s*\.\s*"
+    r"(?P<token>xcodebuildmcp|['\"]xcodebuildmcp['\"])\s*$",
+)
+RENAME_SWAP = 0x00000002
+RENAME_EXCL = 0x00000004
+
+
+class ActivationError(Exception):
+    """A fail-closed activation error safe to report without raw input."""
+
+
+def _emit(status: str, success: bool, *, changed: bool = False, code: str | None = None) -> None:
+    payload: dict[str, object] = {"changed": changed, "status": status, "success": success}
+    if code:
+        payload["code"] = code
+    print(json.dumps(payload, sort_keys=True, separators=(",", ":")))
+
+
+def _safe_root(path: Path, label: str) -> Path:
+    if not path.is_absolute() or path == Path("/") or path.is_symlink():
+        raise ActivationError(f"unsafe_{label}")
+    resolved = path.resolve(strict=False)
+    if resolved == Path("/"):
+        raise ActivationError(f"unsafe_{label}")
+    return resolved
+
+
+def _assert_regular_tree(path: Path) -> None:
+    if path.is_symlink() or not path.is_dir():
+        raise ActivationError("unsafe_skill_target")
+    for child in path.rglob("*"):
+        if child.is_symlink():
+            raise ActivationError("unsafe_skill_target")
+        mode = child.stat().st_mode
+        if not (stat.S_ISDIR(mode) or stat.S_ISREG(mode)):
+            raise ActivationError("unsafe_skill_target")
+
+
+def _assert_safe_parent_chain(path: Path, root: Path) -> None:
+    """Reject existing symlinks or non-directories between root and path."""
+    try:
+        path.relative_to(root)
+    except ValueError as error:
+        raise ActivationError("unsafe_managed_parent") from error
+    current = path
+    while True:
+        if current.is_symlink():
+            raise ActivationError("unsafe_managed_parent")
+        if current.exists() and not current.is_dir():
+            raise ActivationError("unsafe_managed_parent")
+        if current == root:
+            break
+        current = current.parent
+
+
+def _open_dir_fd(path: Path) -> int:
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    return os.open(path, flags)
+
+
+def _open_chain(root_fd: int, parts: tuple[str, ...], *, create: bool) -> int:
+    current = os.dup(root_fd)
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        for part in parts:
+            if not part or part in {".", ".."} or "/" in part:
+                raise ActivationError("unsafe_managed_parent")
+            if create:
+                try:
+                    os.mkdir(part, 0o755, dir_fd=current)
+                except FileExistsError:
+                    pass
+            following = os.open(part, flags, dir_fd=current)
+            os.close(current)
+            current = following
+        return current
+    except Exception:
+        os.close(current)
+        raise
+
+
+def _identity(value: os.stat_result) -> tuple[int, int, int]:
+    return value.st_dev, value.st_ino, value.st_mode
+
+
+def _identity_at(parent_fd: int, name: str) -> tuple[int, int, int]:
+    return _identity(os.stat(name, dir_fd=parent_fd, follow_symlinks=False))
+
+
+def _renameatx(parent_fd: int, source: str, target: str, flags: int) -> None:
+    function = getattr(ctypes.CDLL(None, use_errno=True), "renameatx_np", None)
+    if function is None:
+        raise ActivationError("atomic_rename_unavailable")
+    function.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+    function.restype = ctypes.c_int
+    result = function(
+        parent_fd, os.fsencode(source), parent_fd, os.fsencode(target), flags,
+    )
+    if result != 0:
+        error = ctypes.get_errno()
+        if error == 17:
+            raise FileExistsError(error, os.strerror(error), target)
+        raise OSError(error, os.strerror(error), target)
+
+
+def _atomic_bytes_at(data: bytes, parent_fd: int, name: str, mode: int) -> tuple[int, int, int]:
+    temporary = f".{name}.cma-{os.getpid()}-{os.urandom(6).hex()}"
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(temporary, flags, mode, dir_fd=parent_fd)
+    try:
+        view = memoryview(data)
+        while view:
+            written = os.write(descriptor, view)
+            if written <= 0:
+                raise ActivationError("short_write")
+            view = view[written:]
+        os.fsync(descriptor)
+        os.fchmod(descriptor, mode)
+    except Exception:
+        os.close(descriptor)
+        os.unlink(temporary, dir_fd=parent_fd)
+        raise
+    os.close(descriptor)
+    staged = _identity_at(parent_fd, temporary)
+    try:
+        _renameatx(parent_fd, temporary, name, RENAME_EXCL)
+    finally:
+        try:
+            os.unlink(temporary, dir_fd=parent_fd)
+        except FileNotFoundError:
+            pass
+    return staged
+
+
+def _atomic_replace_bytes_at(
+    parent_fd: int, name: str, data: bytes, mode: int,
+    expected: tuple[int, int, int],
+) -> tuple[int, int, int]:
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(name, flags, dir_fd=parent_fd)
+    try:
+        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        metadata = os.fstat(descriptor)
+        if (
+            _identity(metadata) != expected or not stat.S_ISREG(expected[2])
+            or metadata.st_nlink != 1
+        ):
+            raise ActivationError("unstable_managed_file")
+        temporary = f".{name}.cma-{os.getpid()}-{os.urandom(6).hex()}"
+        staged = _atomic_bytes_at(data, parent_fd, temporary, mode)
+        try:
+            _renameatx(parent_fd, temporary, name, RENAME_SWAP)
+            if _identity_at(parent_fd, temporary) != expected:
+                _renameatx(parent_fd, temporary, name, RENAME_SWAP)
+                raise ActivationError("unstable_managed_file")
+            if _identity_at(parent_fd, name) != staged:
+                raise ActivationError("unstable_managed_file")
+            try:
+                os.unlink(temporary, dir_fd=parent_fd)
+            except OSError:
+                _renameatx(parent_fd, temporary, name, RENAME_SWAP)
+                try:
+                    os.unlink(temporary, dir_fd=parent_fd)
+                except OSError:
+                    pass
+                raise ActivationError("managed_cleanup_failed")
+            return staged
+        except Exception:
+            try:
+                if _identity_at(parent_fd, temporary) == staged:
+                    os.unlink(temporary, dir_fd=parent_fd)
+            except FileNotFoundError:
+                pass
+            raise
+    finally:
+        os.close(descriptor)
+
+
+def _copy_regular_at_bytes(data: bytes, destination_fd: int) -> None:
+    view = memoryview(data)
+    while view:
+        written = os.write(destination_fd, view)
+        if written <= 0:
+            raise ActivationError("short_write")
+        view = view[written:]
+
+
+def _copy_regular_at(source_fd: int, destination_fd: int, digest=None) -> None:
+    while True:
+        chunk = os.read(source_fd, 65536)
+        if not chunk:
+            break
+        if digest is not None:
+            digest.update(chunk)
+        _copy_regular_at_bytes(chunk, destination_fd)
+
+
+def _copy_dir_contents(
+    source_fd: int, destination_fd: int, digest, prefix: str = "",
+) -> None:
+    nofollow = getattr(os, "O_NOFOLLOW", 0)
+    directory = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | nofollow
+    for name in sorted(os.listdir(source_fd)):
+        if not name or name in {".", ".."} or "/" in name:
+            raise ActivationError("unsafe_skill_source")
+        before = os.stat(name, dir_fd=source_fd, follow_symlinks=False)
+        relative = f"{prefix}/{name}" if prefix else name
+        digest.update(relative.encode("utf-8"))
+        digest.update(b"\0")
+        mode = stat.S_IMODE(before.st_mode)
+        if stat.S_ISDIR(before.st_mode):
+            os.mkdir(name, mode, dir_fd=destination_fd)
+            source_child = os.open(name, directory, dir_fd=source_fd)
+            destination_child = os.open(name, directory, dir_fd=destination_fd)
+            try:
+                digest.update(b"\0")
+                _copy_dir_contents(source_child, destination_child, digest, relative)
+                if _identity(os.fstat(source_child)) != _identity(before):
+                    raise ActivationError("unstable_skill_source")
+            finally:
+                os.close(source_child)
+                os.close(destination_child)
+        elif stat.S_ISREG(before.st_mode):
+            source_file = os.open(name, os.O_RDONLY | nofollow, dir_fd=source_fd)
+            destination_file = os.open(
+                name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | nofollow,
+                mode, dir_fd=destination_fd,
+            )
+            try:
+                _copy_regular_at(source_file, destination_file, digest)
+                digest.update(b"\0")
+                os.fsync(destination_file)
+                if _identity(os.fstat(source_file)) != _identity(before):
+                    raise ActivationError("unstable_skill_source")
+            finally:
+                os.close(source_file)
+                os.close(destination_file)
+        else:
+            raise ActivationError("unsafe_skill_source")
+
+
+def _copy_tree_at(
+    source: Path, parent_fd: int, name: str,
+    expected_source: tuple[int, int, int], expected_fingerprint: str,
+) -> tuple[int, int, int]:
+    source_fd = _open_dir_fd(source)
+    staging = f".{name}.cma-{os.getpid()}-{os.urandom(6).hex()}"
+    try:
+        if _identity(os.fstat(source_fd)) != expected_source:
+            raise ActivationError("unstable_skill_source")
+        os.mkdir(staging, stat.S_IMODE(os.fstat(source_fd).st_mode), dir_fd=parent_fd)
+        created = _identity_at(parent_fd, staging)
+        destination_fd = os.open(
+            staging,
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0),
+            dir_fd=parent_fd,
+        )
+        try:
+            copied = hashlib.sha256()
+            _copy_dir_contents(source_fd, destination_fd, copied)
+            if copied.hexdigest() != expected_fingerprint:
+                raise ActivationError("unstable_skill_source")
+            if _identity(os.fstat(source_fd)) != expected_source:
+                raise ActivationError("unstable_skill_source")
+        except Exception:
+            os.close(destination_fd)
+            _remove_tree_at(parent_fd, staging, created)
+            raise
+        os.close(destination_fd)
+        try:
+            _renameatx(parent_fd, staging, name, RENAME_EXCL)
+        except Exception:
+            _remove_tree_at(parent_fd, staging, created)
+            raise
+        return _identity_at(parent_fd, name)
+    finally:
+        os.close(source_fd)
+
+
+def _remove_tree_at(
+    parent_fd: int, name: str, expected: tuple[int, int, int],
+) -> None:
+    observed = _identity_at(parent_fd, name)
+    if observed != expected or not stat.S_ISDIR(observed[2]):
+        raise ActivationError("rollback_identity_changed")
+    descriptor = os.open(
+        name,
+        os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0),
+        dir_fd=parent_fd,
+    )
+    try:
+        if _identity(os.fstat(descriptor)) != expected:
+            raise ActivationError("rollback_identity_changed")
+        for child in os.listdir(descriptor):
+            metadata = os.stat(child, dir_fd=descriptor, follow_symlinks=False)
+            child_identity = _identity(metadata)
+            if stat.S_ISDIR(metadata.st_mode):
+                _remove_tree_at(descriptor, child, child_identity)
+            else:
+                os.unlink(child, dir_fd=descriptor)
+    finally:
+        os.close(descriptor)
+    if _identity_at(parent_fd, name) != expected:
+        raise ActivationError("rollback_identity_changed")
+    os.rmdir(name, dir_fd=parent_fd)
+
+
+def _read_file_at(
+    parent_fd: int, name: str, maximum: int,
+) -> tuple[bytes, int, tuple[int, int, int]]:
+    descriptor = os.open(name, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0), dir_fd=parent_fd)
+    try:
+        before = os.fstat(descriptor)
+        if not stat.S_ISREG(before.st_mode) or before.st_size > maximum:
+            raise ActivationError("invalid_managed_file")
+        chunks: list[bytes] = []
+        remaining = maximum + 1
+        while remaining:
+            chunk = os.read(descriptor, min(65536, remaining))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        after = os.fstat(descriptor)
+        data = b"".join(chunks)
+        if _identity(before) != _identity(after) or len(data) > maximum:
+            raise ActivationError("unstable_managed_file")
+        return data, stat.S_IMODE(before.st_mode), _identity(before)
+    finally:
+        os.close(descriptor)
+
+
+def _read_regular_path(path: Path, maximum: int) -> bytes:
+    parent_fd = _open_dir_fd(path.parent)
+    try:
+        return _read_file_at(parent_fd, path.name, maximum)[0]
+    finally:
+        os.close(parent_fd)
+
+
+def _tree_fingerprint(path: Path) -> str:
+    _assert_regular_tree(path)
+    digest = hashlib.sha256()
+    for child in sorted(path.rglob("*")):
+        relative = child.relative_to(path).as_posix()
+        digest.update(relative.encode("utf-8"))
+        digest.update(b"\0")
+        if child.is_file():
+            digest.update(child.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def _sections(lines: list[str]) -> dict[str, tuple[int, int]]:
+    headers: list[tuple[str, int]] = []
+    seen: set[str] = set()
+    for index, line in enumerate(lines):
+        match = TABLE.match(line.rstrip("\n"))
+        if not match:
+            continue
+        name = match.group(1)
+        if name in seen:
+            raise ActivationError("duplicate_config_section")
+        seen.add(name)
+        headers.append((name, index))
+    result: dict[str, tuple[int, int]] = {}
+    for position, (name, start) in enumerate(headers):
+        stop = headers[position + 1][1] if position + 1 < len(headers) else len(lines)
+        result[name] = (start, stop)
+    return result
+
+
+def _section_bool(lines: list[str], start: int, stop: int, key: str) -> bool | None:
+    found: bool | None = None
+    for line in lines[start + 1:stop]:
+        if QUOTED_MANAGED_KEY.match(line) and key in {"enabled", "required"}:
+            raise ActivationError("unsupported_quoted_managed_key")
+        match = KEY.match(line.rstrip("\n"))
+        if not match or match.group(2) != key:
+            continue
+        if found is not None:
+            raise ActivationError("duplicate_config_key")
+        raw = line.split("=", 1)[1].split("#", 1)[0].strip()
+        if raw not in {"true", "false"}:
+            raise ActivationError("invalid_config_boolean")
+        found = raw == "true"
+    return found
+
+
+def _merge_mcp_flags(text: str) -> str:
+    if '"""' in text or "'''" in text:
+        raise ActivationError("unsupported_multiline_toml")
+    lines = text.splitlines(keepends=True)
+    if any(
+        (line.lstrip().startswith("[") and "\\" in line)
+        or ESCAPED_QUOTED_KEY.match(line)
+        or ("=" in line and "\\" in line.split("=", 1)[0])
+        for line in lines
+    ):
+        raise ActivationError("unsupported_escaped_toml_key")
+    if any(
+        not line.lstrip().startswith(("[", "#")) and NON_TABLE_XCODE.search(line)
+        for line in lines
+    ):
+        raise ActivationError("unsupported_inline_xcodebuildmcp")
+    if text and not text.endswith("\n"):
+        lines[-1] += "\n"
+    sections = _sections(lines)
+    if any(
+        re.match(r'^\s*(?:mcp_servers|[\'\"]mcp_servers[\'\"])\s*=', line)
+        for line in lines
+    ):
+        raise ActivationError("unsupported_managed_mcp_section")
+    for section_name, defaults in MCP_SECTION_DEFAULTS.items():
+        if section_name in sections:
+            continue
+        server_name = section_name.rsplit(".", 1)[1]
+        parent = sections.get("mcp_servers")
+        if parent and any(
+            re.match(rf'^\s*(?:{re.escape(server_name)}|[\'\"]{re.escape(server_name)}[\'\"])\s*=', line)
+            for line in lines[parent[0] + 1:parent[1]]
+        ):
+            raise ActivationError("unsupported_managed_mcp_section")
+        if any(
+            re.fullmatch(r"[\"']mcp_servers[\"']", re.sub(r"\s+", "", name))
+            for name in sections
+        ):
+            raise ActivationError("unsupported_managed_mcp_section")
+        if any(
+            re.fullmatch(
+                rf'(?:mcp_servers|[\'\"]mcp_servers[\'\"])\.(?:{re.escape(server_name)}|[\'\"]{re.escape(server_name)}[\'\"])',
+                re.sub(r"\s+", "", name),
+            )
+            for name in sections
+        ):
+            raise ActivationError("unsupported_managed_mcp_section")
+        if any(
+            re.match(
+                rf'^\s*(?:mcp_servers|[\'\"]mcp_servers[\'\"])\s*\.\s*'
+                rf'(?:{re.escape(server_name)}|[\'\"]{re.escape(server_name)}[\'\"])(?:\s*\.|\s*=)',
+                line,
+            )
+            for line in lines
+        ):
+            raise ActivationError("unsupported_managed_mcp_section")
+        if lines and lines[-1].strip():
+            lines.append("\n")
+        lines.append(f"[{section_name}]\n")
+        lines.extend(defaults)
+        sections = _sections(lines)
+    managed_sections = set(MCP_FLAGS)
+    for name, (start, stop) in sections.items():
+        if name in managed_sections and any(
+            QUOTED_MANAGED_KEY.match(line) for line in lines[start + 1:stop]
+        ):
+            raise ActivationError("unsupported_quoted_managed_key")
+    for name, (start, stop) in sections.items():
+        xcode_match = XCODE_SECTION.search(name)
+        if xcode_match and (
+            xcode_match.group("prefix") != "mcp_servers"
+            or xcode_match.group("token") != "xcodebuildmcp"
+        ):
+            raise ActivationError("unsupported_quoted_managed_section")
+        if xcode_match:
+            if _section_bool(lines, start, stop, "enabled") is True:
+                raise ActivationError("xcodebuildmcp_enabled")
+    for section_name, flags in MCP_FLAGS.items():
+        lines = _merge_section(lines, section_name, flags)
+    merged = "".join(lines)
+    verified_lines = merged.splitlines(keepends=True)
+    verified_sections = _sections(verified_lines)
+    for section_name, flags in MCP_FLAGS.items():
+        start, stop = verified_sections[section_name]
+        for key, expected in flags.items():
+            if _section_bool(verified_lines, start, stop, key) is not expected:
+                raise ActivationError("mcp_flag_verification_failed")
+    return merged
+
+
+def _merge_section(lines: list[str], section_name: str, flags: dict[str, bool]) -> list[str]:
+    sections = _sections(lines)
+    start, stop = sections[section_name]
+    positions: dict[str, int] = {}
+    for index in range(start + 1, stop):
+        match = KEY.match(lines[index].rstrip("\n"))
+        if match and match.group(2) in flags:
+            if match.group(2) in positions:
+                raise ActivationError("duplicate_config_key")
+            raw = lines[index].split("=", 1)[1].split("#", 1)[0].strip()
+            if raw not in {"true", "false"}:
+                raise ActivationError("invalid_config_boolean")
+            positions[match.group(2)] = index
+    additions: list[str] = []
+    for key, value in flags.items():
+        rendered = f"{key} = {'true' if value else 'false'}\n"
+        if key in positions:
+            lines[positions[key]] = rendered
+        else:
+            additions.append(rendered)
+    if additions:
+        lines[stop:stop] = additions
+    return lines
+
+
+def activate(source_root: Path, runtime_home: Path, user_home: Path) -> bool:
+    source_root = _safe_root(source_root, "source_root")
+    runtime_home = _safe_root(runtime_home, "runtime_home")
+    user_home = _safe_root(user_home, "user_home")
+    projections = source_root / "core-skills/projections/codex"
+    router_source = source_root / "variants/codex/home/registry/modules/CMA_REPO_TOOLS.md"
+    config = runtime_home / "config.toml"
+    router_target = runtime_home / "registry/modules/CMA_REPO_TOOLS.md"
+    official_root = user_home / ".agents/skills"
+    legacy_root = runtime_home / "skills"
+    backup_root = runtime_home / "backups"
+    if not projections.is_dir() or not router_source.is_file() or not config.is_file():
+        raise ActivationError("missing_source_or_runtime")
+    if config.is_symlink() or router_target.is_symlink():
+        raise ActivationError("unsafe_managed_target")
+    _assert_safe_parent_chain(official_root, user_home)
+    _assert_safe_parent_chain(legacy_root, runtime_home)
+    _assert_safe_parent_chain(router_target.parent, runtime_home)
+    _assert_safe_parent_chain(backup_root, runtime_home)
+
+    skill_creates: list[
+        tuple[Path, Path, tuple[int, int, int], str]
+    ] = []
+    for skill in SKILLS:
+        source = projections / skill
+        if not source.is_dir():
+            raise ActivationError("missing_skill_projection")
+        _assert_regular_tree(source)
+        official = official_root / skill
+        legacy = legacy_root / skill
+        official_present = official.exists() or official.is_symlink()
+        legacy_present = legacy.exists() or legacy.is_symlink()
+        if official_present and legacy_present:
+            raise ActivationError("duplicate_skill_route")
+        existing = official if official_present else legacy if legacy_present else None
+        if existing is not None:
+            _assert_regular_tree(existing)
+            if skill == "graphify" and existing == legacy:
+                continue
+            if _tree_fingerprint(existing) != _tree_fingerprint(source):
+                raise ActivationError("managed_skill_conflict")
+            continue
+        skill_creates.append((
+            source, official, _identity(source.stat()), _tree_fingerprint(source),
+        ))
+
+    runtime_fd = _open_dir_fd(runtime_home)
+    user_fd = _open_dir_fd(user_home)
+    agents_fd = registry_fd = official_fd = router_fd = backups_fd = backup_fd = None
+    created_skills: list[tuple[str, tuple[int, int, int]]] = []
+    config_written: tuple[int, int, int] | None = None
+    backup_identity: tuple[int, int, int] | None = None
+    backup_name = ""
+    agents_existed = official_root.parent.exists()
+    official_existed = official_root.exists()
+    registry_existed = router_target.parent.parent.exists()
+    router_parent_existed = router_target.parent.exists()
+    backups_existed = backup_root.exists()
+    try:
+        original_config, config_mode, config_identity = _read_file_at(
+            runtime_fd, "config.toml", 2_000_000,
+        )
+        try:
+            merged_config = _merge_mcp_flags(original_config.decode("utf-8")).encode("utf-8")
+        except UnicodeError as error:
+            raise ActivationError("invalid_config_text") from error
+        router_source_bytes = _read_regular_path(router_source, 200_000)
+
+        agents_fd = _open_chain(user_fd, (".agents",), create=True)
+        official_fd = _open_chain(agents_fd, ("skills",), create=True)
+        registry_fd = _open_chain(runtime_fd, ("registry",), create=True)
+        router_fd = _open_chain(registry_fd, ("modules",), create=True)
+        backups_fd = _open_chain(runtime_fd, ("backups",), create=True)
+
+        try:
+            router_original, router_mode, router_identity = _read_file_at(
+                router_fd, "CMA_REPO_TOOLS.md", 200_000,
+            )
+            router_existed = True
+        except FileNotFoundError:
+            router_original, router_mode, router_identity = b"", 0o644, None
+            router_existed = False
+        router_changed = router_original != router_source_bytes
+        config_changed = original_config != merged_config
+        if not skill_creates and not router_changed and not config_changed:
+            if not official_existed:
+                os.rmdir("skills", dir_fd=agents_fd)
+            if not agents_existed:
+                os.rmdir(".agents", dir_fd=user_fd)
+            if not router_parent_existed:
+                os.rmdir("modules", dir_fd=registry_fd)
+            if not registry_existed:
+                os.rmdir("registry", dir_fd=runtime_fd)
+            if not backups_existed:
+                os.rmdir("backups", dir_fd=runtime_fd)
+            return False
+
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
+        backup_name = f"cma-core-tools-{timestamp}-{os.getpid()}"
+        os.mkdir(backup_name, 0o700, dir_fd=backups_fd)
+        backup_identity = _identity_at(backups_fd, backup_name)
+        backup_fd = _open_chain(backups_fd, (backup_name,), create=False)
+        manifest: dict[str, list[str]] = {
+            "created": [target.name for _, target, _, _ in skill_creates], "modified": [],
+        }
+        if config_changed:
+            _atomic_bytes_at(original_config, backup_fd, "config.toml", 0o600)
+            manifest["modified"].append("config.toml")
+        if router_changed and router_existed:
+            _atomic_bytes_at(router_original, backup_fd, "CMA_REPO_TOOLS.md", 0o600)
+            manifest["modified"].append("CMA_REPO_TOOLS.md")
+        _atomic_bytes_at(
+            json.dumps(manifest, sort_keys=True).encode("utf-8"),
+            backup_fd, "manifest.json", 0o600,
+        )
+        if os.environ.get("CMA_ACTIVATE_FAIL_AFTER") == "backup":
+            raise ActivationError("injected_failure")
+
+        for source, target, source_identity, source_fingerprint in skill_creates:
+            try:
+                os.stat(target.name, dir_fd=official_fd, follow_symlinks=False)
+            except FileNotFoundError:
+                pass
+            else:
+                raise ActivationError("managed_skill_conflict")
+            created_skills.append((target.name, _copy_tree_at(
+                source, official_fd, target.name, source_identity, source_fingerprint,
+            )))
+        if os.environ.get("CMA_ACTIVATE_FAIL_AFTER") == "skills":
+            raise ActivationError("injected_failure")
+
+        if config_changed:
+            if _identity_at(runtime_fd, "config.toml") != config_identity:
+                raise ActivationError("unstable_managed_file")
+            config_written = _atomic_replace_bytes_at(
+                runtime_fd, "config.toml", merged_config, config_mode, config_identity,
+            )
+        if os.environ.get("CMA_ACTIVATE_FAIL_AFTER") == "config":
+            raise ActivationError("injected_failure")
+        if os.environ.get("CMA_ACTIVATE_FAIL_AFTER") == "module":
+            raise ActivationError("injected_failure")
+
+        # Router publication is deliberately last: after this atomic operation
+        # succeeds, no fallible work remains and a new router never needs deletion.
+        if router_changed:
+            if router_existed and _identity_at(router_fd, "CMA_REPO_TOOLS.md") != router_identity:
+                raise ActivationError("unstable_managed_file")
+            if router_existed:
+                _atomic_replace_bytes_at(
+                    router_fd, "CMA_REPO_TOOLS.md", router_source_bytes,
+                    router_mode, router_identity,
+                )
+            else:
+                _atomic_bytes_at(
+                    router_source_bytes, router_fd, "CMA_REPO_TOOLS.md", router_mode,
+                )
+        return True
+    except Exception:
+        if config_written is not None:
+            if _identity_at(runtime_fd, "config.toml") != config_written:
+                raise ActivationError("rollback_identity_changed")
+            _atomic_replace_bytes_at(
+                runtime_fd, "config.toml", original_config, config_mode, config_written,
+            )
+        if official_fd is not None:
+            for name, identity in reversed(created_skills):
+                _remove_tree_at(official_fd, name, identity)
+        if backup_identity is not None and backups_fd is not None:
+            if backup_fd is not None:
+                os.close(backup_fd)
+                backup_fd = None
+            _remove_tree_at(backups_fd, backup_name, backup_identity)
+        if not official_existed and agents_fd is not None:
+            try:
+                os.rmdir("skills", dir_fd=agents_fd)
+            except OSError:
+                pass
+        if not agents_existed:
+            try:
+                os.rmdir(".agents", dir_fd=user_fd)
+            except OSError:
+                pass
+        if not router_parent_existed and registry_fd is not None:
+            try:
+                os.rmdir("modules", dir_fd=registry_fd)
+            except OSError:
+                pass
+        if not registry_existed:
+            try:
+                os.rmdir("registry", dir_fd=runtime_fd)
+            except OSError:
+                pass
+        if not backups_existed:
+            try:
+                os.rmdir("backups", dir_fd=runtime_fd)
+            except OSError:
+                pass
+        raise
+    finally:
+        for descriptor in (backup_fd, backups_fd, router_fd, registry_fd, official_fd, agents_fd):
+            if descriptor is not None:
+                os.close(descriptor)
+        os.close(user_fd)
+        os.close(runtime_fd)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Activate protected CMA Codex core-tool skills.")
+    parser.add_argument("--runtime-home", type=Path, required=True)
+    parser.add_argument("--user-home", type=Path, required=True)
+    parser.add_argument("--source-root", type=Path, default=Path(__file__).resolve().parents[1])
+    args = parser.parse_args()
+    try:
+        changed = activate(args.source_root, args.runtime_home, args.user_home)
+    except ActivationError as error:
+        _emit("failed", False, code=str(error))
+        return 1
+    except Exception:
+        _emit("failed", False, code="activation_failed")
+        return 1
+    _emit("passed", True, changed=changed)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
