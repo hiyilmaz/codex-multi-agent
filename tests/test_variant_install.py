@@ -27,11 +27,11 @@ class VariantInstallTests(unittest.TestCase):
                     current[key] = value[1:-1]
         return variants
 
-    def test_catalog_registers_four_complete_unique_variants(self) -> None:
+    def test_catalog_registers_three_complete_unique_variants(self) -> None:
         variants = self.variants()
         self.assertEqual(
             [item["id"] for item in variants],
-            ["codex", "dolphin", "claude", "opencode"],
+            ["codex", "claude", "opencode"],
         )
         self.assertEqual(len({item["id"] for item in variants}), len(variants))
         required = {"name", "home", "default_home", "policy_file", "settings_file", "agent_format"}
@@ -54,6 +54,24 @@ class VariantInstallTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         listed = [line.split("\t", 1)[0] for line in result.stdout.splitlines()]
         self.assertEqual(listed, [item["id"] for item in self.variants()])
+
+    def test_retired_dolphin_variant_is_rejected_without_touching_runtime(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            runtime = root / "dolphin-runtime"
+            runtime.mkdir()
+            marker = runtime / "preserve.txt"
+            marker.write_text("keep", encoding="utf-8")
+            result = subprocess.run(
+                (str(INSTALLER), "--variant", "dolphin", "--runtime-home", str(runtime)),
+                cwd=REPO_ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("unknown variant", result.stderr.lower())
+            self.assertEqual(marker.read_text(encoding="utf-8"), "keep")
 
     def test_each_provider_installs_declared_policy_and_settings(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -137,6 +155,105 @@ class VariantInstallTests(unittest.TestCase):
                     self.assertTrue(
                         (expected / "prompts/recreate-global-subagents.md").is_file()
                     )
+
+    def test_native_codex_default_install_activates_core_tools(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            home = root / "home"
+            environment = {**os.environ, "HOME": str(home)}
+            environment.pop("CODEX_HOME", None)
+            result = subprocess.run(
+                (str(INSTALLER), "--variant", "codex"),
+                cwd=REPO_ROOT,
+                env=environment,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((home / ".codex/AGENTS.md").is_file())
+            for skill in ("serena", "ast-grep", "context7", "cplt"):
+                with self.subTest(skill=skill):
+                    self.assertTrue((home / ".agents/skills" / skill / "SKILL.md").is_file())
+
+    def test_existing_native_codex_config_receives_missing_managed_mcp_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            home = root / "home"
+            config = home / ".codex/config.toml"
+            config.parent.mkdir(parents=True)
+            config.write_text('private_marker = "preserved"\n', encoding="utf-8")
+            environment = {**os.environ, "HOME": str(home)}
+            environment.pop("CODEX_HOME", None)
+            result = subprocess.run(
+                (str(INSTALLER), "--variant", "codex"),
+                cwd=REPO_ROOT,
+                env=environment,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            merged = config.read_text(encoding="utf-8")
+            self.assertIn('private_marker = "preserved"', merged)
+            self.assertIn("[mcp_servers.serena]", merged)
+            self.assertIn("[mcp_servers.context7]", merged)
+            self.assertIn("required = true", merged)
+
+    def test_native_codex_setup_propagates_core_tool_activation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            home = root / "home"
+            environment = {**os.environ, "HOME": str(home)}
+            environment.pop("CODEX_HOME", None)
+            result = subprocess.run(
+                (str(SETUP), "--variant", "codex"),
+                cwd=REPO_ROOT,
+                env=environment,
+                input="\ny\nn\nn\n\n\n\n\nn\n",
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((home / ".agents/skills/context7/SKILL.md").is_file())
+
+    def test_custom_codex_runtime_does_not_activate_core_tools(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            home = root / "home"
+            runtime = root / "custom-codex"
+            result = subprocess.run(
+                (str(INSTALLER), "--variant", "codex", "--runtime-home", str(runtime)),
+                cwd=REPO_ROOT,
+                env={**os.environ, "HOME": str(home)},
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((runtime / "AGENTS.md").is_file())
+            self.assertFalse((home / ".agents/skills").exists())
+
+    def test_native_activation_failure_is_terminal_for_installer(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            home = root / "home"
+            conflict = home / ".agents/skills/serena/SKILL.md"
+            conflict.parent.mkdir(parents=True)
+            conflict.write_text("conflicting managed skill\n", encoding="utf-8")
+            environment = {**os.environ, "HOME": str(home)}
+            environment.pop("CODEX_HOME", None)
+            result = subprocess.run(
+                (str(INSTALLER), "--variant", "codex"),
+                cwd=REPO_ROOT,
+                env=environment,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn("Variant installed: codex", result.stdout)
 
     def test_existing_variant_prompt_is_untouched_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -380,6 +497,19 @@ class VariantInstallTests(unittest.TestCase):
                 self.assertIn("Agent SDK", text)
                 self.assertIn(".claude", text)
                 self.assertNotIn(".llm-runtimes/claude", text)
+
+    def test_runtime_docs_describe_native_codex_core_tool_activation(self) -> None:
+        paths = (
+            "README.md", "USAGE_GUIDE.md", "COMMAND_REFERENCE.md",
+            "TURKCE_KURULUM_REHBERI.md", "variants/codex/home/README.md",
+        )
+        for path in paths:
+            text = (REPO_ROOT / path).read_text(encoding="utf-8")
+            with self.subTest(path=path):
+                self.assertIn("codex-native-activate", text)
+                self.assertIn("Context7", text)
+                self.assertIn("xcodebuildmcp", text)
+                self.assertIn("cplt", text)
 
     def test_runtime_home_and_codex_home_aliases_are_equivalent(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

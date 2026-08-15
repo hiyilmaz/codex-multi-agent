@@ -431,21 +431,9 @@ class RecordArchivePackagingTests(unittest.TestCase):
     def read(self, relative_path: str) -> str:
         return (REPO_ROOT / relative_path).read_text(encoding="utf-8")
 
-    def test_skill_is_identical_in_both_runtime_variants(self) -> None:
-        codex = self.read(
-            "variants/codex/home/skills/record-archive/SKILL.md"
-        )
-        dolphin = self.read(
-            "variants/dolphin/home/skills/record-archive/SKILL.md"
-        )
-        self.assertEqual(codex, dolphin)
-        self.assertEqual(
-            (REPO_ROOT / SCRIPT_RELATIVE).read_bytes(),
-            (
-                REPO_ROOT
-                / "variants/dolphin/home/skills/record-archive/scripts/record_archive.py"
-            ).read_bytes(),
-        )
+    def test_codex_skill_and_script_are_packaged(self) -> None:
+        self.assertTrue((REPO_ROOT / "variants/codex/home/skills/record-archive/SKILL.md").is_file())
+        self.assertTrue((REPO_ROOT / SCRIPT_RELATIVE).is_file())
 
     def test_skill_defines_sparse_event_triggers_and_retention(self) -> None:
         text = " ".join(self.read(
@@ -473,14 +461,13 @@ class RecordArchivePackagingTests(unittest.TestCase):
         for path in (
             "GLOBAL_AGENTS_TEMPLATE.md",
             "variants/codex/home/AGENTS.md",
-            "variants/dolphin/home/AGENTS.md",
         ):
             with self.subTest(path=path):
                 text = self.read(path)
                 self.assertIn("Event-Driven Record Archiving", text)
                 self.assertIn("record-archive", text)
                 self.assertIn("Do not check records at every task closure", text)
-        for variant in ("codex", "dolphin"):
+        for variant in ("codex",):
             index = self.read(
                 f"variants/{variant}/home/registry/SKILLS_INDEX.md"
             )
@@ -491,7 +478,7 @@ class RecordArchivePackagingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             environment = {**os.environ, "HOME": str(root / "home")}
-            for variant in ("codex", "dolphin"):
+            for variant in ("codex",):
                 runtime = root / variant
                 result = subprocess.run(
                     (

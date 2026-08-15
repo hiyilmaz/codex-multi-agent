@@ -208,7 +208,7 @@ cp "$TEMPLATE_DIR/PROJECT_CONFIG_PROMPT.md" "$PROJECT_PATH/.codex/prompts/fill-p
 if [[ "$VARIANT_ID" == "opencode" ]]; then
   mkdir -p "$PROJECT_PATH/.opencode"
   cp "$TEMPLATE_DIR/OPENCODE_PROJECT_CONFIG_EXAMPLE.json" "$PROJECT_PATH/.opencode/opencode.json"
-elif [[ "$VARIANT_ID" == "codex" || "$VARIANT_ID" == "dolphin" ]]; then
+elif [[ "$VARIANT_ID" == "codex" ]]; then
   cp "$TEMPLATE_DIR/CODEX_CONFIG_EXAMPLE.toml" "$PROJECT_PATH/.codex/config.toml"
 fi
 if [[ "$VARIANT_ID" == "claude" ]]; then
@@ -221,7 +221,7 @@ fi
 echo "Created: $PROJECT_PATH/AGENTS.md"
 if [[ "$VARIANT_ID" == "opencode" ]]; then
   echo "Created: $PROJECT_PATH/.opencode/opencode.json"
-elif [[ "$VARIANT_ID" == "codex" || "$VARIANT_ID" == "dolphin" ]]; then
+elif [[ "$VARIANT_ID" == "codex" ]]; then
   echo "Created: $PROJECT_PATH/.codex/config.toml"
 fi
 echo "Created: $PROJECT_PATH/.codex/prompts/fill-project-configuration.md"

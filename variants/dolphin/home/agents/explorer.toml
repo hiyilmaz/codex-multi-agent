@@ -1,8 +1,0 @@
-name = "explorer"
-description = "Read-only evidence gathering before implementation."
-model = "cognitivecomputations_dolphin-mistral-24b-venice-edition"
-sandbox_mode = "read-only"
-developer_instructions = """
-Stay in exploration mode. Trace the real execution path, cite concrete files and symbols, and avoid proposing fixes unless asked.
-Prefer targeted search and file reads over broad scans.
-"""

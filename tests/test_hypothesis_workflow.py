@@ -40,10 +40,8 @@ class HypothesisWorkflowContractTests(unittest.TestCase):
             / "SKILL.md"
         )
 
-    def test_skill_is_identical_in_both_runtime_variants(self) -> None:
-        codex = self.skill_path("codex").read_text(encoding="utf-8")
-        dolphin = self.skill_path("dolphin").read_text(encoding="utf-8")
-        self.assertEqual(codex, dolphin)
+    def test_codex_skill_is_packaged(self) -> None:
+        self.assertTrue(self.skill_path("codex").is_file())
 
     def test_skill_defines_positive_and_negative_activation_contracts(self) -> None:
         text = self.skill_path("codex").read_text(encoding="utf-8").lower()
@@ -73,7 +71,6 @@ class HypothesisWorkflowContractTests(unittest.TestCase):
         policies = (
             "GLOBAL_AGENTS_TEMPLATE.md",
             "variants/codex/home/AGENTS.md",
-            "variants/dolphin/home/AGENTS.md",
         )
         for policy in policies:
             text = self.read(policy)
@@ -84,7 +81,7 @@ class HypothesisWorkflowContractTests(unittest.TestCase):
         self.assertNotIn(SKILL_NAME, self.read("PROJECT_AGENTS_TEMPLATE.md"))
 
     def test_registries_and_orchestration_policy_expose_the_skill(self) -> None:
-        for variant in ("codex", "dolphin"):
+        for variant in ("codex",):
             with self.subTest(variant=variant):
                 index = self.read(
                     f"variants/{variant}/home/registry/SKILLS_INDEX.md"
@@ -101,7 +98,7 @@ class HypothesisWorkflowContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             environment = {**os.environ, "HOME": str(root / "home")}
-            for variant in ("codex", "dolphin"):
+            for variant in ("codex",):
                 runtime = root / variant
                 result = subprocess.run(
                     (

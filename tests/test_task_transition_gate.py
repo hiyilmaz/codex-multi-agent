@@ -10,7 +10,6 @@ INSTALLER = REPO_ROOT / "bin/codex-user-install"
 POLICIES = (
     "GLOBAL_AGENTS_TEMPLATE.md",
     "variants/codex/home/AGENTS.md",
-    "variants/dolphin/home/AGENTS.md",
     "variants/claude/home/CLAUDE.md",
     "variants/opencode/home/AGENTS.md",
 )
@@ -45,8 +44,7 @@ class TaskTransitionGateTests(unittest.TestCase):
             self.assertNotIn(marker, lowered)
 
     def test_all_canonical_policies_define_the_complete_gate(self) -> None:
-        self.assertEqual(len(POLICIES), 5)
-        self.assertIn("variants/dolphin/home/AGENTS.md", POLICIES)
+        self.assertEqual(len(POLICIES), 4)
         self.assertIn("variants/opencode/home/AGENTS.md", POLICIES)
         for relative in POLICIES:
             with self.subTest(path=relative):
@@ -71,7 +69,7 @@ class TaskTransitionGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             environment = {**os.environ, "HOME": str(root / "home")}
-            for variant in ("codex", "dolphin", "claude", "opencode"):
+            for variant in ("codex", "claude", "opencode"):
                 runtime = root / variant
                 result = subprocess.run(
                     (

@@ -60,7 +60,6 @@ class OrchestrationContractTests(unittest.TestCase):
         paths = (
             "GLOBAL_AGENTS_TEMPLATE.md",
             "variants/codex/home/AGENTS.md",
-            "variants/dolphin/home/AGENTS.md",
             "variants/claude/home/CLAUDE.md",
         )
         for path in paths:
@@ -76,8 +75,6 @@ class OrchestrationContractTests(unittest.TestCase):
         paths = (
             "GLOBAL_AGENTS_TEMPLATE.md",
             "variants/codex/home/registry/ORCHESTRATION.md",
-            "variants/dolphin/home/AGENTS.md",
-            "variants/dolphin/home/registry/ORCHESTRATION.md",
             "variants/claude/home/CLAUDE.md",
             "variants/claude/home/registry/ORCHESTRATION.md",
         )
@@ -105,7 +102,7 @@ class OrchestrationContractTests(unittest.TestCase):
             "Do not repeat",
             "Stop condition:",
         )
-        for variant in ("codex", "dolphin", "claude"):
+        for variant in ("codex", "claude"):
             for role in ROLES:
                 extension = "md" if variant == "claude" else "toml"
                 path = f"variants/{variant}/home/agents/{role}.{extension}"
@@ -135,7 +132,7 @@ class OrchestrationContractTests(unittest.TestCase):
                 "NO_SECURITY_IMPACT",
             ),
         }
-        for variant in ("codex", "dolphin", "claude"):
+        for variant in ("codex", "claude"):
             for role, markers in role_markers.items():
                 extension = "md" if variant == "claude" else "toml"
                 path = f"variants/{variant}/home/agents/{role}.{extension}"
@@ -147,7 +144,6 @@ class OrchestrationContractTests(unittest.TestCase):
     def test_tdd_workflow_rejects_false_positive_tests(self) -> None:
         paths = (
             "variants/codex/home/skills/tdd-workflow/SKILL.md",
-            "variants/dolphin/home/skills/tdd-workflow/SKILL.md",
         )
         required = (
             "Test Integrity Guardrails",
@@ -164,7 +160,7 @@ class OrchestrationContractTests(unittest.TestCase):
                     self.assertIn(marker, text)
 
     def test_agent_files_remain_minimal_toml_contracts(self) -> None:
-        for variant in ("codex", "dolphin"):
+        for variant in ("codex",):
             for role in ROLES:
                 path = f"variants/{variant}/home/agents/{role}.toml"
                 text = self.read(path)
@@ -181,7 +177,7 @@ class OrchestrationContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             environment = {**os.environ, "HOME": str(root / "home")}
-            for variant in ("codex", "dolphin", "claude"):
+            for variant in ("codex", "claude"):
                 runtime = root / variant
                 result = subprocess.run(
                     (

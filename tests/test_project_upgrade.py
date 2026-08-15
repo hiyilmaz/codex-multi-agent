@@ -76,20 +76,14 @@ class ProjectUpgradeTests(unittest.TestCase):
                 "`EVIDENCE_MODE` must be exactly `enable` or `disable`."
             )
 
-    def test_fresh_project_records_state_and_is_idempotent(self) -> None:
-        project = self.initialize("fresh", "dolphin")
-        state = json.loads((project / ".codex/template-state.json").read_text())
-
-        self.assertEqual(state["schema_version"], 2)
-        self.assertEqual(state["variants"], ["dolphin"])
-        self.assertEqual(state["files"]["AGENTS.md"]["mode"], "merge")
-        self.assertEqual(
-            state["files"][".codex/config.toml"]["mode"], "managed"
+    def test_dolphin_project_init_is_rejected_without_creating_state(self) -> None:
+        project = self.root / "fresh"
+        project.mkdir()
+        result = self.run_command(
+            PROJECT_INIT, "--variant", "dolphin", project, input_text="y\n", check=False
         )
-
-        result = self.run_command(PROJECT_UPGRADE, "--dry-run", project)
-        self.assertIn("AGENTS.md: UNCHANGED", result.stdout)
-        self.assertIn(".codex/template-state.json: UNCHANGED", result.stdout)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse((project / ".codex/template-state.json").exists())
 
     def test_claude_init_creates_minimal_bridge_and_state(self) -> None:
         project = self.initialize("claude-project", "claude")
@@ -458,7 +452,7 @@ class ProjectUpgradeTests(unittest.TestCase):
             ".codex/prompts/fill-project-configuration.md": sha256(prompt),
         }
 
-        for variant in ("dolphin", "claude", "opencode"):
+        for variant in ("claude", "opencode"):
             result = self.run_command(
                 PROJECT_INIT, "--variant", variant, project, input_text="y\n"
             )
@@ -476,7 +470,7 @@ class ProjectUpgradeTests(unittest.TestCase):
         state = json.loads((project / ".codex/template-state.json").read_text())
         self.assertEqual(state["schema_version"], 2)
         self.assertEqual(
-            state["variants"], ["codex", "dolphin", "claude", "opencode"]
+            state["variants"], ["codex", "claude", "opencode"]
         )
         self.assertIn(".codex/config.toml", state["files"])
         self.assertIn(".claude/settings.json", state["files"])
