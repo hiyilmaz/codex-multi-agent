@@ -1,0 +1,5 @@
+interface:
+  display_name: "OSV-Scanner"
+  short_description: "Detect dependency and package vulnerabilities"
+policy:
+  allow_implicit_invocation: true

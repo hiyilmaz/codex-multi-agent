@@ -1,0 +1,530 @@
+#!/usr/bin/env python3
+"""Read-only Phase 6 validator for local-intelligence core skills."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import stat
+import sys
+from pathlib import Path
+from typing import Any
+
+
+SKILLS = ("graphify", "serena", "ast-grep")
+PLATFORMS = ("codex", "claude", "opencode")
+SECTIONS = (
+    "Governance Metadata", "Purpose", "Use When", "Do Not Use When",
+    "Preconditions", "Workflow", "Stop Conditions", "Output Contract",
+    "Safety / Authority Boundary", "Tool Unavailable Behavior",
+)
+ROUTES = {
+    "architecture": "graphify", "cross-file-flow": "graphify",
+    "symbol-references": "serena", "refactor-radius": "serena",
+    "structural-ast": "ast-grep", "syntax-context": "ast-grep",
+    "exact-text": "rg", "filename-path": "rg", "single-file-read": "rg",
+}
+CONTRACTS = {
+    "graphify": {
+        "display": "Graphify", "category": "architecture-analysis",
+        "tool": "graphify",
+        "short": "Map architecture and cross-file flow",
+        "description": "Use for architecture, cross-file relationships, and call or data flow; not for text, path, single-file, symbol, or AST lookup.",
+        "purpose": "architecture, cross-file relationships, and call or data flow",
+        "boundary": "- Exact text or path lookup, filename lookup, or a single known-file read; use `rg` or direct read.",
+    },
+    "serena": {
+        "display": "Serena", "category": "symbol-intelligence",
+        "tool": "serena",
+        "short": "Find symbols, references, and refactor radius",
+        "description": "Use for symbols, definitions, references, and refactor radius; not for text, architecture, or structural AST search.",
+        "purpose": "symbols, definitions, references, and refactor radius",
+        "boundary": "- Architecture, cross-file call/data flow, or component coupling; use Graphify.",
+    },
+    "ast-grep": {
+        "display": "ast-grep", "category": "structural-search",
+        "tool": "ast-grep",
+        "short": "Search source with structural AST patterns",
+        "description": "Use for structural AST search and syntax-aware matching; not for text, filenames, architecture, or ordinary symbol references.",
+        "purpose": "structural AST search and syntax-aware matching",
+        "boundary": "- Ordinary symbol definition, reference, or refactor-radius lookup; use Serena.",
+    },
+}
+SAFETY_CONTRACTS = {
+    "graphify": """- Existing-graph queries and source reads are read-only by default.
+- This skill never authorizes installation, configuration, graph creation or update, code changes, network access, or broader repository access.
+- Do not expose secrets; minimize and redact sensitive evidence.""",
+    "serena": """- Symbol discovery is read-only by default.
+- This skill never authorizes installation, configuration, indexing that mutates project state, refactoring, code changes, or broader repository access.
+- Do not expose secrets; minimize and redact sensitive evidence.""",
+    "ast-grep": """- Structural search is read-only by default; do not use rewrite or update modes.
+- This skill never authorizes installation, configuration, code transformation, file changes, or broader repository access.
+- Do not expose secrets; minimize and redact sensitive evidence.""",
+}
+UNAVAILABLE_NEEDS = {
+    "graphify": "architecture", "serena": "symbol", "ast-grep": "structural",
+}
+ROUTING_HASHES = {
+    "codex": "f533ea2d6e8767e3b9844d9abbc89dca020dccdc829f1b956f1e1ebfbaa9935b",
+    "claude": "0c6ce866d5df363e18d30b364844dc6f7d5d4343ea194cb10eb3f49478b85292",
+    "opencode": "ac1d677afb768eb3c11869c5967fc43cad2da98f5abf197fe9049f32d245f2f6",
+}
+UNAVAILABLE_MARKERS = (
+    "availability=unavailable", "status=unverified", "success=false",
+    "action=stop",
+)
+ROUTER_ROW = (
+    "| Repository text/path, architecture, AST, symbols, dependency, security, "
+    "or public-source discovery | `{}` |"
+)
+ROUTER_REFS = {
+    "codex": "~/.codex/registry/modules/CMA_REPO_TOOLS.md",
+    "claude": "${CLAUDE_CONFIG_DIR}/registry/modules/CMA_REPO_TOOLS.md",
+    "opencode": "~/.config/opencode/registry/modules/CMA_REPO_TOOLS.md",
+}
+INSTRUCTION_FILES = {
+    "codex": "AGENTS.md", "claude": "CLAUDE.md", "opencode": "AGENTS.md",
+}
+
+
+class InputError(Exception):
+    """Invalid or unsafe validator input."""
+
+
+def finding(code: str, *, skill: str | None = None,
+            platform: str | None = None, field: str | None = None) -> dict[str, str]:
+    item = {"code": code}
+    if skill is not None:
+        item["skill"] = skill
+    if platform is not None:
+        item["platform"] = platform
+    if field is not None:
+        item["field"] = field
+    return item
+
+
+def _pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    output: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in output:
+            raise InputError("duplicate JSON key")
+        output[key] = value
+    return output
+
+
+def _read_text(path: Path, maximum: int) -> str:
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+        try:
+            before = os.fstat(descriptor)
+            if not stat.S_ISREG(before.st_mode) or before.st_size > maximum:
+                raise InputError("invalid input file")
+            chunks = []
+            remaining = maximum + 1
+            while remaining:
+                chunk = os.read(descriptor, min(65536, remaining))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                remaining -= len(chunk)
+            after = os.fstat(descriptor)
+        finally:
+            os.close(descriptor)
+    except InputError:
+        raise
+    except OSError as error:
+        raise InputError("invalid input file") from error
+    identity = lambda value: (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns)
+    if identity(before) != identity(after) or sum(map(len, chunks)) > maximum:
+        raise InputError("input changed during read")
+    try:
+        return b"".join(chunks).decode("utf-8")
+    except UnicodeError as error:
+        raise InputError("invalid text input") from error
+
+
+def _bounded_json(value: Any) -> bool:
+    stack = [(value, 1)]
+    nodes = 0
+    while stack:
+        current, depth = stack.pop()
+        nodes += 1
+        if depth > 64 or nodes > 50_000:
+            return False
+        if isinstance(current, dict):
+            stack.extend((item, depth + 1) for item in current.values())
+        elif isinstance(current, list):
+            stack.extend((item, depth + 1) for item in current)
+    return True
+
+
+def _normalize_text(value: str) -> str:
+    return "\n".join(
+        " ".join(line.split()) for line in value.strip().splitlines() if line.strip()
+    )
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(_read_text(path, 1_000_000), object_pairs_hook=_pairs)
+    except InputError:
+        raise
+    except (OSError, UnicodeError, json.JSONDecodeError, RecursionError) as error:
+        raise InputError("invalid JSON input") from error
+    if not isinstance(value, dict) or not _bounded_json(value):
+        raise InputError("JSON input must be an object")
+    return value
+
+
+def _scalar(value: str) -> object:
+    value = value.strip()
+    if value == "true":
+        return True
+    if value == "false":
+        return False
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        return value[1:-1]
+    return value
+
+
+def parse_skill(path: Path) -> dict[str, Any]:
+    try:
+        text = _read_text(path, 100_000)
+    except InputError:
+        raise
+    except (OSError, UnicodeError) as error:
+        raise InputError("invalid skill file") from error
+    lines = text.splitlines()
+    if not lines or lines[0] != "---":
+        raise InputError("missing skill frontmatter")
+    try:
+        end = lines.index("---", 1)
+    except ValueError as error:
+        raise InputError("unterminated skill frontmatter") from error
+    frontmatter: dict[str, object] = {}
+    for line in lines[1:end]:
+        if not line.strip() or ":" not in line or line.startswith((" ", "\t")):
+            raise InputError("invalid skill frontmatter")
+        key, value = line.split(":", 1)
+        if key in frontmatter:
+            raise InputError("duplicate skill frontmatter")
+        frontmatter[key] = _scalar(value)
+    sections: dict[str, str] = {}
+    current: str | None = None
+    body: list[str] = []
+    content = lines[end + 1:]
+    first_section = next((index for index, line in enumerate(content)
+                          if line.startswith("## ")), len(content))
+    preamble = [line for line in content[:first_section] if line.strip()]
+    if len(preamble) != 1 or re.fullmatch(r"# [^#].+", preamble[0]) is None:
+        raise InputError("invalid skill preamble")
+    headings: list[str] = []
+    for line in content[first_section:]:
+        if line.startswith("## "):
+            if current is not None:
+                if current in sections:
+                    raise InputError("duplicate skill heading")
+                sections[current] = "\n".join(body).strip()
+            current = line[3:].strip()
+            headings.append(current)
+            body = []
+        elif current is not None:
+            if line.startswith("# "):
+                raise InputError("invalid skill heading")
+            body.append(line)
+    if current is not None:
+        if current in sections:
+            raise InputError("duplicate skill heading")
+        sections[current] = "\n".join(body).strip()
+    if tuple(headings) != SECTIONS:
+        raise InputError("invalid skill section order")
+    governance: dict[str, str] = {}
+    for line in sections.get("Governance Metadata", "").splitlines():
+        match = re.fullmatch(r"- ([^:]+): (.+)", line)
+        if match:
+            governance[match.group(1)] = match.group(2)
+    return {"frontmatter": frontmatter, "title": preamble[0], "sections": sections,
+            "governance": governance}
+
+
+def _normalized(parsed: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "title": parsed["title"],
+        "governance": parsed["governance"],
+        "sections": {name: _normalize_text(parsed["sections"].get(name, "")) for name in SECTIONS},
+    }
+
+
+def semantic_fingerprints(root: Path, skill: str) -> dict[str, str]:
+    paths = {"canonical": root / f"core-skills/skills/{skill}/SKILL.md"}
+    paths.update({platform: root / f"core-skills/projections/{platform}/{skill}/SKILL.md"
+                  for platform in PLATFORMS})
+    result = {}
+    for name, path in paths.items():
+        payload = json.dumps(_normalized(parse_skill(path)), sort_keys=True,
+                             separators=(",", ":")).encode()
+        result[name] = hashlib.sha256(payload).hexdigest()
+    return result
+
+
+def _registry_record(root: Path, skill: str) -> dict[str, Any]:
+    registry = load_json(root / "core-skills/registry.json")
+    records = registry.get("skills")
+    if not isinstance(records, list):
+        raise InputError("invalid registry")
+    matches = [record for record in records
+               if isinstance(record, dict) and record.get("id") == skill]
+    if len(matches) != 1:
+        raise InputError("invalid registry record")
+    return matches[0]
+
+
+def _registry_is_valid(root: Path) -> bool:
+    validator = Path(__file__).resolve().with_name("cma-core-skill-governance")
+    try:
+        if validator.parent != Path(__file__).resolve().parent:
+            raise InputError("invalid governance validator")
+        registry = load_json(root / "core-skills/registry.json")
+        source = _read_text(validator, 1_000_000)
+        namespace: dict[str, Any] = {
+            "__name__": "cma_core_skill_governance_dependency",
+            "__file__": str(validator),
+        }
+        exec(compile(source, str(validator), "exec"), namespace)
+        validate = namespace.get("validate_registry")
+        if not callable(validate):
+            raise InputError("invalid governance validator interface")
+        findings = validate(registry)
+    except (Exception, RecursionError) as error:
+        raise InputError("governance validation unavailable") from error
+    if not isinstance(findings, list) or not all(isinstance(item, dict) for item in findings):
+        raise InputError("invalid governance validation result")
+    return not findings
+
+
+def validate_skill(root: Path, skill: str) -> list[dict[str, str]]:
+    findings: list[dict[str, str]] = []
+    contract = CONTRACTS[skill]
+    record = _registry_record(root, skill)
+    expected_governance = {
+        "Stable Skill ID": skill,
+        "Display Name": record.get("display_name"),
+        "Capability Category": record.get("capability_category"),
+        "Core / Protected Status": "core/protected",
+        "Tool Dependency": f"{record.get('tool_dependency', {}).get('mode')}: {record.get('tool_dependency', {}).get('tool_id')}",
+        "Semantic Version": record.get("semantic_version"),
+    }
+    if (record.get("core") is not True or record.get("protected") is not True or
+            record.get("display_name") != contract["display"] or
+            record.get("capability_category") != contract["category"] or
+            record.get("tool_dependency") != {"tool_id": contract["tool"], "mode": "required"}):
+        findings.append(finding("REGISTRY_METADATA_MISMATCH", skill=skill))
+    parsed_by_platform: dict[str, dict[str, Any]] = {}
+    locations = {"canonical": root / f"core-skills/skills/{skill}/SKILL.md"}
+    locations.update({platform: root / f"core-skills/projections/{platform}/{skill}/SKILL.md"
+                      for platform in PLATFORMS})
+    for platform, path in locations.items():
+        try:
+            parsed = parse_skill(path)
+        except InputError:
+            findings.append(finding("INVALID_SKILL", skill=skill, platform=platform))
+            continue
+        parsed_by_platform[platform] = parsed
+        if parsed["title"] != f'# {contract["display"]}':
+            findings.append(finding("TITLE_CONTRACT_MISMATCH", skill=skill, platform=platform))
+        if set(parsed["sections"]) != set(SECTIONS):
+            findings.append(finding("INVALID_SKILL_STRUCTURE", skill=skill, platform=platform))
+        if parsed["governance"] != expected_governance:
+            findings.append(finding("REGISTRY_METADATA_MISMATCH", skill=skill, platform=platform))
+        purpose = parsed["sections"].get("Purpose", "")
+        if contract["purpose"] not in purpose or "one primary evidence need" not in purpose:
+            findings.append(finding("PURPOSE_CONTRACT_MISMATCH", skill=skill, platform=platform))
+        if contract["boundary"] not in parsed["sections"].get("Do Not Use When", ""):
+            findings.append(finding("BOUNDARY_CONTRACT_MISMATCH", skill=skill, platform=platform))
+        unavailable = parsed["sections"].get("Tool Unavailable Behavior", "")
+        if (any(marker not in unavailable for marker in UNAVAILABLE_MARKERS) or
+                "fall back to" in unavailable.lower()):
+            findings.append(finding("UNAVAILABLE_CONTRACT_MISMATCH", skill=skill, platform=platform))
+        expected_unavailable = (
+            "- Report `availability=unavailable`, `status=unverified`, `success=false`, and `action=stop`.\n"
+            f"- Name the blocked {UNAVAILABLE_NEEDS[skill]} evidence need and stop the dependent workflow.\n"
+            "- Never install, configure, activate, emulate, substitute another core skill, or widen the evidence route."
+        )
+        if (_normalize_text(parsed["sections"].get("Safety / Authority Boundary", "")) !=
+                _normalize_text(SAFETY_CONTRACTS[skill]) or
+                _normalize_text(unavailable) != _normalize_text(expected_unavailable)):
+            findings.append(finding("AUTHORITY_CONTRACT_MISMATCH", skill=skill, platform=platform))
+    if len(parsed_by_platform) == 4:
+        fingerprints = semantic_fingerprints(root, skill)
+        canonical = fingerprints["canonical"]
+        for platform in PLATFORMS:
+            if fingerprints[platform] != canonical:
+                findings.append(finding("SEMANTIC_DRIFT", skill=skill, platform=platform))
+    findings.extend(validate_native_metadata(root, skill))
+    return findings
+
+
+def validate_native_metadata(root: Path, skill: str) -> list[dict[str, str]]:
+    findings: list[dict[str, str]] = []
+    for platform in PLATFORMS:
+        path = root / f"core-skills/projections/{platform}/{skill}/SKILL.md"
+        try:
+            frontmatter = parse_skill(path)["frontmatter"]
+        except InputError:
+            findings.append(finding("INVALID_NATIVE_METADATA", skill=skill, platform=platform))
+            continue
+        expected = {"name": skill, "description": CONTRACTS[skill]["description"]}
+        valid = True
+        if platform == "claude":
+            expected.update({"disable-model-invocation": True, "user-invocable": True})
+        if frontmatter != expected:
+            valid = False
+        if platform == "codex":
+            yaml = root / f"core-skills/projections/codex/{skill}/agents/openai.yaml"
+            try:
+                expected_yaml = (
+                    f'interface:\n  display_name: "{CONTRACTS[skill]["display"]}"\n'
+                    f'  short_description: "{CONTRACTS[skill]["short"]}"\n'
+                    "policy:\n  allow_implicit_invocation: true\n"
+                )
+                valid = valid and _read_text(yaml, 10_000) == expected_yaml
+            except InputError:
+                valid = False
+        if not valid:
+            findings.append(finding("INVALID_NATIVE_METADATA", skill=skill, platform=platform))
+    return findings
+
+
+def load_eval(path: Path) -> dict[str, Any]:
+    return load_json(path)
+
+
+def route_evidence_need(evidence_need: str) -> str | None:
+    return ROUTES.get(evidence_need)
+
+
+def route_prompt(prompt: str) -> str | None:
+    if not isinstance(prompt, str) or not prompt.strip():
+        return None
+    text = " ".join(prompt.lower().split())
+    explicit = (
+        ("use graphify", "graphify"), ("use serena", "serena"),
+        ("use ast-grep", "ast-grep"),
+    )
+    for marker, skill in explicit:
+        if marker in text:
+            return skill
+    if ("literal" in text or "exact text" in text or text.startswith("read ") or
+            (text.startswith("find ") and re.search(r"\.[a-z0-9]+(?:\.|$)", text))):
+        return "rg"
+    if ("architecture" in text or
+            ("trace " in text and any(marker in text for marker in (" across ", " through ", " layers")))):
+        return "graphify"
+    if any(marker in text for marker in ("definition", "references", "refactor radius")):
+        return "serena"
+    if any(marker in text for marker in ("inside try", "bare except", "structural ast", "syntax-aware")):
+        return "ast-grep"
+    return None
+
+
+def validate_eval_cases(payload: dict[str, Any]) -> list[dict[str, str]]:
+    findings: list[dict[str, str]] = []
+    if payload.get("schema_version") != "cma-local-intelligence-evals/v1":
+        return [finding("INVALID_EVAL", field="schema_version")]
+    cases = payload.get("cases")
+    if not isinstance(cases, list) or len(cases) < 16:
+        return [finding("INVALID_EVAL", field="cases")]
+    ids: set[str] = set()
+    unavailable = set()
+    for case in cases:
+        if not isinstance(case, dict) or not isinstance(case.get("id"), str) or case["id"] in ids:
+            findings.append(finding("INVALID_EVAL", field="id"))
+            continue
+        ids.add(case["id"])
+        primary = route_evidence_need(case.get("evidence_need"))
+        prompt_primary = route_prompt(case.get("prompt"))
+        rejected = case.get("rejected_skills")
+        if (primary != case.get("expected_primary") or
+                prompt_primary != case.get("expected_primary") or
+                not isinstance(rejected, list)):
+            findings.append(finding("INVALID_EVAL", field="routing"))
+        elif primary in SKILLS and primary in rejected:
+            findings.append(finding("INVALID_EVAL", field="overlap"))
+        if case.get("tool_availability") == "unavailable":
+            unavailable.add(primary)
+            if case.get("expected_result") != {
+                "availability": "unavailable", "status": "unverified",
+                "success": False, "action": "stop",
+            }:
+                findings.append(finding("INVALID_EVAL", field="unavailable"))
+    if unavailable != set(SKILLS):
+        findings.append(finding("INVALID_EVAL", field="unavailable-coverage"))
+    return findings
+
+
+def validate_routing(root: Path) -> list[dict[str, str]]:
+    findings: list[dict[str, str]] = []
+    for platform in PLATFORMS:
+        module = root / f"variants/{platform}/home/registry/modules/CMA_REPO_TOOLS.md"
+        instructions = root / f"variants/{platform}/home/{INSTRUCTION_FILES[platform]}"
+        try:
+            module_text = _read_text(module, 100_000)
+            instruction_text = _read_text(instructions, 200_000)
+        except InputError:
+            findings.append(finding("ROUTING_CONTRACT_MISMATCH", platform=platform))
+            continue
+        row = ROUTER_ROW.format(ROUTER_REFS[platform])
+        module_hash = hashlib.sha256(_normalize_text(module_text).encode()).hexdigest()
+        if module_hash != ROUTING_HASHES[platform] or instruction_text.count(row) != 1:
+            findings.append(finding("ROUTING_CONTRACT_MISMATCH", platform=platform))
+    return findings
+
+
+def validate_tree(root: Path, eval_path: Path,
+                  skill: str | None = None) -> list[dict[str, str]]:
+    root = root.resolve()
+    if skill is not None and skill not in SKILLS:
+        raise InputError("unsupported skill")
+    findings: list[dict[str, str]] = []
+    selected = (skill,) if skill else SKILLS
+    if not _registry_is_valid(root):
+        findings.extend(finding("REGISTRY_INVALID", skill=skill_id)
+                        for skill_id in selected)
+    for skill_id in selected:
+        findings.extend(validate_skill(root, skill_id))
+    findings.extend(validate_eval_cases(load_eval(eval_path)))
+    findings.extend(validate_routing(root))
+    unique = {json.dumps(item, sort_keys=True): item for item in findings}
+    return [unique[key] for key in sorted(unique)]
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="cma-local-intelligence-core-skills")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    validate = subparsers.add_parser("validate")
+    validate.add_argument("--root", type=Path, required=True)
+    validate.add_argument("--eval", dest="eval_path", type=Path, required=True)
+    validate.add_argument("--skill", choices=SKILLS)
+    return parser
+
+
+def main() -> int:
+    try:
+        args = _parser().parse_args()
+        findings = validate_tree(args.root, args.eval_path, args.skill)
+    except InputError:
+        print(json.dumps({"findings": [{"code": "INVALID_INPUT"}],
+                          "status": "invalid", "success": False}, sort_keys=True))
+        return 2
+    status = "failed" if findings else "passed"
+    print(json.dumps({"findings": findings, "status": status,
+                      "success": not findings}, sort_keys=True))
+    return 1 if findings else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

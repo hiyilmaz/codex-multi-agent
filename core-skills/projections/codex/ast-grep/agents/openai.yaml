@@ -1,0 +1,5 @@
+interface:
+  display_name: "ast-grep"
+  short_description: "Search source with structural AST patterns"
+policy:
+  allow_implicit_invocation: true

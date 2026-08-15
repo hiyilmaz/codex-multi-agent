@@ -1,0 +1,151 @@
+{
+  "schema_version": "cma-claude-core-skill-profile/v1",
+  "platform": "claude",
+  "profile_version": "1.0.0",
+  "canonical_sources": {
+    "standard": "../STANDARD.md",
+    "registry": "../registry.json",
+    "semantic_reference": "codex.json"
+  },
+  "documentation": {
+    "primary_source": "official-anthropic",
+    "official_sources": [
+      "https://code.claude.com/docs/en/slash-commands",
+      "https://code.claude.com/docs/en/plugins",
+      "https://code.claude.com/docs/en/plugins-reference",
+      "https://code.claude.com/docs/en/mcp",
+      "https://code.claude.com/docs/en/settings",
+      "https://code.claude.com/docs/en/memory",
+      "https://code.claude.com/docs/en/sub-agents",
+      "https://code.claude.com/docs/en/agent-sdk/skills"
+    ],
+    "community_observations": [],
+    "assumptions": []
+  },
+  "native_skill": {
+    "directory_pattern": "<skill-id>/",
+    "official_required_files": ["SKILL.md"],
+    "official_optional_entries": ["reference.md", "examples.md", "scripts/"],
+    "format": "YAML-frontmatter-plus-Markdown",
+    "official_frontmatter_required": [],
+    "official_frontmatter_recommended": ["description"],
+    "cma_frontmatter": {
+      "name": "<skill-id>",
+      "description": "required-non-empty",
+      "disable-model-invocation": true,
+      "user-invocable": true
+    },
+    "instruction_default": "instruction-only",
+    "progressive_disclosure": {
+      "initial_context": "none-for-explicit-only",
+      "full_instructions": "load-on-explicit-invocation",
+      "supporting_files": "load-only-when-referenced-and-needed",
+      "invoked_content": "persists-in-session-context"
+    }
+  },
+  "discovery": {
+    "scopes": [
+      "enterprise managed skill location",
+      "~/.claude/skills/<skill-id>/SKILL.md",
+      ".claude/skills in CWD and ancestors to repository root",
+      "nested .claude/skills loaded on file access",
+      "<plugin>/skills/<skill-id>/SKILL.md"
+    ],
+    "standalone_precedence": ["enterprise", "personal", "project"],
+    "plugin_namespace": "/<plugin-name>:<skill-id>",
+    "nested_duplicates": "directory-qualified-and-retained",
+    "standalone_symlinks": "followed-and-deduplicated",
+    "live_detection": "SKILL.md changes watched; new top-level directory may require restart",
+    "additional_directories": "--add-dir loads contained .claude/skills; permissions.additionalDirectories does not"
+  },
+  "activation": {
+    "profile_state": "inactive-representation-only",
+    "projected_skill_instances": 0,
+    "default_mode": "explicit-only",
+    "explicit_invocation": {"enabled": true, "method": "/<skill-id>"},
+    "implicit_invocation": {
+      "disable-model-invocation": true,
+      "opted_in_skill_ids": [],
+      "future_scope": "per-skill",
+      "required_evals": [
+        "explicit-positive",
+        "natural-positive",
+        "negative",
+        "overlap-boundary",
+        "tool-unavailable"
+      ]
+    },
+    "disabled_core_ids": [],
+    "skill_overrides": {},
+    "plugin_enablement": [],
+    "settings_entries": []
+  },
+  "protected_identification": {
+    "authority": "core-skills/registry.json",
+    "claude_native_protection_field": null,
+    "skill_body_representation": "SKILL.md Governance Metadata",
+    "removal": "explicit-user-approval-required",
+    "automatic_pruning": false
+  },
+  "field_mappings": [
+    {"canonical_field":"stable_skill_id","canonical_source":"registry.skills[].id","claude_targets":["skill-directory-name","SKILL.md.frontmatter.name"]},
+    {"canonical_field":"display_name","canonical_source":"registry.skills[].display_name","claude_targets":["SKILL.md.body.Governance Metadata.Display Name"]},
+    {"canonical_field":"capability_category","canonical_source":"registry.skills[].capability_category","claude_targets":["SKILL.md.body.Governance Metadata.Capability Category"]},
+    {"canonical_field":"core_protected_status","canonical_source":"registry.skills[].core + registry.skills[].protected","claude_targets":["SKILL.md.body.Governance Metadata.Core Protected Status"]},
+    {"canonical_field":"tool_dependency","canonical_source":"registry.skills[].tool_dependency","claude_targets":["SKILL.md.body.Governance Metadata.Tool Dependency"]},
+    {"canonical_field":"semantic_version","canonical_source":"registry.skills[].semantic_version","claude_targets":["SKILL.md.body.Governance Metadata.Semantic Version"]},
+    {"canonical_field":"purpose","canonical_source":"canonical-skill.Purpose","claude_targets":["SKILL.md.body.Purpose","SKILL.md.frontmatter.description"]},
+    {"canonical_field":"use_when","canonical_source":"canonical-skill.Use When","claude_targets":["SKILL.md.body.Use When","SKILL.md.frontmatter.description"]},
+    {"canonical_field":"do_not_use_when","canonical_source":"canonical-skill.Do Not Use When","claude_targets":["SKILL.md.body.Do Not Use When","SKILL.md.frontmatter.description"]},
+    {"canonical_field":"preconditions","canonical_source":"canonical-skill.Preconditions","claude_targets":["SKILL.md.body.Preconditions"]},
+    {"canonical_field":"workflow","canonical_source":"canonical-skill.Workflow","claude_targets":["SKILL.md.body.Workflow"]},
+    {"canonical_field":"stop_conditions","canonical_source":"canonical-skill.Stop Conditions","claude_targets":["SKILL.md.body.Stop Conditions"]},
+    {"canonical_field":"output_contract","canonical_source":"canonical-skill.Output Contract","claude_targets":["SKILL.md.body.Output Contract"]},
+    {"canonical_field":"safety_authority_boundary","canonical_source":"canonical-skill.Safety Authority Boundary","claude_targets":["SKILL.md.body.Safety Authority Boundary"]},
+    {"canonical_field":"tool_unavailable_behavior","canonical_source":"canonical-skill.Tool Unavailable Behavior","claude_targets":["SKILL.md.body.Tool Unavailable Behavior"]}
+  ],
+  "claude_metadata": {
+    "nonsemantic_frontmatter": ["argument-hint"],
+    "activation_frontmatter": ["disable-model-invocation", "user-invocable"],
+    "behavioral_frontmatter_forbidden": ["allowed-tools", "disallowed-tools", "model", "effort", "context", "agent", "background", "hooks", "when_to_use"],
+    "description_contract": "derived-from-purpose-use-when-do-not-use-when"
+  },
+  "tool_unavailable_behavior": {
+    "none": {"availability": "not_applicable"},
+    "required": {"availability": "unavailable", "status": "unverified", "success": false, "action": "stop"},
+    "optional": {"availability": "unavailable", "fallback": "predeclared-tool-free-path-only", "tool_dependent_claims": "unverified-success-false"},
+    "forbidden": ["silent-fallback", "silent-install", "silent-configuration", "silent-activation", "tool-emulation", "widened-evidence-route"]
+  },
+  "global_instructions": {
+    "mode": "routing-only",
+    "reference_form": "evidence need -> /<skill-id> (user invokes)",
+    "claude_md": {
+      "reads_agents_md_directly": false,
+      "agents_md_import": "optional-explicit-@AGENTS.md-not-created-by-profile",
+      "scopes": ["managed", "user", "project", "local"],
+      "merge": "concatenate-root-to-CWD; local-after-shared; nested-on-demand",
+      "enforcement": "context-not-hard-policy"
+    },
+    "forbidden_content": ["tool-commands", "tool-setup", "authentication-steps", "skill-body-copy", "fallback-logic", "semantic-overrides"]
+  },
+  "integration_boundaries": {
+    "plugins": "future-packaging-only-not-enabled",
+    "mcp": "not-configured-or-activated",
+    "agents": "not-created-or-preloaded",
+    "sdk_skill_filter": "context-filter-not-sandbox"
+  },
+  "semantic_parity": {
+    "basis": "normalized-semantics",
+    "canonical_fields": ["stable_skill_id","display_name","capability_category","core_protected_status","tool_dependency","semantic_version","purpose","use_when","do_not_use_when","preconditions","workflow","stop_conditions","output_contract","safety_authority_boundary","tool_unavailable_behavior"],
+    "excluded_claude_metadata": ["argument-hint"],
+    "capability_dependency_independent": true,
+    "byte_identity_required": false,
+    "codex_format_copied": false
+  },
+  "runtime_mutation": {
+    "allowed": false,
+    "protected_paths": ["~/.claude/**", "variants/claude/**"],
+    "operations": []
+  },
+  "prohibited_operations": ["install", "configure", "activate", "disable", "project", "sync", "prune", "repair", "enable-plugin", "start-mcp", "create-agent"]
+}

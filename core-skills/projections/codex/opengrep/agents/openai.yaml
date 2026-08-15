@@ -1,0 +1,5 @@
+interface:
+  display_name: "Opengrep"
+  short_description: "Analyze security-sensitive source with SAST"
+policy:
+  allow_implicit_invocation: true

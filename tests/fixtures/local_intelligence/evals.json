@@ -1,0 +1,21 @@
+{
+  "schema_version": "cma-local-intelligence-evals/v1",
+  "cases": [
+    {"id":"graphify-explicit","prompt":"Use Graphify to map the architecture of this repository.","evidence_need":"architecture","expected_primary":"graphify","rejected_skills":["serena","ast-grep"]},
+    {"id":"graphify-natural","prompt":"Trace request flow across the controller, service, queue, and repository.","evidence_need":"cross-file-flow","expected_primary":"graphify","rejected_skills":["serena","ast-grep"]},
+    {"id":"serena-explicit","prompt":"Use Serena to find the definition and references of process_order.","evidence_need":"symbol-references","expected_primary":"serena","rejected_skills":["graphify","ast-grep"]},
+    {"id":"serena-natural","prompt":"Determine the refactor radius of the PaymentService class.","evidence_need":"refactor-radius","expected_primary":"serena","rejected_skills":["graphify","ast-grep"]},
+    {"id":"ast-grep-explicit","prompt":"Use ast-grep to find bare except clauses.","evidence_need":"structural-ast","expected_primary":"ast-grep","rejected_skills":["graphify","serena"]},
+    {"id":"ast-grep-natural","prompt":"Find calls to process_order that occur inside try blocks.","evidence_need":"syntax-context","expected_primary":"ast-grep","rejected_skills":["graphify","serena"]},
+    {"id":"rg-exact-text","prompt":"Find the literal ERROR_SENTINEL.","evidence_need":"exact-text","expected_primary":"rg","rejected_skills":["graphify","serena","ast-grep"]},
+    {"id":"rg-path","prompt":"Find payment_service.py.","evidence_need":"filename-path","expected_primary":"rg","rejected_skills":["graphify","serena","ast-grep"]},
+    {"id":"rg-known-file","prompt":"Read src/payment_service.py.","evidence_need":"single-file-read","expected_primary":"rg","rejected_skills":["graphify","serena","ast-grep"]},
+    {"id":"boundary-symbol","prompt":"Find all references to process_order.","evidence_need":"symbol-references","expected_primary":"serena","rejected_skills":["graphify","ast-grep"]},
+    {"id":"boundary-architecture","prompt":"Trace process_order through the API, queue, and persistence layers.","evidence_need":"cross-file-flow","expected_primary":"graphify","rejected_skills":["serena","ast-grep"]},
+    {"id":"boundary-structural","prompt":"Find calls named process_order inside try blocks.","evidence_need":"syntax-context","expected_primary":"ast-grep","rejected_skills":["graphify","serena"]},
+    {"id":"boundary-lexical-call-text","prompt":"Find the literal text process_order(.","evidence_need":"exact-text","expected_primary":"rg","rejected_skills":["graphify","serena","ast-grep"]},
+    {"id":"graphify-unavailable","prompt":"Use Graphify, but its tool is unavailable.","evidence_need":"architecture","expected_primary":"graphify","rejected_skills":["serena","ast-grep"],"tool_availability":"unavailable","expected_result":{"availability":"unavailable","status":"unverified","success":false,"action":"stop"}},
+    {"id":"serena-unavailable","prompt":"Use Serena, but its tool is unavailable.","evidence_need":"symbol-references","expected_primary":"serena","rejected_skills":["graphify","ast-grep"],"tool_availability":"unavailable","expected_result":{"availability":"unavailable","status":"unverified","success":false,"action":"stop"}},
+    {"id":"ast-grep-unavailable","prompt":"Use ast-grep, but its tool is unavailable.","evidence_need":"structural-ast","expected_primary":"ast-grep","rejected_skills":["graphify","serena"],"tool_availability":"unavailable","expected_result":{"availability":"unavailable","status":"unverified","success":false,"action":"stop"}}
+  ]
+}

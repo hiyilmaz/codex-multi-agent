@@ -1,0 +1,467 @@
+#!/usr/bin/env python3
+"""Read-only validation for the inactive CMA Codex core-skill profile."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import stat
+import sys
+from pathlib import Path
+from typing import Any
+
+
+CANONICAL_FIELDS = (
+    "stable_skill_id", "display_name", "capability_category",
+    "core_protected_status", "tool_dependency", "semantic_version", "purpose",
+    "use_when", "do_not_use_when", "preconditions", "workflow",
+    "stop_conditions", "output_contract", "safety_authority_boundary",
+    "tool_unavailable_behavior",
+)
+MAPPING_CONTRACT = {
+    "stable_skill_id": (
+        "registry.skills[].id",
+        ["skill-directory-name", "SKILL.md.frontmatter.name"],
+    ),
+    "display_name": (
+        "registry.skills[].display_name",
+        [
+            "SKILL.md.body.Governance Metadata.Display Name",
+            "agents/openai.yaml.interface.display_name",
+        ],
+    ),
+    "capability_category": (
+        "registry.skills[].capability_category",
+        ["SKILL.md.body.Governance Metadata.Capability Category"],
+    ),
+    "core_protected_status": (
+        "registry.skills[].core + registry.skills[].protected",
+        ["SKILL.md.body.Governance Metadata.Core Protected Status"],
+    ),
+    "tool_dependency": (
+        "registry.skills[].tool_dependency",
+        ["SKILL.md.body.Governance Metadata.Tool Dependency"],
+    ),
+    "semantic_version": (
+        "registry.skills[].semantic_version",
+        ["SKILL.md.body.Governance Metadata.Semantic Version"],
+    ),
+    "purpose": ("canonical-skill.Purpose", ["SKILL.md.body.Purpose"]),
+    "use_when": (
+        "canonical-skill.Use When",
+        ["SKILL.md.body.Use When", "SKILL.md.frontmatter.description"],
+    ),
+    "do_not_use_when": (
+        "canonical-skill.Do Not Use When",
+        ["SKILL.md.body.Do Not Use When", "SKILL.md.frontmatter.description"],
+    ),
+    "preconditions": (
+        "canonical-skill.Preconditions", ["SKILL.md.body.Preconditions"]
+    ),
+    "workflow": ("canonical-skill.Workflow", ["SKILL.md.body.Workflow"]),
+    "stop_conditions": (
+        "canonical-skill.Stop Conditions", ["SKILL.md.body.Stop Conditions"]
+    ),
+    "output_contract": (
+        "canonical-skill.Output Contract", ["SKILL.md.body.Output Contract"]
+    ),
+    "safety_authority_boundary": (
+        "canonical-skill.Safety Authority Boundary",
+        ["SKILL.md.body.Safety Authority Boundary"],
+    ),
+    "tool_unavailable_behavior": (
+        "canonical-skill.Tool Unavailable Behavior",
+        ["SKILL.md.body.Tool Unavailable Behavior"],
+    ),
+}
+TOP_LEVEL_FIELDS = {
+    "schema_version", "platform", "profile_version", "canonical_sources",
+    "documentation", "native_skill", "discovery", "activation",
+    "protected_identification", "field_mappings", "codex_metadata",
+    "tool_unavailable_behavior", "global_instructions", "semantic_parity",
+    "runtime_mutation", "prohibited_operations",
+}
+OFFICIAL_SOURCES = [
+    "https://developers.openai.com/codex/skills",
+    "https://developers.openai.com/codex/guides/agents-md",
+    "https://developers.openai.com/codex/config-reference",
+]
+UI_FIELDS = [
+    "display_name", "short_description", "icon_small", "icon_large",
+    "brand_color",
+]
+
+
+class InputError(ValueError):
+    """Raised when input cannot be safely interpreted."""
+
+
+def strict_equal(left: Any, right: Any) -> bool:
+    if type(left) is not type(right):
+        return False
+    if isinstance(left, dict):
+        return left.keys() == right.keys() and all(
+            strict_equal(value, right[key]) for key, value in left.items()
+        )
+    if isinstance(left, list):
+        return len(left) == len(right) and all(
+            strict_equal(a, b) for a, b in zip(left, right)
+        )
+    return left == right
+
+
+def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise InputError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            value = json.load(handle, object_pairs_hook=unique_object)
+    except (OSError, UnicodeError, json.JSONDecodeError, InputError) as error:
+        raise InputError(f"invalid JSON input {path}: {error}") from error
+    if not isinstance(value, dict):
+        raise InputError(f"JSON input must be an object: {path}")
+    return value
+
+
+def finding(code: str, field: str | None = None, observed: Any = None) -> dict[str, Any]:
+    item: dict[str, Any] = {"code": code}
+    if field is not None:
+        item["field"] = field
+    if observed is not None:
+        item["observed"] = observed
+    return item
+
+
+def expected_sections() -> dict[str, tuple[Any, str]]:
+    return {
+        "canonical_sources": (
+            {"standard": "../STANDARD.md", "registry": "../registry.json"},
+            "INVALID_CANONICAL_SOURCE",
+        ),
+        "documentation": (
+            {
+                "primary_source": "official-openai",
+                "official_sources": OFFICIAL_SOURCES,
+                "community_observations": [],
+                "assumptions": [],
+            },
+            "INVALID_DOCUMENTATION_BASIS",
+        ),
+        "native_skill": (
+            {
+                "directory_pattern": "<skill-id>/",
+                "official_required_files": ["SKILL.md"],
+                "official_optional_entries": [
+                    "scripts/", "references/", "assets/", "agents/openai.yaml"
+                ],
+                "cma_projection_required_files": ["SKILL.md", "agents/openai.yaml"],
+                "frontmatter_required": ["name", "description"],
+                "instruction_default": "instruction-only",
+                "progressive_disclosure": {
+                    "initial_context": ["name", "description", "file-path"],
+                    "full_instructions": "load-on-selection",
+                    "references": "load-only-when-needed",
+                },
+            },
+            "INVALID_NATIVE_STRUCTURE",
+        ),
+        "discovery": (
+            {
+                "scopes": [
+                    "$CWD/.agents/skills through $REPO_ROOT/.agents/skills",
+                    "$HOME/.agents/skills",
+                    "/etc/codex/skills",
+                    "OpenAI bundled system skills",
+                ],
+                "duplicate_names": "not-merged",
+                "symlinked_skill_directories": "followed",
+                "change_detection": "automatic-restart-if-not-visible",
+            },
+            "UNSUPPORTED_CODEX_DISCOVERY",
+        ),
+        "activation": (
+            {
+                "profile_state": "active-global",
+                "projected_skill_instances": 10,
+                "default_mode": "conditional-implicit",
+                "explicit_invocation": {
+                    "enabled": True,
+                    "methods": ["/skills", "$<skill-id>"],
+                },
+                "implicit_invocation": {
+                    "allow_implicit_invocation": True,
+                    "opted_in_skill_ids": [
+                        "graphify", "serena", "ast-grep", "deepwiki", "github",
+                        "opengrep", "osv-scanner", "betterleaks", "context7",
+                    ],
+                    "excluded_skill_ids": ["cplt"],
+                    "required_evals": [
+                        "explicit-positive", "natural-positive", "negative",
+                        "overlap-boundary", "tool-unavailable",
+                    ],
+                },
+                "selection": "narrowest-sufficient-single-provider",
+                "disabled_core_ids": [],
+                "config_entries": [
+                    "mcp_servers.serena.enabled=true",
+                    "mcp_servers.deepwiki.enabled=true",
+                    "mcp_servers.github.enabled=true",
+                    "mcp_servers.context7.enabled=true",
+                    "mcp_servers.context7.required=true",
+                ],
+            },
+            "INVALID_ACTIVATION_POLICY",
+        ),
+        "protected_identification": (
+            {
+                "authority": "core-skills/registry.json",
+                "codex_native_protection_field": None,
+                "skill_body_representation": "SKILL.md Governance Metadata",
+                "removal": "explicit-user-approval-required",
+                "automatic_pruning": False,
+            },
+            "INVALID_PROTECTION_PROFILE",
+        ),
+        "codex_metadata": (
+            {
+                "allowed_interface_fields": UI_FIELDS,
+                "forbidden_interface_fields": ["default_prompt"],
+                "required_policy": {
+                    "implicit_core_skills": "conditional-positive-trigger-only",
+                    "cplt": "explicit-only",
+                },
+                "dependency_metadata": (
+                    "advisory-only-cannot-change-canonical-dependency-or-"
+                    "unavailable-behavior"
+                ),
+            },
+            "BEHAVIORAL_METADATA_FORBIDDEN",
+        ),
+        "tool_unavailable_behavior": (
+            {
+                "none": {"availability": "not_applicable"},
+                "required": {
+                    "availability": "unavailable", "status": "unverified",
+                    "success": False, "action": "stop",
+                },
+                "optional": {
+                    "availability": "unavailable",
+                    "fallback": "predeclared-tool-free-path-only",
+                    "tool_dependent_claims": "unverified-success-false",
+                },
+                "forbidden": [
+                    "silent-fallback", "silent-install", "silent-configuration",
+                    "silent-activation", "tool-emulation", "widened-evidence-route",
+                ],
+            },
+            "INVALID_UNAVAILABLE_BEHAVIOR",
+        ),
+        "global_instructions": (
+            {
+                "mode": "routing-only",
+                "reference_form": "evidence need -> $<skill-id>",
+                "agents_md": {
+                    "load_timing": "once-per-run",
+                    "global": "$CODEX_HOME/AGENTS.override.md else $CODEX_HOME/AGENTS.md; first non-empty",
+                    "project": "repository-root-to-CWD; one instruction file per directory",
+                    "directory_precedence": "AGENTS.override.md then AGENTS.md then configured fallbacks",
+                    "merge_order": "root-to-CWD; closer overrides later",
+                    "default_project_limit": "32-KiB",
+                },
+                "forbidden_content": [
+                    "tool-commands", "tool-setup", "authentication-steps",
+                    "skill-body-copy", "fallback-logic", "semantic-overrides",
+                ],
+            },
+            "GLOBAL_ROUTING_VIOLATION",
+        ),
+        "semantic_parity": (
+            {
+                "basis": "normalized-semantics",
+                "canonical_fields": list(CANONICAL_FIELDS),
+                "excluded_codex_ui_metadata": UI_FIELDS,
+                "capability_dependency_independent": True,
+                "byte_identity_required": False,
+            },
+            "SEMANTIC_CONFLATION",
+        ),
+        "runtime_mutation": (
+            {
+                "allowed": True,
+                "protected_paths": ["~/.codex/**", "variants/codex/**"],
+                "operations": [
+                    "project-skills", "merge-mcp-flags", "sync-routing",
+                    "backup", "rollback",
+                ],
+            },
+            "RUNTIME_MUTATION_FORBIDDEN",
+        ),
+        "prohibited_operations": (
+            ["force-overwrite", "prune", "credential-write", "tool-execution"],
+            "RUNTIME_MUTATION_FORBIDDEN",
+        ),
+    }
+
+
+def validate_registry_authority(registry: dict[str, Any]) -> list[dict[str, Any]]:
+    try:
+        script = Path(__file__).resolve(strict=True)
+        bin_root = script.parent
+        path = bin_root / "cma-core-skill-governance"
+        if path.is_symlink():
+            raise InputError("canonical registry validator unavailable or invalid")
+        resolved = path.resolve(strict=True)
+        metadata = resolved.stat()
+        if (
+            resolved != path
+            or resolved.parent != bin_root
+            or not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_size > 1_048_576
+        ):
+            raise InputError("canonical registry validator unavailable or invalid")
+        source = resolved.read_bytes()
+        namespace: dict[str, Any] = {
+            "__file__": str(resolved),
+            "__name__": "cma_core_skill_governance",
+            "__package__": None,
+        }
+        exec(compile(source, str(resolved), "exec"), namespace)
+        validator = namespace.get("validate_registry")
+        if not callable(validator):
+            raise InputError("canonical registry validator unavailable or invalid")
+        findings = validator(registry)
+        if not isinstance(findings, list):
+            raise InputError("canonical registry validator unavailable or invalid")
+        return findings
+    except InputError:
+        raise
+    except Exception:
+        raise InputError("canonical registry validator unavailable or invalid") from None
+
+
+def validate_profile(profile: dict[str, Any], registry: dict[str, Any]) -> list[dict[str, Any]]:
+    findings = validate_registry_authority(registry)
+    if set(profile) != TOP_LEVEL_FIELDS:
+        findings.append(finding("INVALID_PROFILE_SCHEMA", "top_level_fields", sorted(profile)))
+    for field, expected in (
+        ("schema_version", "cma-codex-core-skill-profile/v1"),
+        ("platform", "codex"),
+        ("profile_version", "1.0.0"),
+    ):
+        if not strict_equal(expected, profile.get(field)):
+            findings.append(finding("INVALID_PROFILE_SCHEMA", field, profile.get(field)))
+
+    mappings = profile.get("field_mappings")
+    if not isinstance(mappings, list):
+        findings.append(finding("INVALID_PROFILE_SCHEMA", "field_mappings"))
+        mappings = []
+    names = [item.get("canonical_field") for item in mappings if isinstance(item, dict)]
+    for name in CANONICAL_FIELDS:
+        count = names.count(name)
+        if count == 0:
+            findings.append(finding("MISSING_MAPPING", name))
+        elif count > 1:
+            findings.append(finding("DUPLICATE_MAPPING", name))
+    for index, item in enumerate(mappings):
+        if not isinstance(item, dict) or set(item) != {
+            "canonical_field", "canonical_source", "codex_targets"
+        }:
+            findings.append(finding("UNKNOWN_MAPPING", f"field_mappings[{index}]"))
+            continue
+        name = item["canonical_field"]
+        if not isinstance(name, str):
+            findings.append(
+                finding("UNKNOWN_MAPPING", f"field_mappings[{index}].canonical_field")
+            )
+            continue
+        if name not in MAPPING_CONTRACT:
+            findings.append(finding("UNKNOWN_MAPPING", str(name)))
+            continue
+        expected_source, expected_targets = MAPPING_CONTRACT[name]
+        if not strict_equal(expected_source, item.get("canonical_source")):
+            findings.append(finding("CANONICAL_AUTHORITY_VIOLATION", name))
+        if not strict_equal(expected_targets, item.get("codex_targets")):
+            findings.append(finding("UNSUPPORTED_CODEX_MAPPING", name))
+
+    for field, (expected, code) in expected_sections().items():
+        if not strict_equal(expected, profile.get(field)):
+            error_field = field
+            if field == "activation":
+                observed = profile.get(field)
+                if isinstance(observed, dict) and observed.get("disabled_core_ids"):
+                    findings.append(finding("CORE_DISABLE_FORBIDDEN", "activation.disabled_core_ids"))
+                implicit = observed.get("implicit_invocation") if isinstance(observed, dict) else None
+                if isinstance(implicit, dict) and not strict_equal(
+                    True, implicit.get("allow_implicit_invocation")
+                ):
+                    error_field = "activation.implicit_invocation.allow_implicit_invocation"
+            elif field == "semantic_parity":
+                error_field = "semantic_parity.capability_dependency_independent"
+            elif field == "discovery":
+                error_field = "discovery.scopes"
+            elif field == "codex_metadata":
+                error_field = "codex_metadata.allowed_interface_fields"
+            findings.append(finding(code, error_field))
+    return findings
+
+
+def canonical_fingerprint(
+    profile: dict[str, Any],
+    registry: dict[str, Any],
+    native_metadata: dict[str, Any] | None = None,
+) -> str:
+    findings = validate_profile(profile, registry)
+    if findings:
+        raise InputError(f"invalid profile: {findings[0]['code']}")
+    metadata = native_metadata or {}
+    if set(metadata) - {"interface"} or not isinstance(metadata.get("interface", {}), dict):
+        raise InputError("unsupported native metadata")
+    interface = metadata.get("interface", {})
+    if any(key not in UI_FIELDS for key in interface):
+        raise InputError("behavioral or unknown interface metadata")
+    if not all(isinstance(value, str) for value in interface.values()):
+        raise InputError("interface metadata values must be strings")
+    payload = {
+        "mappings": profile["field_mappings"],
+        "activation": profile["activation"],
+        "unavailable": profile["tool_unavailable_behavior"],
+        "routing": profile["global_instructions"],
+        "registry_skills": registry["skills"],
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def emit(status: str, success: bool, findings: list[dict[str, Any]]) -> None:
+    print(json.dumps({"findings": findings, "status": status, "success": success}, sort_keys=True, separators=(",", ":")))
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Read-only CMA Codex core-skill profile validation.")
+    commands = parser.add_subparsers(dest="command", required=True)
+    validate = commands.add_parser("validate")
+    validate.add_argument("--profile", required=True, type=Path)
+    validate.add_argument("--registry", required=True, type=Path)
+    args = parser.parse_args()
+    try:
+        findings = validate_profile(load_json(args.profile), load_json(args.registry))
+    except InputError as error:
+        emit("invalid", False, [finding("INVALID_INPUT", observed=str(error))])
+        return 2
+    if findings:
+        emit("failed", False, findings)
+        return 1
+    emit("passed", True, [])
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

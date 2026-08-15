@@ -1,0 +1,161 @@
+{
+  "schema_version": "cma-core-skills/v1",
+  "standard": "STANDARD.md",
+  "platforms": [
+    "codex",
+    "claude",
+    "opencode"
+  ],
+  "policies": {
+    "removal": "explicit-user-approval-required",
+    "automatic_pruning": false,
+    "semantic_parity": "required",
+    "parity_basis": "normalized-semantics",
+    "byte_identity_required": false,
+    "custom_skills": "outside-core-registry-preserve-unmanaged"
+  },
+  "protected_core_ids": [
+    "graphify",
+    "serena",
+    "ast-grep",
+    "deepwiki",
+    "github",
+    "opengrep",
+    "osv-scanner",
+    "betterleaks",
+    "cplt",
+    "context7"
+  ],
+  "skills": [
+    {
+      "id": "graphify",
+      "display_name": "Graphify",
+      "capability_category": "architecture-analysis",
+      "core": true,
+      "protected": true,
+      "semantic_version": "1.0.0",
+      "capability_status": "required",
+      "tool_dependency": {
+        "tool_id": "graphify",
+        "mode": "required"
+      }
+    },
+    {
+      "id": "serena",
+      "display_name": "Serena",
+      "capability_category": "symbol-intelligence",
+      "core": true,
+      "protected": true,
+      "semantic_version": "1.0.0",
+      "capability_status": "required",
+      "tool_dependency": {
+        "tool_id": "serena",
+        "mode": "required"
+      }
+    },
+    {
+      "id": "ast-grep",
+      "display_name": "ast-grep",
+      "capability_category": "structural-search",
+      "core": true,
+      "protected": true,
+      "semantic_version": "1.0.0",
+      "capability_status": "required",
+      "tool_dependency": {
+        "tool_id": "ast-grep",
+        "mode": "required"
+      }
+    },
+    {
+      "id": "deepwiki",
+      "display_name": "DeepWiki MCP",
+      "capability_category": "public-repository-knowledge",
+      "core": true,
+      "protected": true,
+      "semantic_version": "1.0.0",
+      "capability_status": "required",
+      "tool_dependency": {
+        "tool_id": "deepwiki-mcp",
+        "mode": "required"
+      }
+    },
+    {
+      "id": "github",
+      "display_name": "GitHub MCP",
+      "capability_category": "remote-source-knowledge",
+      "core": true,
+      "protected": true,
+      "semantic_version": "1.0.0",
+      "capability_status": "required",
+      "tool_dependency": {
+        "tool_id": "github-mcp",
+        "mode": "required"
+      }
+    },
+    {
+      "id": "opengrep",
+      "display_name": "Opengrep",
+      "capability_category": "static-application-security-testing",
+      "core": true,
+      "protected": true,
+      "semantic_version": "1.0.0",
+      "capability_status": "required",
+      "tool_dependency": {
+        "tool_id": "opengrep",
+        "mode": "required"
+      }
+    },
+    {
+      "id": "osv-scanner",
+      "display_name": "OSV-Scanner",
+      "capability_category": "dependency-vulnerability-analysis",
+      "core": true,
+      "protected": true,
+      "semantic_version": "1.0.0",
+      "capability_status": "required",
+      "tool_dependency": {
+        "tool_id": "osv-scanner",
+        "mode": "required"
+      }
+    },
+    {
+      "id": "betterleaks",
+      "display_name": "Betterleaks",
+      "capability_category": "secret-detection",
+      "core": true,
+      "protected": true,
+      "semantic_version": "1.0.0",
+      "capability_status": "required",
+      "tool_dependency": {
+        "tool_id": "betterleaks",
+        "mode": "required"
+      }
+    },
+    {
+      "id": "cplt",
+      "display_name": "cplt",
+      "capability_category": "isolated-execution",
+      "core": true,
+      "protected": true,
+      "semantic_version": "1.0.0",
+      "capability_status": "required",
+      "tool_dependency": {
+        "tool_id": "cplt",
+        "mode": "required"
+      }
+    },
+    {
+      "id": "context7",
+      "display_name": "Context7",
+      "capability_category": "version-specific-documentation",
+      "core": true,
+      "protected": true,
+      "semantic_version": "1.0.0",
+      "capability_status": "required",
+      "tool_dependency": {
+        "tool_id": "context7",
+        "mode": "required"
+      }
+    }
+  ]
+}

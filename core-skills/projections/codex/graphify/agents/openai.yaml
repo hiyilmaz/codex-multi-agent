@@ -1,0 +1,5 @@
+interface:
+  display_name: "Graphify"
+  short_description: "Map architecture and cross-file flow"
+policy:
+  allow_implicit_invocation: true

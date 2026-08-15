@@ -1,0 +1,481 @@
+#!/usr/bin/env python3
+"""Read-only Phase 9 validator for the cplt core skill."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import stat
+import sys
+from pathlib import Path
+from typing import Any
+
+PLATFORMS = ("codex", "claude", "opencode")
+SECTIONS = (
+    "Governance Metadata", "Purpose", "Use When", "Do Not Use When",
+    "Preconditions", "Workflow", "Stop Conditions", "Output Contract",
+    "Safety / Authority Boundary", "Tool Unavailable Behavior",
+)
+DESCRIPTION = ("Use explicitly for an already-selected and authorized risky or untrusted "
+               "command only when verified cplt isolation is required; not for discovery, "
+               "scanning, or commands adequately covered by the ordinary sandbox.")
+SEMANTIC_HASH = "8be614d199e68a3fe5df5e7ad724bce94e2be310861b240d830531b9d4b217b8"
+ROUTER_ROW = ("| Risky or untrusted command requiring stronger isolation | cplt, only "
+              "when approved and ordinary sandbox is insufficient |")
+ROUTING_HASHES = {
+    "codex": "b992032eaed3aeace9c4aa4dadc0ced1ac3ef904c15c297a00fdd742b76ed0b1",
+    "claude": "30ea3cf1ff96a30389577755a98d8703ca696a74eb01d434431d14ea863eb228",
+    "opencode": "23550457353055d958df21894495c9eda5aa2b90c835a2b3510b7e4dde9a4250",
+}
+EXPECTED_GOVERNANCE = {
+    "Stable Skill ID": "cplt", "Display Name": "cplt",
+    "Capability Category": "isolated-execution",
+    "Core / Protected Status": "core/protected",
+    "Tool Dependency": "required: cplt", "Semantic Version": "1.0.0",
+}
+UNAVAILABLE_RESULT = {
+    "availability": "unavailable", "status": "unverified", "success": False,
+    "action": "stop", "host_fallback": False,
+}
+CONTROL_KEYS = (
+    "filesystem", "network", "process", "user", "resource", "time", "output",
+    "persistence",
+)
+REQUIRED_EVIDENCE = (
+    "evidence_kind", "requested", "available", "verified", "runtime_version", "policy_identity",
+    "argv", "cwd", "environment_summary", "source_digest", "controls",
+    "exit_code", "signal", "timed_out", "output_disposition", "artifact_paths",
+    "mutation_paths",
+)
+
+
+class InputError(Exception):
+    """Malformed, unsafe, or unstable validator input."""
+
+
+def finding(code: str, *, platform: str | None = None,
+            field: str | None = None) -> dict[str, str]:
+    item = {"code": code}
+    if platform is not None:
+        item["platform"] = platform
+    if field is not None:
+        item["field"] = field
+    return item
+
+
+def _pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise InputError("duplicate key")
+        result[key] = value
+    return result
+
+
+def _read_text(path: Path, maximum: int) -> str:
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+        try:
+            before = os.fstat(descriptor)
+            if not stat.S_ISREG(before.st_mode) or before.st_size > maximum:
+                raise InputError("invalid input")
+            chunks: list[bytes] = []
+            remaining = maximum + 1
+            while remaining:
+                chunk = os.read(descriptor, min(65536, remaining))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                remaining -= len(chunk)
+            after = os.fstat(descriptor)
+        finally:
+            os.close(descriptor)
+    except InputError:
+        raise
+    except OSError as error:
+        raise InputError("invalid input") from error
+    identity = lambda value: (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns)
+    if identity(before) != identity(after) or sum(map(len, chunks)) > maximum:
+        raise InputError("unstable input")
+    try:
+        return b"".join(chunks).decode("utf-8")
+    except UnicodeError as error:
+        raise InputError("invalid text") from error
+
+
+def _bounded(value: Any) -> bool:
+    stack = [(value, 1)]
+    count = 0
+    while stack:
+        current, depth = stack.pop()
+        count += 1
+        if depth > 48 or count > 20_000:
+            return False
+        if isinstance(current, dict):
+            stack.extend((child, depth + 1) for child in current.values())
+        elif isinstance(current, list):
+            stack.extend((child, depth + 1) for child in current)
+    return True
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(_read_text(path, 500_000), object_pairs_hook=_pairs)
+    except InputError:
+        raise
+    except (json.JSONDecodeError, RecursionError) as error:
+        raise InputError("invalid JSON") from error
+    if not isinstance(value, dict) or not _bounded(value):
+        raise InputError("invalid JSON")
+    return value
+
+
+def _scalar(value: str) -> object:
+    value = value.strip()
+    if value == "true":
+        return True
+    if value == "false":
+        return False
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        return value[1:-1]
+    return value
+
+
+def _normalize(value: str) -> str:
+    return "\n".join(" ".join(line.split()) for line in value.strip().splitlines()
+                      if line.strip())
+
+
+def parse_skill(path: Path) -> dict[str, Any]:
+    lines = _read_text(path, 80_000).splitlines()
+    if not lines or lines[0] != "---":
+        raise InputError("missing frontmatter")
+    try:
+        end = lines.index("---", 1)
+    except ValueError as error:
+        raise InputError("unterminated frontmatter") from error
+    frontmatter: dict[str, object] = {}
+    for line in lines[1:end]:
+        if not line or line.startswith((" ", "\t")) or ":" not in line:
+            raise InputError("invalid frontmatter")
+        key, value = line.split(":", 1)
+        if key in frontmatter or not key:
+            raise InputError("invalid frontmatter")
+        frontmatter[key] = _scalar(value)
+    body = lines[end + 1:]
+    h1 = [index for index, line in enumerate(body) if line.startswith("# ")]
+    if len(h1) != 1 or body[h1[0]] != "# cplt":
+        raise InputError("invalid title")
+    headings = [(index, line[3:]) for index, line in enumerate(body)
+                if line.startswith("## ")]
+    if tuple(name for _, name in headings) != SECTIONS:
+        raise InputError("invalid sections")
+    if any(line.strip() and line != "# cplt" for line in body[:headings[0][0]]):
+        raise InputError("hidden instructions")
+    sections: dict[str, str] = {}
+    for position, (start, name) in enumerate(headings):
+        stop = headings[position + 1][0] if position + 1 < len(headings) else len(body)
+        text = "\n".join(body[start + 1:stop]).strip()
+        if not text:
+            raise InputError("empty section")
+        sections[name] = text
+    governance: dict[str, str] = {}
+    for line in sections["Governance Metadata"].splitlines():
+        match = re.fullmatch(r"- ([^:]+): (.+)", line)
+        if match is None or match.group(1) in governance:
+            raise InputError("invalid governance")
+        governance[match.group(1)] = match.group(2)
+    return {"frontmatter": frontmatter, "governance": governance, "sections": sections}
+
+
+def _semantic(value: dict[str, Any]) -> dict[str, Any]:
+    return {"governance": value["governance"], "sections": value["sections"]}
+
+
+def semantic_fingerprints(root: Path) -> dict[str, str]:
+    paths = {"canonical": root / "core-skills/skills/cplt/SKILL.md"}
+    paths.update({platform: root / f"core-skills/projections/{platform}/cplt/SKILL.md"
+                  for platform in PLATFORMS})
+    result = {}
+    for platform, path in paths.items():
+        payload = json.dumps(_semantic(parse_skill(path)), sort_keys=True, separators=(",", ":"))
+        result[platform] = hashlib.sha256(payload.encode()).hexdigest()
+    return result
+
+
+def _registry(root: Path) -> tuple[dict[str, Any], bool]:
+    registry = load_json(root / "core-skills/registry.json")
+    if not isinstance(registry.get("skills"), list):
+        raise InputError("invalid registry")
+    dependency = Path(__file__).resolve().with_name("cma-core-skill-governance")
+    try:
+        namespace: dict[str, Any] = {"__name__": "governance_dependency",
+                                     "__file__": str(dependency)}
+        source = _read_text(dependency, 1_000_000)
+        exec(compile(source, "governance_dependency", "exec"), namespace)
+        validate = namespace.get("validate_registry")
+        if not callable(validate):
+            raise InputError("invalid dependency")
+        valid = not bool(validate(registry))
+    except InputError:
+        raise
+    except Exception as error:
+        raise InputError("invalid dependency") from error
+    return registry, valid
+
+
+def _record(registry: dict[str, Any]) -> dict[str, Any]:
+    matches = [item for item in registry["skills"]
+               if isinstance(item, dict) and item.get("id") == "cplt"]
+    if len(matches) != 1:
+        raise InputError("invalid registry")
+    return matches[0]
+
+
+def validate_native_metadata(root: Path) -> list[dict[str, str]]:
+    findings = []
+    for platform in PLATFORMS:
+        parsed = parse_skill(root / f"core-skills/projections/{platform}/cplt/SKILL.md")
+        expected: dict[str, object] = {"name": "cplt", "description": DESCRIPTION}
+        if platform == "claude":
+            expected.update({"disable-model-invocation": True, "user-invocable": True})
+        valid = parsed["frontmatter"] == expected
+        if platform == "codex":
+            expected_yaml = ('interface:\n  display_name: "cplt"\n'
+                             '  short_description: "Run risky commands in verified isolation"\n'
+                             "policy:\n  allow_implicit_invocation: false\n")
+            valid = valid and _read_text(
+                root / "core-skills/projections/codex/cplt/agents/openai.yaml", 10_000
+            ) == expected_yaml
+        if not valid:
+            findings.append(finding("INVALID_NATIVE_METADATA", platform=platform))
+    return findings
+
+
+def route_prompt(prompt: str, *, authority_verified: bool = False,
+                 command_selected: bool = False,
+                 ordinary_sandbox_sufficient: bool = True) -> bool:
+    if (not isinstance(prompt, str) or type(authority_verified) is not bool or
+            type(command_selected) is not bool or
+            type(ordinary_sandbox_sufficient) is not bool):
+        return False
+    if not authority_verified or not command_selected or ordinary_sandbox_sufficient:
+        return False
+    text = " ".join(prompt.lower().split())
+    negatives = (
+        "ordinary sandbox is sufficient", "safe command", "no execution",
+        "repository discovery", "find an exact string", "map the architecture",
+        "run sast", "scan dependencies", "detect secrets", "missing approval",
+        "not authorized", "not approved", "unauthorized", "unapproved",
+        "approval is denied", "authorization is denied", "mention cplt", "what is cplt",
+    )
+    if any(marker in text for marker in negatives):
+        return False
+    isolation = ("ordinary sandbox is insufficient" in text or
+                 "stronger isolation is required" in text or
+                 "requires stronger isolation" in text)
+    risky = "use cplt" in text or "risky" in text or "untrusted command" in text
+    return isolation and risky
+
+
+def validate_eval_cases(payload: dict[str, Any]) -> list[dict[str, str]]:
+    if payload.get("schema_version") != "cma-cplt-core-skill-evals/v1":
+        return [finding("INVALID_EVAL", field="schema_version")]
+    cases = payload.get("cases")
+    if not isinstance(cases, list) or not 9 <= len(cases) <= 100:
+        return [finding("INVALID_EVAL", field="cases")]
+    findings = []
+    if validate_isolation_evidence(payload.get("isolation_evidence_contract")):
+        findings.append(finding("INVALID_EVAL", field="isolation_evidence_contract"))
+    seen: set[str] = set()
+    classes: set[str] = set()
+    for case in cases:
+        if not isinstance(case, dict) or set(case) - {
+                "id", "case_type", "prompt", "authority_verified",
+                "command_selected", "ordinary_sandbox_sufficient",
+                "expected_gate", "expected_result"}:
+            findings.append(finding("INVALID_EVAL", field="case"))
+            continue
+        case_id, case_type = case.get("id"), case.get("case_type")
+        prompt, expected = case.get("prompt"), case.get("expected_gate")
+        authority = case.get("authority_verified")
+        selected = case.get("command_selected")
+        ordinary = case.get("ordinary_sandbox_sufficient")
+        if (not isinstance(case_id, str) or not case_id or case_id in seen or
+                not isinstance(case_type, str) or
+                case_type not in {"explicit", "natural", "negative", "boundary", "unavailable"} or
+                not isinstance(prompt, str) or not 1 <= len(prompt) <= 1000 or
+                type(authority) is not bool or type(selected) is not bool or
+                type(ordinary) is not bool or type(expected) is not bool):
+            findings.append(finding("INVALID_EVAL", field="case"))
+            continue
+        seen.add(case_id)
+        classes.add(case_type)
+        if route_prompt(prompt, authority_verified=authority, command_selected=selected,
+                        ordinary_sandbox_sufficient=ordinary) is not expected:
+            findings.append(finding("INVALID_EVAL", field="routing"))
+        result = case.get("expected_result")
+        if case_type == "unavailable":
+            if result != UNAVAILABLE_RESULT:
+                findings.append(finding("INVALID_EVAL", field="unavailable"))
+        elif result is not None:
+            findings.append(finding("INVALID_EVAL", field="unexpected_result"))
+    if classes != {"explicit", "natural", "negative", "boundary", "unavailable"}:
+        findings.append(finding("INVALID_EVAL", field="coverage"))
+    return findings
+
+
+def example_verified_evidence() -> dict[str, Any]:
+    return {
+        "evidence_kind": "schema-example-not-execution-proof",
+        "requested": True, "available": True, "verified": True,
+        "runtime_version": "cplt/1.0.0",
+        "policy_identity": "sha256:" + "a" * 64,
+        "argv": ["/approved/untrusted-command", "--bounded"], "cwd": "/bounded/workdir",
+        "environment_summary": "allowlist; credentials removed",
+        "source_digest": "sha256:" + "b" * 64,
+        "controls": {key: {"requested": True, "available": True, "verified": True,
+                           "evidence": f"observed:{key}"} for key in CONTROL_KEYS},
+        "exit_code": 0, "signal": None, "timed_out": False,
+        "output_disposition": "bounded and redacted",
+        "artifact_paths": ["/bounded/artifact"], "mutation_paths": [],
+    }
+
+
+def validate_isolation_evidence(payload: Any) -> list[dict[str, str]]:
+    if not isinstance(payload, dict) or set(payload) != set(REQUIRED_EVIDENCE):
+        return [finding("INVALID_ISOLATION_EVIDENCE", field="shape")]
+    if payload["evidence_kind"] != "schema-example-not-execution-proof":
+        return [finding("INVALID_ISOLATION_EVIDENCE", field="evidence_kind")]
+    if any(payload[key] is not True for key in ("requested", "available", "verified")):
+        return [finding("INVALID_ISOLATION_EVIDENCE", field="state")]
+    if (not isinstance(payload["runtime_version"], str) or
+            re.fullmatch(r"cplt/[0-9]+\.[0-9]+\.[0-9]+", payload["runtime_version"]) is None):
+        return [finding("INVALID_ISOLATION_EVIDENCE", field="runtime_version")]
+    for key in ("policy_identity", "source_digest"):
+        if not isinstance(payload[key], str) or re.fullmatch(r"sha256:[0-9a-f]{64}", payload[key]) is None:
+            return [finding("INVALID_ISOLATION_EVIDENCE", field=key)]
+    for key in ("cwd", "environment_summary", "output_disposition"):
+        value = payload[key]
+        if (not isinstance(value, str) or not value.strip() or len(value) > 2000 or
+                any(ord(character) < 32 and character not in "\t" for character in value)):
+            return [finding("INVALID_ISOLATION_EVIDENCE", field=key)]
+    if not payload["cwd"].startswith("/"):
+        return [finding("INVALID_ISOLATION_EVIDENCE", field="cwd")]
+    for key in ("argv", "artifact_paths", "mutation_paths"):
+        if (not isinstance(payload[key], list) or
+                any(not isinstance(item, str) or not item or len(item) > 4096 or
+                    any(ord(character) < 32 for character in item) for item in payload[key])):
+            return [finding("INVALID_ISOLATION_EVIDENCE", field=key)]
+    if not payload["argv"] or not payload["argv"][0].startswith("/"):
+        return [finding("INVALID_ISOLATION_EVIDENCE", field="argv")]
+    for key in ("artifact_paths", "mutation_paths"):
+        if any(not item.startswith("/") for item in payload[key]):
+            return [finding("INVALID_ISOLATION_EVIDENCE", field=key)]
+    controls = payload["controls"]
+    if not isinstance(controls, dict) or set(controls) != set(CONTROL_KEYS):
+        return [finding("INVALID_ISOLATION_EVIDENCE", field="controls")]
+    for name, value in controls.items():
+        if (not isinstance(value, dict) or
+                set(value) != {"requested", "available", "verified", "evidence"} or
+                any(value[state] is not True for state in ("requested", "available", "verified")) or
+                value["evidence"] != f"observed:{name}"):
+            return [finding("INVALID_ISOLATION_EVIDENCE", field="controls")]
+    if type(payload["exit_code"]) is not int or not 0 <= payload["exit_code"] <= 255:
+        return [finding("INVALID_ISOLATION_EVIDENCE", field="exit_code")]
+    if (payload["signal"] is not None and
+            (not isinstance(payload["signal"], str) or not payload["signal"].strip() or
+             len(payload["signal"]) > 64)):
+        return [finding("INVALID_ISOLATION_EVIDENCE", field="signal")]
+    if payload["timed_out"] is not False:
+        return [finding("INVALID_ISOLATION_EVIDENCE", field="timed_out")]
+    return []
+
+
+def validate_skill(root: Path, registry: dict[str, Any]) -> list[dict[str, str]]:
+    findings = []
+    record = _record(registry)
+    if (record.get("display_name") != "cplt" or
+            record.get("capability_category") != "isolated-execution" or
+            record.get("core") is not True or record.get("protected") is not True or
+            record.get("capability_status") != "required" or
+            record.get("semantic_version") != "1.0.0" or
+            record.get("tool_dependency") != {"tool_id": "cplt", "mode": "required"}):
+        findings.append(finding("REGISTRY_METADATA_MISMATCH"))
+    paths = {"canonical": root / "core-skills/skills/cplt/SKILL.md"}
+    paths.update({platform: root / f"core-skills/projections/{platform}/cplt/SKILL.md"
+                  for platform in PLATFORMS})
+    for platform, path in paths.items():
+        parsed = parse_skill(path)
+        if parsed["governance"] != EXPECTED_GOVERNANCE:
+            findings.append(finding("REGISTRY_METADATA_MISMATCH", platform=platform))
+        payload = json.dumps(_semantic(parsed), sort_keys=True, separators=(",", ":"))
+        if hashlib.sha256(payload.encode()).hexdigest() != SEMANTIC_HASH:
+            findings.append(finding("SEMANTIC_CONTRACT_MISMATCH", platform=platform))
+    fingerprints = semantic_fingerprints(root)
+    for platform in PLATFORMS:
+        if fingerprints[platform] != fingerprints["canonical"]:
+            findings.append(finding("SEMANTIC_DRIFT", platform=platform))
+    findings.extend(validate_native_metadata(root))
+    return findings
+
+
+def validate_routing(root: Path) -> list[dict[str, str]]:
+    findings = []
+    for platform in PLATFORMS:
+        text = _read_text(
+            root / f"variants/{platform}/home/registry/modules/CMA_REPO_TOOLS.md", 100_000)
+        digest = hashlib.sha256(text.encode()).hexdigest()
+        valid = digest == ROUTING_HASHES[platform]
+        valid = valid and text.count(ROUTER_ROW) == 1
+        valid = valid and text.count("cplt is an orthogonal execution gate") == 1
+        valid = valid and "CMA_SECURITY.md" in text
+        valid = valid and "Routing only selects a candidate tool. It grants no authority to execute" in text
+        if not valid:
+            findings.append(finding("ROUTING_CONTRACT_MISMATCH", platform=platform))
+    return findings
+
+
+def validate_tree(root: Path, eval_path: Path) -> list[dict[str, str]]:
+    root = root.resolve()
+    registry, valid_registry = _registry(root)
+    if not valid_registry:
+        return [finding("INVALID_REGISTRY")]
+    findings = validate_skill(root, registry)
+    findings.extend(validate_eval_cases(load_json(eval_path)))
+    findings.extend(validate_routing(root))
+    unique = {json.dumps(item, sort_keys=True): item for item in findings}
+    return [unique[key] for key in sorted(unique)]
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="cma-cplt-core-skill")
+    subs = parser.add_subparsers(dest="command", required=True)
+    validate = subs.add_parser("validate")
+    validate.add_argument("--root", type=Path, required=True)
+    validate.add_argument("--eval", dest="eval_path", type=Path, required=True)
+    return parser
+
+
+def main() -> int:
+    try:
+        args = _parser().parse_args()
+        findings = validate_tree(args.root, args.eval_path)
+    except (InputError, TypeError, ValueError, RecursionError):
+        print(json.dumps({"findings": [{"code": "INVALID_INPUT"}],
+                          "status": "invalid", "success": False}, sort_keys=True))
+        return 2
+    if findings:
+        print(json.dumps({"findings": findings, "status": "failed", "success": False},
+                         sort_keys=True))
+        return 1
+    print(json.dumps({"findings": [], "status": "passed", "success": True}, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

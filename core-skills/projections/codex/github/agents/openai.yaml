@@ -1,0 +1,5 @@
+interface:
+  display_name: "GitHub MCP"
+  short_description: "Verify authoritative remote repository facts"
+policy:
+  allow_implicit_invocation: true

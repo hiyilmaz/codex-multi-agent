@@ -1,0 +1,333 @@
+{
+  "schema_version": "cma-codex-core-skill-profile/v1",
+  "platform": "codex",
+  "profile_version": "1.0.0",
+  "canonical_sources": {
+    "standard": "../STANDARD.md",
+    "registry": "../registry.json"
+  },
+  "documentation": {
+    "primary_source": "official-openai",
+    "official_sources": [
+      "https://developers.openai.com/codex/skills",
+      "https://developers.openai.com/codex/guides/agents-md",
+      "https://developers.openai.com/codex/config-reference"
+    ],
+    "community_observations": [],
+    "assumptions": []
+  },
+  "native_skill": {
+    "directory_pattern": "<skill-id>/",
+    "official_required_files": [
+      "SKILL.md"
+    ],
+    "official_optional_entries": [
+      "scripts/",
+      "references/",
+      "assets/",
+      "agents/openai.yaml"
+    ],
+    "cma_projection_required_files": [
+      "SKILL.md",
+      "agents/openai.yaml"
+    ],
+    "frontmatter_required": [
+      "name",
+      "description"
+    ],
+    "instruction_default": "instruction-only",
+    "progressive_disclosure": {
+      "initial_context": [
+        "name",
+        "description",
+        "file-path"
+      ],
+      "full_instructions": "load-on-selection",
+      "references": "load-only-when-needed"
+    }
+  },
+  "discovery": {
+    "scopes": [
+      "$CWD/.agents/skills through $REPO_ROOT/.agents/skills",
+      "$HOME/.agents/skills",
+      "/etc/codex/skills",
+      "OpenAI bundled system skills"
+    ],
+    "duplicate_names": "not-merged",
+    "symlinked_skill_directories": "followed",
+    "change_detection": "automatic-restart-if-not-visible"
+  },
+  "activation": {
+    "profile_state": "active-global",
+    "projected_skill_instances": 10,
+    "default_mode": "conditional-implicit",
+    "explicit_invocation": {
+      "enabled": true,
+      "methods": [
+        "/skills",
+        "$<skill-id>"
+      ]
+    },
+    "implicit_invocation": {
+      "allow_implicit_invocation": true,
+      "opted_in_skill_ids": [
+        "graphify",
+        "serena",
+        "ast-grep",
+        "deepwiki",
+        "github",
+        "opengrep",
+        "osv-scanner",
+        "betterleaks",
+        "context7"
+      ],
+      "excluded_skill_ids": [
+        "cplt"
+      ],
+      "required_evals": [
+        "explicit-positive",
+        "natural-positive",
+        "negative",
+        "overlap-boundary",
+        "tool-unavailable"
+      ]
+    },
+    "selection": "narrowest-sufficient-single-provider",
+    "disabled_core_ids": [],
+    "config_entries": [
+      "mcp_servers.serena.enabled=true",
+      "mcp_servers.deepwiki.enabled=true",
+      "mcp_servers.github.enabled=true",
+      "mcp_servers.context7.enabled=true",
+      "mcp_servers.context7.required=true"
+    ]
+  },
+  "protected_identification": {
+    "authority": "core-skills/registry.json",
+    "codex_native_protection_field": null,
+    "skill_body_representation": "SKILL.md Governance Metadata",
+    "removal": "explicit-user-approval-required",
+    "automatic_pruning": false
+  },
+  "field_mappings": [
+    {
+      "canonical_field": "stable_skill_id",
+      "canonical_source": "registry.skills[].id",
+      "codex_targets": [
+        "skill-directory-name",
+        "SKILL.md.frontmatter.name"
+      ]
+    },
+    {
+      "canonical_field": "display_name",
+      "canonical_source": "registry.skills[].display_name",
+      "codex_targets": [
+        "SKILL.md.body.Governance Metadata.Display Name",
+        "agents/openai.yaml.interface.display_name"
+      ]
+    },
+    {
+      "canonical_field": "capability_category",
+      "canonical_source": "registry.skills[].capability_category",
+      "codex_targets": [
+        "SKILL.md.body.Governance Metadata.Capability Category"
+      ]
+    },
+    {
+      "canonical_field": "core_protected_status",
+      "canonical_source": "registry.skills[].core + registry.skills[].protected",
+      "codex_targets": [
+        "SKILL.md.body.Governance Metadata.Core Protected Status"
+      ]
+    },
+    {
+      "canonical_field": "tool_dependency",
+      "canonical_source": "registry.skills[].tool_dependency",
+      "codex_targets": [
+        "SKILL.md.body.Governance Metadata.Tool Dependency"
+      ]
+    },
+    {
+      "canonical_field": "semantic_version",
+      "canonical_source": "registry.skills[].semantic_version",
+      "codex_targets": [
+        "SKILL.md.body.Governance Metadata.Semantic Version"
+      ]
+    },
+    {
+      "canonical_field": "purpose",
+      "canonical_source": "canonical-skill.Purpose",
+      "codex_targets": [
+        "SKILL.md.body.Purpose"
+      ]
+    },
+    {
+      "canonical_field": "use_when",
+      "canonical_source": "canonical-skill.Use When",
+      "codex_targets": [
+        "SKILL.md.body.Use When",
+        "SKILL.md.frontmatter.description"
+      ]
+    },
+    {
+      "canonical_field": "do_not_use_when",
+      "canonical_source": "canonical-skill.Do Not Use When",
+      "codex_targets": [
+        "SKILL.md.body.Do Not Use When",
+        "SKILL.md.frontmatter.description"
+      ]
+    },
+    {
+      "canonical_field": "preconditions",
+      "canonical_source": "canonical-skill.Preconditions",
+      "codex_targets": [
+        "SKILL.md.body.Preconditions"
+      ]
+    },
+    {
+      "canonical_field": "workflow",
+      "canonical_source": "canonical-skill.Workflow",
+      "codex_targets": [
+        "SKILL.md.body.Workflow"
+      ]
+    },
+    {
+      "canonical_field": "stop_conditions",
+      "canonical_source": "canonical-skill.Stop Conditions",
+      "codex_targets": [
+        "SKILL.md.body.Stop Conditions"
+      ]
+    },
+    {
+      "canonical_field": "output_contract",
+      "canonical_source": "canonical-skill.Output Contract",
+      "codex_targets": [
+        "SKILL.md.body.Output Contract"
+      ]
+    },
+    {
+      "canonical_field": "safety_authority_boundary",
+      "canonical_source": "canonical-skill.Safety Authority Boundary",
+      "codex_targets": [
+        "SKILL.md.body.Safety Authority Boundary"
+      ]
+    },
+    {
+      "canonical_field": "tool_unavailable_behavior",
+      "canonical_source": "canonical-skill.Tool Unavailable Behavior",
+      "codex_targets": [
+        "SKILL.md.body.Tool Unavailable Behavior"
+      ]
+    }
+  ],
+  "codex_metadata": {
+    "allowed_interface_fields": [
+      "display_name",
+      "short_description",
+      "icon_small",
+      "icon_large",
+      "brand_color"
+    ],
+    "forbidden_interface_fields": [
+      "default_prompt"
+    ],
+    "required_policy": {
+      "implicit_core_skills": "conditional-positive-trigger-only",
+      "cplt": "explicit-only"
+    },
+    "dependency_metadata": "advisory-only-cannot-change-canonical-dependency-or-unavailable-behavior"
+  },
+  "tool_unavailable_behavior": {
+    "none": {
+      "availability": "not_applicable"
+    },
+    "required": {
+      "availability": "unavailable",
+      "status": "unverified",
+      "success": false,
+      "action": "stop"
+    },
+    "optional": {
+      "availability": "unavailable",
+      "fallback": "predeclared-tool-free-path-only",
+      "tool_dependent_claims": "unverified-success-false"
+    },
+    "forbidden": [
+      "silent-fallback",
+      "silent-install",
+      "silent-configuration",
+      "silent-activation",
+      "tool-emulation",
+      "widened-evidence-route"
+    ]
+  },
+  "global_instructions": {
+    "mode": "routing-only",
+    "reference_form": "evidence need -> $<skill-id>",
+    "agents_md": {
+      "load_timing": "once-per-run",
+      "global": "$CODEX_HOME/AGENTS.override.md else $CODEX_HOME/AGENTS.md; first non-empty",
+      "project": "repository-root-to-CWD; one instruction file per directory",
+      "directory_precedence": "AGENTS.override.md then AGENTS.md then configured fallbacks",
+      "merge_order": "root-to-CWD; closer overrides later",
+      "default_project_limit": "32-KiB"
+    },
+    "forbidden_content": [
+      "tool-commands",
+      "tool-setup",
+      "authentication-steps",
+      "skill-body-copy",
+      "fallback-logic",
+      "semantic-overrides"
+    ]
+  },
+  "semantic_parity": {
+    "basis": "normalized-semantics",
+    "canonical_fields": [
+      "stable_skill_id",
+      "display_name",
+      "capability_category",
+      "core_protected_status",
+      "tool_dependency",
+      "semantic_version",
+      "purpose",
+      "use_when",
+      "do_not_use_when",
+      "preconditions",
+      "workflow",
+      "stop_conditions",
+      "output_contract",
+      "safety_authority_boundary",
+      "tool_unavailable_behavior"
+    ],
+    "excluded_codex_ui_metadata": [
+      "display_name",
+      "short_description",
+      "icon_small",
+      "icon_large",
+      "brand_color"
+    ],
+    "capability_dependency_independent": true,
+    "byte_identity_required": false
+  },
+  "runtime_mutation": {
+    "allowed": true,
+    "protected_paths": [
+      "~/.codex/**",
+      "variants/codex/**"
+    ],
+    "operations": [
+      "project-skills",
+      "merge-mcp-flags",
+      "sync-routing",
+      "backup",
+      "rollback"
+    ]
+  },
+  "prohibited_operations": [
+    "force-overwrite",
+    "prune",
+    "credential-write",
+    "tool-execution"
+  ]
+}

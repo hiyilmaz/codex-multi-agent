@@ -1,0 +1,174 @@
+{
+  "schema_version": "cma-opencode-core-skill-profile/v1",
+  "platform": "opencode",
+  "profile_version": "1.0.0",
+  "canonical_sources": {
+    "standard": "../STANDARD.md",
+    "registry": "../registry.json",
+    "semantic_references": ["codex.json", "claude.json"]
+  },
+  "documentation": {
+    "primary_source": "official-opencode",
+    "official_sources": [
+      "https://opencode.ai/docs/skills",
+      "https://opencode.ai/docs/config/",
+      "https://opencode.ai/docs/rules/",
+      "https://opencode.ai/docs/agents",
+      "https://opencode.ai/docs/mcp-servers/",
+      "https://opencode.ai/docs/plugins/",
+      "https://opencode.ai/v2/docs/migrate-v1"
+    ],
+    "community_observations": [],
+    "assumptions": [],
+    "limitations": [
+      "Stable V1 documents no per-skill explicit-only or autoinvoke-off switch.",
+      "Stable V1 documents SKILL.md but no named supporting-file convention."
+    ]
+  },
+  "runtime_target": {
+    "channel": "stable-v1",
+    "executable": "opencode",
+    "repository_launcher": "delegates-to-opencode",
+    "excluded_beta_channel": "v2-beta",
+    "excluded_beta_executable": "opencode2",
+    "selection_basis": "repository-stable-launcher-and-official-separate-beta"
+  },
+  "native_skill": {
+    "directory_pattern": "<skill-id>/",
+    "official_required_files": ["SKILL.md"],
+    "official_optional_entries": [],
+    "cma_optional_supporting_entries": ["references/", "scripts/"],
+    "format": "YAML-frontmatter-plus-Markdown",
+    "frontmatter": {
+      "required": ["name", "description"],
+      "optional": ["license", "compatibility", "metadata"],
+      "metadata_type": "string-to-string-map",
+      "unknown_fields": "ignored-by-runtime-rejected-by-cma"
+    },
+    "name_contract": {
+      "source": "registry.skills[].id",
+      "directory_match": true,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "minimum_length": 1,
+      "maximum_length": 64
+    },
+    "description_contract": {
+      "source": "Purpose + Use When + Do Not Use When",
+      "minimum_length": 1,
+      "maximum_length": 1024
+    },
+    "instruction_default": "instruction-only",
+    "progressive_disclosure": {
+      "advertised": "name-and-description-only",
+      "full_instructions": "load-on-demand-via-skill-tool",
+      "supporting_files": "load-only-when-referenced-and-needed"
+    }
+  },
+  "discovery": {
+    "scopes": [
+      ".opencode/skills/<skill-id>/SKILL.md",
+      "~/.config/opencode/skills/<skill-id>/SKILL.md",
+      ".claude/skills/<skill-id>/SKILL.md",
+      "~/.claude/skills/<skill-id>/SKILL.md",
+      ".agents/skills/<skill-id>/SKILL.md",
+      "~/.agents/skills/<skill-id>/SKILL.md"
+    ],
+    "project_search": "walk-from-CWD-to-git-worktree-root",
+    "duplicate_ids": "must-be-unique-no-precedence-assumed",
+    "claude_compatibility_disable": "OPENCODE_DISABLE_CLAUDE_CODE_SKILLS"
+  },
+  "activation": {
+    "profile_state": "inactive-representation-only",
+    "projected_skill_instances": 0,
+    "loading": {"mechanism": "native-skill-tool", "body": "on-demand"},
+    "routing": {"mode": "exact-id-user-request", "direct_runtime_command": null},
+    "explicit_only": {"officially_supported": false, "documented_switch": null, "claim": "not-made"},
+    "future_permission_gate": {
+      "effect": "ask",
+      "supported_effects": ["allow", "ask", "deny"],
+      "config_path": "permission.skill.<skill-id>",
+      "role": "approval-gate-not-explicit-invocation",
+      "status": "profile-only-not-written"
+    },
+    "implicit_activation": {
+      "enabled_by_phase": false,
+      "runtime_capability": "model-may-request-skill-load",
+      "opted_in_skill_ids": [],
+      "future_scope": "per-skill",
+      "required_evals": ["explicit-positive", "natural-positive", "negative", "overlap-boundary", "tool-unavailable"]
+    },
+    "disabled_core_ids": [],
+    "config_entries": []
+  },
+  "protected_identification": {
+    "authority": "core-skills/registry.json",
+    "opencode_native_protection_field": null,
+    "skill_body_representation": "SKILL.md Governance Metadata",
+    "removal": "explicit-user-approval-required",
+    "automatic_pruning": false
+  },
+  "field_mappings": [
+    {"canonical_field":"stable_skill_id","canonical_source":"registry.skills[].id","opencode_targets":["skill-directory-name","SKILL.md.frontmatter.name"]},
+    {"canonical_field":"display_name","canonical_source":"registry.skills[].display_name","opencode_targets":["SKILL.md.body.Governance Metadata.Display Name"]},
+    {"canonical_field":"capability_category","canonical_source":"registry.skills[].capability_category","opencode_targets":["SKILL.md.body.Governance Metadata.Capability Category"]},
+    {"canonical_field":"core_protected_status","canonical_source":"registry.skills[].core + registry.skills[].protected","opencode_targets":["SKILL.md.body.Governance Metadata.Core Protected Status"]},
+    {"canonical_field":"tool_dependency","canonical_source":"registry.skills[].tool_dependency","opencode_targets":["SKILL.md.body.Governance Metadata.Tool Dependency"]},
+    {"canonical_field":"semantic_version","canonical_source":"registry.skills[].semantic_version","opencode_targets":["SKILL.md.body.Governance Metadata.Semantic Version"]},
+    {"canonical_field":"purpose","canonical_source":"canonical-skill.Purpose","opencode_targets":["SKILL.md.body.Purpose","SKILL.md.frontmatter.description"]},
+    {"canonical_field":"use_when","canonical_source":"canonical-skill.Use When","opencode_targets":["SKILL.md.body.Use When","SKILL.md.frontmatter.description"]},
+    {"canonical_field":"do_not_use_when","canonical_source":"canonical-skill.Do Not Use When","opencode_targets":["SKILL.md.body.Do Not Use When","SKILL.md.frontmatter.description"]},
+    {"canonical_field":"preconditions","canonical_source":"canonical-skill.Preconditions","opencode_targets":["SKILL.md.body.Preconditions"]},
+    {"canonical_field":"workflow","canonical_source":"canonical-skill.Workflow","opencode_targets":["SKILL.md.body.Workflow"]},
+    {"canonical_field":"stop_conditions","canonical_source":"canonical-skill.Stop Conditions","opencode_targets":["SKILL.md.body.Stop Conditions"]},
+    {"canonical_field":"output_contract","canonical_source":"canonical-skill.Output Contract","opencode_targets":["SKILL.md.body.Output Contract"]},
+    {"canonical_field":"safety_authority_boundary","canonical_source":"canonical-skill.Safety Authority Boundary","opencode_targets":["SKILL.md.body.Safety Authority Boundary"]},
+    {"canonical_field":"tool_unavailable_behavior","canonical_source":"canonical-skill.Tool Unavailable Behavior","opencode_targets":["SKILL.md.body.Tool Unavailable Behavior"]}
+  ],
+  "opencode_metadata": {
+    "nonsemantic_fields": ["license", "compatibility", "metadata"],
+    "metadata_type": "string-to-string-map",
+    "v2_fields_forbidden": ["slash", "metadata.opencode/slash", "metadata.opencode/autoinvoke"],
+    "behavioral_fields_forbidden": ["permission", "tools", "agent", "model", "command", "plugin", "mcp"],
+    "canonical_override": "forbidden"
+  },
+  "tool_unavailable_behavior": {
+    "none": {"availability": "not_applicable"},
+    "required": {"availability": "unavailable", "status": "unverified", "success": false, "action": "stop"},
+    "optional": {"availability": "unavailable", "fallback": "predeclared-tool-free-path-only", "tool_dependent_claims": "unverified-success-false"},
+    "forbidden": ["silent-fallback", "silent-install", "silent-configuration", "silent-activation", "tool-emulation", "widened-evidence-route"]
+  },
+  "global_instructions": {
+    "mode": "routing-only",
+    "reference_form": "evidence need -> exact skill ID (user requests it)",
+    "rules": {
+      "primary": "AGENTS.md",
+      "global": "~/.config/opencode/AGENTS.md",
+      "claude_fallback": "CLAUDE.md-only-when-AGENTS.md-absent",
+      "custom_instructions": "configured-instructions-combine-with-AGENTS"
+    },
+    "forbidden_content": ["tool-commands", "tool-setup", "authentication-steps", "skill-body-copy", "fallback-logic", "semantic-overrides"]
+  },
+  "integration_boundaries": {
+    "agents": "separate-not-created-or-used-as-skill-wrapper",
+    "commands": "separate-not-created-or-used-as-skill-wrapper",
+    "plugins": "not-configured-or-loaded",
+    "mcp": "not-configured-or-activated",
+    "runtime_config": "not-written"
+  },
+  "semantic_parity": {
+    "basis": "normalized-semantics",
+    "canonical_fields": ["stable_skill_id","display_name","capability_category","core_protected_status","tool_dependency","semantic_version","purpose","use_when","do_not_use_when","preconditions","workflow","stop_conditions","output_contract","safety_authority_boundary","tool_unavailable_behavior"],
+    "excluded_opencode_metadata": ["license", "compatibility", "metadata"],
+    "capability_dependency_independent": true,
+    "byte_identity_required": false,
+    "codex_format_copied": false,
+    "claude_format_copied": false,
+    "stable_v1_only": true
+  },
+  "runtime_mutation": {
+    "allowed": false,
+    "protected_paths": ["~/.config/opencode/**", "~/.opencode/**", "~/.llm-runtimes/opencode/**", "variants/opencode/**"],
+    "operations": []
+  },
+  "prohibited_operations": ["install", "configure", "activate", "disable", "project", "sync", "prune", "repair", "load-plugin", "start-mcp", "create-agent", "write-permission"]
+}

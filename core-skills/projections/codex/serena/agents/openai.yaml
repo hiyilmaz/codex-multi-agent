@@ -1,0 +1,5 @@
+interface:
+  display_name: "Serena"
+  short_description: "Find symbols, references, and refactor radius"
+policy:
+  allow_implicit_invocation: true

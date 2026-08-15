@@ -1,0 +1,5 @@
+interface:
+  display_name: "DeepWiki MCP"
+  short_description: "Explain public repository concepts"
+policy:
+  allow_implicit_invocation: true

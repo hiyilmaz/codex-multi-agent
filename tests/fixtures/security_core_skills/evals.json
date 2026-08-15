@@ -1,0 +1,27 @@
+{
+  "schema_version": "cma-security-core-skill-evals/v1",
+  "cases": [
+    {"id":"opengrep-explicit","case_type":"explicit","prompt":"Use Opengrep for this bounded SAST review.","expected_primary":"opengrep","rejected_skills":["osv-scanner","betterleaks"]},
+    {"id":"opengrep-auth","case_type":"natural","prompt":"Review this authorization source change for bypasses.","expected_primary":"opengrep","rejected_skills":["osv-scanner","betterleaks"]},
+    {"id":"opengrep-command","case_type":"natural","prompt":"Check this command execution path for command injection.","expected_primary":"opengrep","rejected_skills":["osv-scanner","betterleaks"]},
+    {"id":"opengrep-deserialize","case_type":"natural","prompt":"Analyze unsafe deserialization in the input parser.","expected_primary":"opengrep","rejected_skills":["osv-scanner","betterleaks"]},
+    {"id":"osv-explicit","case_type":"explicit","prompt":"Use OSV-Scanner on the changed lockfile.","expected_primary":"osv-scanner","rejected_skills":["opengrep","betterleaks"]},
+    {"id":"osv-lockfile","case_type":"natural","prompt":"Does package-lock.json contain a vulnerable dependency?","expected_primary":"osv-scanner","rejected_skills":["opengrep","betterleaks"]},
+    {"id":"osv-cve","case_type":"natural","prompt":"Check the CVE status of this resolved dependency version.","expected_primary":"osv-scanner","rejected_skills":["opengrep","betterleaks"]},
+    {"id":"osv-sbom","case_type":"natural","prompt":"Find package vulnerabilities represented in this SBOM.","expected_primary":"osv-scanner","rejected_skills":["opengrep","betterleaks"]},
+    {"id":"better-explicit","case_type":"explicit","prompt":"Use Betterleaks on this bounded diff with redaction.","expected_primary":"betterleaks","rejected_skills":["opengrep","osv-scanner"]},
+    {"id":"better-token","case_type":"natural","prompt":"A token may have been exposed in this configuration diff.","expected_primary":"betterleaks","rejected_skills":["opengrep","osv-scanner"]},
+    {"id":"better-key","case_type":"natural","prompt":"Check whether this file contains a leaked private key.","expected_primary":"betterleaks","rejected_skills":["opengrep","osv-scanner"]},
+    {"id":"better-credential","case_type":"natural","prompt":"Detect an exposed credential without printing its value.","expected_primary":"betterleaks","rejected_skills":["opengrep","osv-scanner"]},
+    {"id":"negative-files","case_type":"negative","prompt":"List the filenames in this repository.","expected_primary":"none","rejected_skills":["opengrep","osv-scanner","betterleaks"]},
+    {"id":"negative-text","case_type":"negative","prompt":"Find the exact text hello world.","expected_primary":"none","rejected_skills":["opengrep","osv-scanner","betterleaks"]},
+    {"id":"negative-manifest-format","case_type":"negative","prompt":"Reformat package.json without checking vulnerabilities.","expected_primary":"none","rejected_skills":["opengrep","osv-scanner","betterleaks"]},
+    {"id":"negative-config-format","case_type":"negative","prompt":"Sort the keys in this configuration file.","expected_primary":"none","rejected_skills":["opengrep","osv-scanner","betterleaks"]},
+    {"id":"overlap-opengrep","case_type":"overlap","prompt":"Review this authorization source change before checking the vulnerable dependency.","expected_primary":"opengrep","rejected_skills":["osv-scanner","betterleaks"]},
+    {"id":"overlap-osv","case_type":"overlap","prompt":"Check the vulnerable dependency before reviewing the authentication source.","expected_primary":"osv-scanner","rejected_skills":["opengrep","betterleaks"]},
+    {"id":"overlap-betterleaks","case_type":"overlap","prompt":"Check the exposed credential before analyzing the command injection path.","expected_primary":"betterleaks","rejected_skills":["opengrep","osv-scanner"]},
+    {"id":"opengrep-unavailable","case_type":"unavailable","prompt":"Opengrep is unavailable for the requested SAST evidence.","expected_primary":"opengrep","rejected_skills":["osv-scanner","betterleaks"],"expected_result":{"availability":"unavailable","status":"unverified","success":false,"action":"stop"}},
+    {"id":"osv-unavailable","case_type":"unavailable","prompt":"OSV-Scanner is unavailable for the dependency CVE check.","expected_primary":"osv-scanner","rejected_skills":["opengrep","betterleaks"],"expected_result":{"availability":"unavailable","status":"unverified","success":false,"action":"stop"}},
+    {"id":"better-unavailable","case_type":"unavailable","prompt":"Betterleaks is unavailable for the exposed secret check.","expected_primary":"betterleaks","rejected_skills":["opengrep","osv-scanner"],"expected_result":{"availability":"unavailable","status":"unverified","success":false,"action":"stop"}}
+  ]
+}

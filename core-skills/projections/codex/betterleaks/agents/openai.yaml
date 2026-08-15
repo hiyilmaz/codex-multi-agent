@@ -1,0 +1,5 @@
+interface:
+  display_name: "Betterleaks"
+  short_description: "Detect secret exposure with redacted findings"
+policy:
+  allow_implicit_invocation: true

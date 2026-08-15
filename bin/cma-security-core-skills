@@ -1,0 +1,508 @@
+#!/usr/bin/env python3
+"""Read-only Phase 7 validator for conditional security core skills."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import stat
+import sys
+from pathlib import Path
+from typing import Any
+
+
+SKILLS = ("opengrep", "osv-scanner", "betterleaks")
+PLATFORMS = ("codex", "claude", "opencode")
+SECTIONS = (
+    "Governance Metadata", "Purpose", "Use When", "Do Not Use When",
+    "Preconditions", "Workflow", "Stop Conditions", "Output Contract",
+    "Safety / Authority Boundary", "Tool Unavailable Behavior",
+)
+CONTRACTS = {
+    "opengrep": {
+        "display": "Opengrep", "category": "static-application-security-testing",
+        "description": "Use conditionally for SAST and security-sensitive source behavior; not for dependency CVEs, secret-only exposure, or ordinary source discovery.",
+        "short": "Analyze security-sensitive source with SAST",
+        "purpose": "SAST and security-sensitive source behavior",
+        "boundary": "- Dependency or package vulnerability detection; use OSV-Scanner.",
+        "blocked": "SAST",
+    },
+    "osv-scanner": {
+        "display": "OSV-Scanner", "category": "dependency-vulnerability-analysis",
+        "description": "Use conditionally for dependency and package vulnerability detection when manifests, lockfiles, SBOMs, or dependency status matter; not for source SAST or secret detection.",
+        "short": "Detect dependency and package vulnerabilities",
+        "purpose": "dependency and package vulnerability detection",
+        "boundary": "- Source-code SAST or security-sensitive source behavior; use Opengrep.",
+        "blocked": "dependency-vulnerability",
+    },
+    "betterleaks": {
+        "display": "Betterleaks", "category": "secret-detection",
+        "description": "Use conditionally for possible exposure of credentials, tokens, keys, secrets, or sensitive configuration; not for general SAST or dependency CVEs.",
+        "short": "Detect secret exposure with redacted findings",
+        "purpose": "secret exposure detection",
+        "boundary": "- General SAST or source security analysis; use Opengrep.",
+        "blocked": "secret-exposure",
+    },
+}
+SAFETY = {
+    "opengrep": """- Opengrep analysis is conditional, read-only, and bounded; it never runs by default on every task.
+- This skill never authorizes installation, configuration, rule downloads, network access, code changes, or expansion to a broad repository scan.
+- Do not expose secrets or unsafe sensitive source snippets; minimize and redact evidence.""",
+    "osv-scanner": """- OSV-Scanner analysis is conditional, detection-only, and bounded; it never runs by default on every task.
+- This skill never authorizes installation, configuration, database updates, network access, fix mode, package-manager execution, or dependency changes.
+- Do not expose credentials or sensitive package-source configuration; minimize and redact evidence.""",
+    "betterleaks": """- Betterleaks analysis is conditional, read-only, redacted, and bounded; it never runs by default on every task.
+- This skill never authorizes installation, configuration, repository-history expansion, network validation, credential use, mutation, or a broad repository scan.
+- Treat every match as sensitive; never expose, persist, echo, or transmit the matched value.""",
+}
+OUTPUT = {
+    "opengrep": """- Report finding type, severity when available, location, short explanation, and remediation direction.
+- Identify the analyzed scope and rule provenance, and distinguish confirmed findings from candidates.
+- Omit or redact sensitive snippets and report truthful status and success fields.""",
+    "osv-scanner": """- Report finding type, severity when available, location, short explanation, and remediation direction.
+- Include affected package, resolved version, advisory identifier, input scope, and distinguish vulnerabilities found from execution failure.
+- Avoid sensitive configuration values and report truthful status and success fields.""",
+    "betterleaks": """- Report finding type, severity when available, location, short explanation, and remediation direction.
+- Keep every finding redacted; Never report the matched secret value, full credential, token, or key.
+- State scan scope and detector provenance without reproducing sensitive configuration, and report truthful status and success fields.""",
+}
+ROUTER_ROWS = (
+    "| SAST or source security analysis | Opengrep, conditional |",
+    "| Dependency CVE or package vulnerability | OSV-Scanner, conditional |",
+    "| Secret exposure | Betterleaks, conditional and redacted |",
+)
+ROUTING_HASHES = {
+    "codex": "b992032eaed3aeace9c4aa4dadc0ced1ac3ef904c15c297a00fdd742b76ed0b1",
+    "claude": "30ea3cf1ff96a30389577755a98d8703ca696a74eb01d434431d14ea863eb228",
+    "opencode": "23550457353055d958df21894495c9eda5aa2b90c835a2b3510b7e4dde9a4250",
+}
+SEMANTIC_CONTRACT_HASHES = {
+    "opengrep": "e9b839b629dc9b8dc28766eb3dbba18f43b29d3d1a894a0ae0b90ad70a058b77",
+    "osv-scanner": "8562e773e6430dea482b7cac93971d193359c6b4107850a0d495e6f4e065ea09",
+    "betterleaks": "45e3170048c705d5b6eb14311b6d9d8f729cbf4669b36fe62fcace2ee8f23a95",
+}
+
+
+class InputError(Exception):
+    """Unsafe or malformed validation input."""
+
+
+def finding(code: str, *, skill: str | None = None,
+            platform: str | None = None, field: str | None = None) -> dict[str, str]:
+    item = {"code": code}
+    if skill is not None:
+        item["skill"] = skill
+    if platform is not None:
+        item["platform"] = platform
+    if field is not None:
+        item["field"] = field
+    return item
+
+
+def _pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise InputError("duplicate JSON key")
+        result[key] = value
+    return result
+
+
+def _read_text(path: Path, maximum: int) -> str:
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+        try:
+            before = os.fstat(descriptor)
+            if not stat.S_ISREG(before.st_mode) or before.st_size > maximum:
+                raise InputError("invalid input")
+            chunks: list[bytes] = []
+            remaining = maximum + 1
+            while remaining:
+                chunk = os.read(descriptor, min(65536, remaining))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                remaining -= len(chunk)
+            after = os.fstat(descriptor)
+        finally:
+            os.close(descriptor)
+    except InputError:
+        raise
+    except OSError as error:
+        raise InputError("invalid input") from error
+    identity = lambda item: (item.st_dev, item.st_ino, item.st_size, item.st_mtime_ns)
+    if identity(before) != identity(after) or sum(map(len, chunks)) > maximum:
+        raise InputError("unstable input")
+    try:
+        return b"".join(chunks).decode("utf-8")
+    except UnicodeError as error:
+        raise InputError("invalid text") from error
+
+
+def _bounded(value: Any) -> bool:
+    stack = [(value, 1)]
+    nodes = 0
+    while stack:
+        current, depth = stack.pop()
+        nodes += 1
+        if depth > 64 or nodes > 50_000:
+            return False
+        if isinstance(current, dict):
+            stack.extend((child, depth + 1) for child in current.values())
+        elif isinstance(current, list):
+            stack.extend((child, depth + 1) for child in current)
+    return True
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(_read_text(path, 1_000_000), object_pairs_hook=_pairs)
+    except InputError:
+        raise
+    except (json.JSONDecodeError, RecursionError) as error:
+        raise InputError("invalid JSON") from error
+    if not isinstance(value, dict) or not _bounded(value):
+        raise InputError("invalid JSON object")
+    return value
+
+
+def _scalar(value: str) -> object:
+    value = value.strip()
+    if value == "true":
+        return True
+    if value == "false":
+        return False
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        return value[1:-1]
+    return value
+
+
+def _normalize(value: str) -> str:
+    return "\n".join(" ".join(line.split()) for line in value.strip().splitlines()
+                     if line.strip())
+
+
+def parse_skill(path: Path) -> dict[str, Any]:
+    lines = _read_text(path, 100_000).splitlines()
+    if not lines or lines[0] != "---":
+        raise InputError("missing frontmatter")
+    try:
+        end = lines.index("---", 1)
+    except ValueError as error:
+        raise InputError("unterminated frontmatter") from error
+    frontmatter: dict[str, object] = {}
+    for line in lines[1:end]:
+        if not line.strip() or ":" not in line or line.startswith((" ", "\t")):
+            raise InputError("invalid frontmatter")
+        key, value = line.split(":", 1)
+        if key in frontmatter:
+            raise InputError("duplicate frontmatter")
+        frontmatter[key] = _scalar(value)
+    content = lines[end + 1:]
+    first = next((index for index, line in enumerate(content) if line.startswith("## ")), len(content))
+    preamble = [line for line in content[:first] if line.strip()]
+    if len(preamble) != 1 or re.fullmatch(r"# [^#].+", preamble[0]) is None:
+        raise InputError("invalid preamble")
+    headings: list[str] = []
+    sections: dict[str, str] = {}
+    current: str | None = None
+    body: list[str] = []
+    for line in content[first:]:
+        if line.startswith("## "):
+            if current is not None:
+                if current in sections:
+                    raise InputError("duplicate section")
+                sections[current] = "\n".join(body).strip()
+            current, body = line[3:].strip(), []
+            headings.append(current)
+        elif current is not None:
+            if line.startswith("# "):
+                raise InputError("invalid heading")
+            body.append(line)
+    if current is not None:
+        if current in sections:
+            raise InputError("duplicate section")
+        sections[current] = "\n".join(body).strip()
+    if tuple(headings) != SECTIONS:
+        raise InputError("invalid sections")
+    governance: dict[str, str] = {}
+    for line in sections["Governance Metadata"].splitlines():
+        match = re.fullmatch(r"- ([^:]+): (.+)", line)
+        if match:
+            governance[match.group(1)] = match.group(2)
+    return {"frontmatter": frontmatter, "title": preamble[0],
+            "sections": sections, "governance": governance}
+
+
+def _semantic(parsed: dict[str, Any]) -> dict[str, Any]:
+    return {"title": parsed["title"], "governance": parsed["governance"],
+            "sections": {key: _normalize(parsed["sections"][key]) for key in SECTIONS}}
+
+
+def semantic_fingerprints(root: Path, skill: str) -> dict[str, str]:
+    locations = {"canonical": root / f"core-skills/skills/{skill}/SKILL.md"}
+    locations.update({p: root / f"core-skills/projections/{p}/{skill}/SKILL.md" for p in PLATFORMS})
+    result = {}
+    for platform, path in locations.items():
+        payload = json.dumps(_semantic(parse_skill(path)), sort_keys=True, separators=(",", ":"))
+        result[platform] = hashlib.sha256(payload.encode()).hexdigest()
+    return result
+
+
+def _valid_registry(root: Path) -> tuple[bool, dict[str, Any]]:
+    registry = load_json(root / "core-skills/registry.json")
+    if not isinstance(registry.get("skills"), list):
+        raise InputError("invalid registry")
+    validator = Path(__file__).resolve().with_name("cma-core-skill-governance")
+    try:
+        if validator.parent != Path(__file__).resolve().parent:
+            raise InputError("invalid dependency")
+        namespace: dict[str, Any] = {"__name__": "governance_dependency", "__file__": str(validator)}
+        exec(compile(_read_text(validator, 1_000_000), str(validator), "exec"), namespace)
+        validate = namespace.get("validate_registry")
+        if not callable(validate) or validate(registry):
+            return False, registry
+    except Exception as error:
+        raise InputError("governance unavailable") from error
+    return True, registry
+
+
+def _record(registry: dict[str, Any], skill: str) -> dict[str, Any]:
+    matches = [item for item in registry.get("skills", [])
+               if isinstance(item, dict) and item.get("id") == skill]
+    if len(matches) != 1:
+        raise InputError("invalid registry record")
+    return matches[0]
+
+
+def _unavailable(skill: str) -> str:
+    return ("- Report `availability=unavailable`, `status=unverified`, `success=false`, and `action=stop`.\n"
+            f"- Name the blocked {CONTRACTS[skill]['blocked']} evidence need and stop the dependent workflow.\n"
+            "- Never install, configure, activate, emulate, substitute another scanner, or widen the evidence route.")
+
+
+def validate_native_metadata(root: Path, skill: str) -> list[dict[str, str]]:
+    findings = []
+    contract = CONTRACTS[skill]
+    for platform in PLATFORMS:
+        try:
+            frontmatter = parse_skill(root / f"core-skills/projections/{platform}/{skill}/SKILL.md")["frontmatter"]
+            expected: dict[str, object] = {"name": skill, "description": contract["description"]}
+            if platform == "claude":
+                expected.update({"disable-model-invocation": True, "user-invocable": True})
+            valid = frontmatter == expected
+            if platform == "codex":
+                expected_yaml = (f'interface:\n  display_name: "{contract["display"]}"\n'
+                                 f'  short_description: "{contract["short"]}"\n'
+                                 "policy:\n  allow_implicit_invocation: true\n")
+                valid = valid and _read_text(root / f"core-skills/projections/codex/{skill}/agents/openai.yaml", 10_000) == expected_yaml
+        except InputError:
+            valid = False
+        if not valid:
+            findings.append(finding("INVALID_NATIVE_METADATA", skill=skill, platform=platform))
+    return findings
+
+
+def validate_skill(root: Path, skill: str, registry: dict[str, Any]) -> list[dict[str, str]]:
+    findings = []
+    contract, record = CONTRACTS[skill], _record(registry, skill)
+    expected_governance = {
+        "Stable Skill ID": skill, "Display Name": contract["display"],
+        "Capability Category": contract["category"], "Core / Protected Status": "core/protected",
+        "Tool Dependency": f"required: {skill}", "Semantic Version": "1.0.0",
+    }
+    if (record.get("display_name") != contract["display"] or
+            record.get("capability_category") != contract["category"] or
+            record.get("core") is not True or record.get("protected") is not True or
+            record.get("semantic_version") != "1.0.0" or
+            record.get("tool_dependency") != {"tool_id": skill, "mode": "required"}):
+        findings.append(finding("REGISTRY_METADATA_MISMATCH", skill=skill))
+    parsed: dict[str, dict[str, Any]] = {}
+    locations = {"canonical": root / f"core-skills/skills/{skill}/SKILL.md"}
+    locations.update({p: root / f"core-skills/projections/{p}/{skill}/SKILL.md" for p in PLATFORMS})
+    for platform, path in locations.items():
+        try:
+            value = parse_skill(path)
+        except InputError:
+            findings.append(finding("INVALID_SKILL", skill=skill, platform=platform))
+            continue
+        parsed[platform] = value
+        if value["title"] != f"# {contract['display']}":
+            findings.append(finding("INVALID_SKILL", skill=skill, platform=platform))
+        if value["governance"] != expected_governance:
+            findings.append(finding("REGISTRY_METADATA_MISMATCH", skill=skill, platform=platform))
+        purpose = value["sections"]["Purpose"]
+        if contract["purpose"] not in purpose or "one primary evidence need" not in purpose:
+            findings.append(finding("PURPOSE_CONTRACT_MISMATCH", skill=skill, platform=platform))
+        if contract["boundary"] not in value["sections"]["Do Not Use When"]:
+            findings.append(finding("BOUNDARY_CONTRACT_MISMATCH", skill=skill, platform=platform))
+        if _normalize(value["sections"]["Safety / Authority Boundary"]) != _normalize(SAFETY[skill]):
+            findings.append(finding("AUTHORITY_CONTRACT_MISMATCH", skill=skill, platform=platform))
+        if _normalize(value["sections"]["Tool Unavailable Behavior"]) != _normalize(_unavailable(skill)):
+            findings.append(finding("UNAVAILABLE_CONTRACT_MISMATCH", skill=skill, platform=platform))
+        if _normalize(value["sections"]["Output Contract"]) != _normalize(OUTPUT[skill]):
+            code = "SENSITIVE_OUTPUT_CONTRACT_MISMATCH" if skill == "betterleaks" else "OUTPUT_CONTRACT_MISMATCH"
+            findings.append(finding(code, skill=skill, platform=platform))
+        semantic_payload = json.dumps(_semantic(value), sort_keys=True, separators=(",", ":"))
+        if hashlib.sha256(semantic_payload.encode()).hexdigest() != SEMANTIC_CONTRACT_HASHES[skill]:
+            findings.append(finding("SEMANTIC_CONTRACT_MISMATCH", skill=skill, platform=platform))
+    if len(parsed) == 4:
+        fingerprints = semantic_fingerprints(root, skill)
+        for platform in PLATFORMS:
+            if fingerprints[platform] != fingerprints["canonical"]:
+                findings.append(finding("SEMANTIC_DRIFT", skill=skill, platform=platform))
+    findings.extend(validate_native_metadata(root, skill))
+    return findings
+
+
+SIGNAL_MARKERS = {
+    "betterleaks": ("exposed credential", "exposed secret", "leaked token",
+                    "token may have been exposed", "private key", "secret exposure"),
+    "osv-scanner": ("vulnerable dependency", "dependency cve", "cve status",
+                    "package vulnerabilities", "vulnerability status"),
+    "opengrep": ("authorization source", "authentication source", "command injection",
+                 "command execution path", "unsafe deserialization", "permission boundary",
+                 "security-sensitive source"),
+}
+
+
+def prompt_signals(prompt: str) -> set[str]:
+    if not isinstance(prompt, str):
+        return set()
+    text = " ".join(prompt.lower().split())
+    return {skill for skill, markers in SIGNAL_MARKERS.items()
+            if any(marker in text for marker in markers)}
+
+
+def route_prompt(prompt: str) -> str:
+    if not isinstance(prompt, str):
+        return "none"
+    text = " ".join(prompt.lower().split())
+    for marker, skill in (("opengrep", "opengrep"), ("osv-scanner", "osv-scanner"), ("betterleaks", "betterleaks")):
+        if marker in text:
+            return skill
+    matches = [(text.index(marker), skill) for skill, markers in SIGNAL_MARKERS.items()
+               for marker in markers if marker in text]
+    return min(matches)[1] if matches else "none"
+
+
+def load_eval(path: Path) -> dict[str, Any]:
+    return load_json(path)
+
+
+def validate_eval_cases(payload: dict[str, Any]) -> list[dict[str, str]]:
+    if payload.get("schema_version") != "cma-security-core-skill-evals/v1":
+        return [finding("INVALID_EVAL", field="schema_version")]
+    cases = payload.get("cases")
+    if not isinstance(cases, list) or len(cases) < 16:
+        return [finding("INVALID_EVAL", field="cases")]
+    findings, ids, prompts, primaries, unavailable = [], set(), set(), set(), set()
+    classes = {"explicit": set(), "natural": set(), "negative": set(),
+               "overlap": set(), "unavailable": set()}
+    expected_unavailable = {"availability": "unavailable", "status": "unverified", "success": False, "action": "stop"}
+    for case in cases:
+        if not isinstance(case, dict):
+            raise InputError("invalid eval case")
+        if (not isinstance(case.get("prompt"), str) or
+                not isinstance(case.get("case_type"), str) or
+                not isinstance(case.get("expected_primary"), str) or
+                not isinstance(case.get("rejected_skills"), list) or
+                not all(isinstance(item, str) for item in case["rejected_skills"]) or
+                ("expected_result" in case and not isinstance(case["expected_result"], dict))):
+            raise InputError("invalid eval types")
+        if not isinstance(case.get("id"), str) or case["id"] in ids:
+            findings.append(finding("INVALID_EVAL", field="id")); continue
+        ids.add(case["id"])
+        primary = route_prompt(case.get("prompt"))
+        rejected = case.get("rejected_skills")
+        prompt = case.get("prompt")
+        case_type = case.get("case_type")
+        expected_rejected = set(SKILLS) if primary == "none" else set(SKILLS) - {primary}
+        rejected_valid = (isinstance(rejected, list) and
+                          all(isinstance(item, str) for item in rejected) and
+                          len(rejected) == len(set(rejected)) and
+                          set(rejected) == expected_rejected)
+        if (not isinstance(prompt, str) or prompt in prompts or
+                not isinstance(case_type, str) or case_type not in classes or
+                primary != case.get("expected_primary") or not rejected_valid):
+            findings.append(finding("INVALID_EVAL", field="routing"))
+        if isinstance(prompt, str):
+            prompts.add(prompt)
+        primaries.add(primary)
+        if isinstance(case_type, str) and case_type in classes:
+            classes[case_type].add(primary)
+        if "expected_result" in case:
+            if primary not in SKILLS or case["expected_result"] != expected_unavailable:
+                findings.append(finding("INVALID_EVAL", field="unavailable"))
+            unavailable.add(primary)
+        if case_type == "overlap" and len(prompt_signals(prompt)) < 2:
+            findings.append(finding("INVALID_EVAL", field="overlap"))
+    expected_skills = set(SKILLS)
+    if (not expected_skills.issubset(primaries) or "none" not in primaries or
+            unavailable != expected_skills or classes["explicit"] != expected_skills or
+            classes["natural"] != expected_skills or classes["overlap"] != expected_skills or
+            classes["unavailable"] != expected_skills or classes["negative"] != {"none"} or
+            sum(1 for case in cases if case.get("case_type") == "negative") < 3):
+        findings.append(finding("INVALID_EVAL", field="coverage"))
+    return findings
+
+
+def validate_routing(root: Path) -> list[dict[str, str]]:
+    findings = []
+    for platform in PLATFORMS:
+        try:
+            text = _read_text(root / f"variants/{platform}/home/registry/modules/CMA_REPO_TOOLS.md", 100_000)
+            valid = hashlib.sha256(text.encode()).hexdigest() == ROUTING_HASHES[platform]
+            valid = valid and all(text.count(row) == 1 for row in ROUTER_ROWS)
+        except InputError:
+            valid = False
+        if not valid:
+            findings.append(finding("ROUTING_CONTRACT_MISMATCH", platform=platform))
+    return findings
+
+
+def validate_tree(root: Path, eval_path: Path, skill: str | None = None) -> list[dict[str, str]]:
+    root = root.resolve()
+    if skill is not None and skill not in SKILLS:
+        raise InputError("unsupported skill")
+    valid_registry, registry = _valid_registry(root)
+    selected = (skill,) if skill else SKILLS
+    findings = [] if valid_registry else [finding("REGISTRY_INVALID", skill=item) for item in selected]
+    for item in selected:
+        findings.extend(validate_skill(root, item, registry))
+    findings.extend(validate_eval_cases(load_eval(eval_path)))
+    findings.extend(validate_routing(root))
+    unique = {json.dumps(item, sort_keys=True): item for item in findings}
+    return [unique[key] for key in sorted(unique)]
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="cma-security-core-skills")
+    subs = parser.add_subparsers(dest="command", required=True)
+    validate = subs.add_parser("validate")
+    validate.add_argument("--root", type=Path, required=True)
+    validate.add_argument("--eval", dest="eval_path", type=Path, required=True)
+    validate.add_argument("--skill", choices=SKILLS)
+    return parser
+
+
+def main() -> int:
+    try:
+        args = _parser().parse_args()
+        findings = validate_tree(args.root, args.eval_path, args.skill)
+    except (InputError, TypeError, ValueError):
+        print(json.dumps({"findings": [{"code": "INVALID_INPUT"}], "status": "invalid", "success": False}, sort_keys=True))
+        return 2
+    if findings:
+        print(json.dumps({"findings": findings, "status": "failed", "success": False}, sort_keys=True))
+        return 1
+    print(json.dumps({"findings": [], "status": "passed", "success": True}, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

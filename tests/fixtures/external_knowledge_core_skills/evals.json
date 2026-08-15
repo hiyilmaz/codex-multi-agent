@@ -1,0 +1,30 @@
+{
+  "schema_version": "cma-external-knowledge-core-skill-evals/v1",
+  "cases": [
+    {"id":"github-explicit","case_type":"explicit","prompt":"Use GitHub to verify the remote release tag.","expected_primary":"github","rejected_skills":["deepwiki","context7"]},
+    {"id":"github-release","case_type":"natural","prompt":"Verify the current remote release and tag for this repository.","expected_primary":"github","rejected_skills":["deepwiki","context7"]},
+    {"id":"github-pr","case_type":"natural","prompt":"Check the remote pull request state and head commit.","expected_primary":"github","rejected_skills":["deepwiki","context7"]},
+    {"id":"github-advisory","case_type":"natural","prompt":"Find the repository security advisory on GitHub.","expected_primary":"github","rejected_skills":["deepwiki","context7"]},
+    {"id":"deepwiki-explicit","case_type":"explicit","prompt":"Use DeepWiki to explain this public repository concept.","expected_primary":"deepwiki","rejected_skills":["github","context7"]},
+    {"id":"deepwiki-architecture","case_type":"natural","prompt":"Explain the public upstream repository architecture because no local checkout is available.","expected_primary":"deepwiki","rejected_skills":["github","context7"]},
+    {"id":"deepwiki-concept","case_type":"natural","prompt":"How does this public repository's scheduler concept work when local evidence is insufficient?","expected_primary":"deepwiki","rejected_skills":["github","context7"]},
+    {"id":"context7-explicit","case_type":"explicit","prompt":"Use Context7 for the version-specific library documentation.","expected_primary":"context7","rejected_skills":["github","deepwiki"]},
+    {"id":"context7-api","case_type":"natural","prompt":"Verify this framework API in version 5.2 documentation.","expected_primary":"context7","rejected_skills":["github","deepwiki"]},
+    {"id":"context7-current","case_type":"natural","prompt":"What is the current library API behavior for version 3?","expected_primary":"context7","rejected_skills":["github","deepwiki"]},
+    {"id":"local-file","case_type":"local","prompt":"Read the local src/auth.py file; local evidence is sufficient.","expected_primary":"local","rejected_skills":["github","deepwiki","context7"]},
+    {"id":"local-text","case_type":"local","prompt":"Find this exact string in the local repository.","expected_primary":"local","rejected_skills":["github","deepwiki","context7"]},
+    {"id":"local-architecture","case_type":"local","prompt":"Map the architecture of this local checkout.","expected_primary":"local","rejected_skills":["github","deepwiki","context7"]},
+    {"id":"local-lockfile","case_type":"local","prompt":"Read the local lockfile; it already answers the installed version.","expected_primary":"local","rejected_skills":["github","deepwiki","context7"]},
+    {"id":"local-overrides-github","case_type":"local","prompt":"Use GitHub for the release, but local evidence is sufficient.","expected_primary":"local","rejected_skills":["github","deepwiki","context7"]},
+    {"id":"local-overrides-deepwiki","case_type":"local","prompt":"Use DeepWiki for the concept, but local evidence is sufficient.","expected_primary":"local","rejected_skills":["github","deepwiki","context7"]},
+    {"id":"local-overrides-context7","case_type":"local","prompt":"Use Context7 for the API, but local evidence is sufficient.","expected_primary":"local","rejected_skills":["github","deepwiki","context7"]},
+    {"id":"overlap-github","case_type":"overlap","prompt":"Verify the remote release before explaining the public repository concept.","expected_primary":"github","rejected_skills":["deepwiki","context7"]},
+    {"id":"overlap-deepwiki","case_type":"overlap","prompt":"Explain the public repository architecture before checking its version-specific API documentation.","expected_primary":"deepwiki","rejected_skills":["github","context7"]},
+    {"id":"overlap-context7","case_type":"overlap","prompt":"Verify the version-specific library API before checking the remote release.","expected_primary":"context7","rejected_skills":["github","deepwiki"]},
+    {"id":"github-unavailable","case_type":"unavailable","prompt":"GitHub is unavailable for the remote release fact.","expected_primary":"github","rejected_skills":["deepwiki","context7"],"expected_result":{"availability":"unavailable","status":"unverified","success":false,"action":"stop"}},
+    {"id":"deepwiki-unavailable","case_type":"unavailable","prompt":"DeepWiki is unavailable for the public repository concept.","expected_primary":"deepwiki","rejected_skills":["github","context7"],"expected_result":{"availability":"unavailable","status":"unverified","success":false,"action":"stop"}},
+    {"id":"context7-unavailable","case_type":"unavailable","prompt":"Context7 is unavailable for the version-specific API documentation.","expected_primary":"context7","rejected_skills":["github","deepwiki"],"expected_result":{"availability":"unavailable","status":"unverified","success":false,"action":"stop"}},
+    {"id":"negative-security","case_type":"local","prompt":"Run local SAST on the changed authorization source.","expected_primary":"local","rejected_skills":["github","deepwiki","context7"]},
+    {"id":"negative-symbol","case_type":"local","prompt":"Find local symbol references and refactor radius.","expected_primary":"local","rejected_skills":["github","deepwiki","context7"]}
+  ]
+}

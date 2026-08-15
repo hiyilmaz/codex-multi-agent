@@ -1,0 +1,5 @@
+interface:
+  display_name: "cplt"
+  short_description: "Run risky commands in verified isolation"
+policy:
+  allow_implicit_invocation: false
