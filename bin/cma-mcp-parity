@@ -1,0 +1,274 @@
+#!/usr/bin/env python3
+"""Apply the approved user-global MCP contract without storing credentials."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import stat
+import subprocess
+import sys
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    try:
+        import tomli as tomllib
+    except ModuleNotFoundError:
+        tomllib = None
+
+EXPECTED = {"codex": "0.147.0", "claude": "2.1.121", "opencode": "1.18.17"}
+REQUIRED_ENVIRONMENT = ("GITHUB_PAT_TOKEN", "CONTEXT7_API_KEY")
+REMOTE = {
+    "deepwiki": {"type": "http", "url": "https://mcp.deepwiki.com/mcp"},
+    "github": {"type": "http", "url": "https://api.githubcopilot.com/mcp/",
+               "headers": {"Authorization": "Bearer ${GITHUB_PAT_TOKEN}"}},
+    "context7": {"type": "http", "url": "https://mcp.context7.com/mcp",
+                 "headers": {"Authorization": "Bearer ${CONTEXT7_API_KEY}"}},
+}
+
+
+class ParityError(RuntimeError):
+    pass
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--home", type=Path, default=Path.home())
+    parser.add_argument("--codex-bin", default="codex")
+    parser.add_argument("--claude-bin", default="claude")
+    parser.add_argument("--opencode-bin", default="opencode")
+    return parser.parse_args()
+
+
+def version(binary: str) -> str:
+    resolved = shutil.which(binary)
+    if resolved is None:
+        raise ParityError(f"version_gate_{binary}")
+    result = subprocess.run(
+        (resolved, "--version"), text=True, capture_output=True, check=False,
+        env={"PATH": os.defpath, "LC_ALL": "C"},
+    )
+    if result.returncode != 0:
+        raise ParityError(f"version_gate_{binary}")
+    for token in result.stdout.split():
+        if token.count(".") == 2 and token.replace(".", "").isdigit():
+            return token
+    raise ParityError(f"version_gate_{binary}")
+
+
+def safe_path(path: Path, home: Path) -> None:
+    current = path.parent
+    while current != home:
+        if current.is_symlink():
+            raise ParityError("unsafe_symlink")
+        current = current.parent
+        if current == current.parent:
+            raise ParityError("unsafe_target")
+    if path.is_symlink() or (path.exists() and not path.is_file()):
+        raise ParityError("unsafe_target")
+
+
+def safe_home(home: Path) -> None:
+    current = home
+    while True:
+        if current.is_symlink():
+            raise ParityError("unsafe_home")
+        if current == current.parent:
+            return
+        current = current.parent
+
+
+def read_json(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ParityError("invalid_json") from exc
+    if not isinstance(value, dict):
+        raise ParityError("invalid_json")
+    return value
+
+
+def atomic_json(path: Path, value: dict, home: Path) -> bool:
+    rendered = json.dumps(value, indent=2, sort_keys=True) + "\n"
+    original = path.read_text(encoding="utf-8") if path.exists() else None
+    if original == rendered:
+        return False
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    mode = stat.S_IMODE(path.stat().st_mode) if path.exists() else 0o600
+    backup = path.parent / "backups" / f"mcp-parity-{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}"
+    safe_path(backup, home)
+    if path.exists():
+        backup.mkdir(mode=0o700, parents=True)
+        shutil.copy2(path, backup / path.name)
+        os.chmod(backup, 0o700)
+    descriptor, temporary = tempfile.mkstemp(prefix=".mcp-parity-", dir=path.parent)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(rendered)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(temporary, mode)
+        os.replace(temporary, path)
+    except Exception:
+        try:
+            os.unlink(temporary)
+        except FileNotFoundError:
+            pass
+        raise
+    return True
+
+
+def restore(path: Path, original: bytes | None, mode: int | None) -> None:
+    if original is None:
+        path.unlink(missing_ok=True)
+        return
+    descriptor, temporary = tempfile.mkstemp(prefix=".mcp-parity-restore-", dir=path.parent)
+    with os.fdopen(descriptor, "wb") as handle:
+        handle.write(original)
+        handle.flush()
+        os.fsync(handle.fileno())
+    if mode is not None:
+        os.chmod(temporary, mode)
+    os.replace(temporary, path)
+
+
+def claude_servers() -> dict:
+    return {
+        "serena": {"type": "stdio", "command": "serena", "args": ["start-mcp-server", "--context=claude-code", "--project-from-cwd"], "env": {}},
+        **REMOTE,
+    }
+
+
+def opencode_servers() -> dict:
+    def remote(value: dict) -> dict:
+        result = {"type": "remote", "url": value["url"], "enabled": True}
+        if "headers" in value:
+            result["headers"] = {
+                name: credential.replace("${GITHUB_PAT_TOKEN}", "{env:GITHUB_PAT_TOKEN}")
+                .replace("${CONTEXT7_API_KEY}", "{env:CONTEXT7_API_KEY}")
+                for name, credential in value["headers"].items()
+            }
+        return result
+    return {
+        "serena": {"type": "local", "command": ["serena", "start-mcp-server", "--project-from-cwd"], "enabled": True},
+        **{name: remote(value) for name, value in REMOTE.items()},
+    }
+
+
+def validate_codex_config(home: Path) -> None:
+    config = home / ".codex" / "config.toml"
+    safe_path(config, home)
+    if tomllib is None:
+        raise ParityError("toml_parser_unavailable")
+    try:
+        data = tomllib.loads(config.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
+        raise ParityError("invalid_codex_mcp") from exc
+    expected = {
+        "serena": {"command": "serena", "args": ["start-mcp-server", "--context=codex", "--project-from-cwd"], "enabled": True},
+        "deepwiki": {"url": "https://mcp.deepwiki.com/mcp", "enabled": True},
+        "github": {"url": "https://api.githubcopilot.com/mcp/", "bearer_token_env_var": "GITHUB_PAT_TOKEN", "enabled": True},
+        "context7": {"url": "https://mcp.context7.com/mcp", "bearer_token_env_var": "CONTEXT7_API_KEY", "enabled": True},
+    }
+    servers = data.get("mcp_servers")
+    if not isinstance(servers, dict):
+        raise ParityError("invalid_codex_mcp")
+    for name, fields in expected.items():
+        server = servers.get(name)
+        if not isinstance(server, dict):
+            raise ParityError("invalid_codex_mcp")
+        allowed = set(fields)
+        if name == "context7":
+            allowed.add("required")
+        if set(server) - allowed:
+            raise ParityError("unapproved_codex_mcp_field")
+        for key, value in fields.items():
+            actual = server.get(key)
+            if key == "enabled":
+                if type(actual) is not bool or actual is not value:
+                    raise ParityError("invalid_codex_mcp")
+            elif actual != value:
+                raise ParityError("invalid_codex_mcp")
+        if name == "context7" and "required" in server and (type(server["required"]) is not bool or server["required"] is not True):
+            raise ParityError("invalid_codex_mcp")
+    xcode_sections = [servers.get("xcodebuildmcp")]
+    plugins = data.get("plugins")
+    plugin = plugins.get("build-ios-apps@openai-curated-remote", {}) if isinstance(plugins, dict) else {}
+    if isinstance(plugin, dict):
+        xcode_sections.append(plugin.get("mcp_servers", {}).get("xcodebuildmcp"))
+    for section in xcode_sections:
+        if section is not None and (not isinstance(section, dict) or section.get("enabled") is not False):
+            raise ParityError("invalid_codex_xcodebuildmcp")
+
+
+def atomic_merge(updates: tuple[tuple[Path, dict], ...], home: Path) -> bool:
+    before = {
+        path: (path.read_bytes() if path.exists() else None,
+               stat.S_IMODE(path.stat().st_mode) if path.exists() else None)
+        for path, _ in updates
+    }
+    try:
+        changed = False
+        for path, value in updates:
+            changed = atomic_json(path, value, home) or changed
+        return changed
+    except Exception as exc:
+        restore_error = None
+        for path, (original, mode) in before.items():
+            try:
+                restore(path, original, mode)
+            except Exception as error:
+                restore_error = error
+        if restore_error is not None:
+            raise ParityError("atomic_rollback_failed") from restore_error
+        raise ParityError("atomic_merge_failed") from exc
+
+
+def main() -> int:
+    args = parse_args()
+    home = args.home.expanduser()
+    if not home.is_absolute():
+        raise ParityError("unsafe_home")
+    safe_home(home)
+    binaries = {"codex": args.codex_bin, "claude": args.claude_bin, "opencode": args.opencode_bin}
+    for name, expected in EXPECTED.items():
+        if version(binaries[name]) != expected:
+            raise ParityError(f"unsupported_{name}_version")
+    if any(not os.environ.get(name) for name in REQUIRED_ENVIRONMENT):
+        raise ParityError("missing_required_environment")
+    validate_codex_config(home)
+    claude = home / ".claude.json"
+    opencode = home / ".config" / "opencode" / "opencode.json"
+    safe_path(claude, home)
+    safe_path(opencode, home)
+    claude_data = read_json(claude)
+    opencode_data = read_json(opencode)
+    claude_mcp = claude_data.setdefault("mcpServers", {})
+    if not isinstance(claude_mcp, dict):
+        raise ParityError("invalid_claude_mcp")
+    open_mcp = opencode_data.setdefault("mcp", {})
+    if not isinstance(open_mcp, dict) or "servers" in open_mcp:
+        raise ParityError("unsupported_opencode_mcp_schema")
+    claude_mcp.update(claude_servers())
+    open_mcp.update(opencode_servers())
+    claude_mcp.pop("xcodebuildmcp", None)
+    open_mcp.pop("xcodebuildmcp", None)
+    changed = atomic_merge(((claude, claude_data), (opencode, opencode_data)), home)
+    print(json.dumps({"changed": changed, "success": True, "status": "passed"}, separators=(",", ":")))
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except ParityError as error:
+        print(json.dumps({"success": False, "status": "failed", "code": str(error)}, separators=(",", ":")), file=sys.stderr)
+        raise SystemExit(1)
