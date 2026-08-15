@@ -10,12 +10,12 @@ Project `AGENTS.md` files contain only project identity, active declarations,
 domain rules, and narrower local deltas.
 
 ```text
-OPENCODE_CONFIG_DIR: ~/.llm-runtimes/opencode
+OPENCODE_CONFIG_DIR: ~/.config/opencode
 project declaration -> user-global override -> unavailable/report
 ```
 
-Reusable assets live under `~/.llm-runtimes/opencode/agents/`, `~/.llm-runtimes/opencode/skills/`, and
-`~/.llm-runtimes/opencode/registry/`. Do not copy reusable bodies into project instructions.
+Reusable assets live under `~/.config/opencode/agents/`, `~/.config/opencode/skills/`, and
+`~/.config/opencode/registry/`. Do not copy reusable bodies into project instructions.
 
 ## Core Rules
 
@@ -128,14 +128,15 @@ for simple answers or unrelated tasks.
 
 | Trigger | Module |
 |---|---|
-| Orchestration, subagents, agent routing, model escalation | `~/.llm-runtimes/opencode/registry/modules/CMA_ORCHESTRATION.md` |
-| Feature, bugfix, refactor, tests, coverage | `~/.llm-runtimes/opencode/registry/modules/CMA_TDD.md` |
-| Auth, secrets, permissions, destructive or data-loss risk | `~/.llm-runtimes/opencode/registry/modules/CMA_SECURITY.md` |
-| SSH, root, deployment, services, remote backup | `~/.llm-runtimes/opencode/registry/modules/CMA_REMOTE_ADMIN.md` |
-| Prior decisions, workspace history, memory citations | `~/.llm-runtimes/opencode/registry/modules/CMA_MEMORY_ROUTING.md` |
-| Current APIs, releases, standards, primary-source research | `~/.llm-runtimes/opencode/registry/modules/CMA_DOCS_RESEARCH.md` |
-| UI, browser, screenshot, responsive or accessibility work | `~/.llm-runtimes/opencode/registry/modules/CMA_FRONTEND.md` |
-| Changelog, evidence, deferred findings, experiments, archive | `~/.llm-runtimes/opencode/registry/modules/CMA_RECORDS.md` |
+| Orchestration, subagents, agent routing, model escalation | `~/.config/opencode/registry/modules/CMA_ORCHESTRATION.md` |
+| Feature, bugfix, refactor, tests, coverage | `~/.config/opencode/registry/modules/CMA_TDD.md` |
+| Auth, secrets, permissions, destructive or data-loss risk | `~/.config/opencode/registry/modules/CMA_SECURITY.md` |
+| SSH, root, deployment, services, remote backup | `~/.config/opencode/registry/modules/CMA_REMOTE_ADMIN.md` |
+| Prior decisions, workspace history, memory citations | `~/.config/opencode/registry/modules/CMA_MEMORY_ROUTING.md` |
+| Current APIs, releases, standards, primary-source research | `~/.config/opencode/registry/modules/CMA_DOCS_RESEARCH.md` |
+| Repository text/path, architecture, AST, symbols, dependency, security, or public-source discovery | `~/.config/opencode/registry/modules/CMA_REPO_TOOLS.md` |
+| UI, browser, screenshot, responsive or accessibility work | `~/.config/opencode/registry/modules/CMA_FRONTEND.md` |
+| Changelog, evidence, deferred findings, experiments, archive | `~/.config/opencode/registry/modules/CMA_RECORDS.md` |
 
 If a required module is missing, report it before dependent work. A module
 cannot weaken this Core CMA policy or project domain rules.
@@ -176,7 +177,7 @@ Implementation is not a chain stage and must never appear inside the four-role
 chain string.
 
 Detailed handoffs and model routing live in the orchestration module and
-`~/.llm-runtimes/opencode/registry/ORCHESTRATION.md`.
+`~/.config/opencode/registry/ORCHESTRATION.md`.
 
 ## Conditional Hypothesis Escalation
 
@@ -205,8 +206,8 @@ Only `skill-agent-governor` may automatically create or activate reusable
 skills and agents. It must check duplication, scope, conflicts, indexes, and
 audit records.
 
-It must not edit `~/.llm-runtimes/opencode/AGENTS.md`,
-`~/.llm-runtimes/opencode/opencode.json`, mandatory chain,
+It must not edit `~/.config/opencode/AGENTS.md`,
+`~/.config/opencode/opencode.json`, mandatory chain,
 approval rules, destructive-operation rules, auth/security policy, or model
 defaults without explicit user approval.
 

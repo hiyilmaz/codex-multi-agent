@@ -1,7 +1,7 @@
 # Skill Index
 
 **Status:** Active
-**Runtime Surface:** `~/.llm-runtimes/opencode/skills/`
+**Runtime Surface:** `~/.config/opencode/skills/`
 
 This index tracks reusable OpenCode skills that are active in the user-global
 runtime surface.
@@ -10,12 +10,13 @@ runtime surface.
 
 | Name | Path | Scope | Status |
 |---|---|---|---|
-| hypothesis-workflow | `~/.llm-runtimes/opencode/skills/hypothesis-workflow/SKILL.md` | Escalate difficult or uncertain improvements into traceable experiments. | active |
-| orchestration-gate | `~/.llm-runtimes/opencode/skills/orchestration-gate/SKILL.md` | Decide whether a task should skip orchestration, ask for approval, or run the mandatory chain. | active |
-| record-archive | `~/.llm-runtimes/opencode/skills/record-archive/SKILL.md` | Compact governance records at sparse lifecycle events without losing history. | active |
-| tdd-workflow | `~/.llm-runtimes/opencode/skills/tdd-workflow/SKILL.md` | Enforce test-first implementation and coverage verification for features, bug fixes, and refactors. | active |
+| hypothesis-workflow | `~/.config/opencode/skills/hypothesis-workflow/SKILL.md` | Escalate difficult or uncertain improvements into traceable experiments. | active |
+| orchestration-gate | `~/.config/opencode/skills/orchestration-gate/SKILL.md` | Decide whether a task should skip orchestration, ask for approval, or run the mandatory chain. | active |
+| record-archive | `~/.config/opencode/skills/record-archive/SKILL.md` | Compact governance records at sparse lifecycle events without losing history. | active |
+| tdd-workflow | `~/.config/opencode/skills/tdd-workflow/SKILL.md` | Enforce test-first implementation and coverage verification for features, bug fixes, and refactors. | active |
+| opencode-docs | `~/.config/opencode/skills/opencode-docs/SKILL.md` | Consult only official OpenCode documentation. | active |
 
-System skills under `~/.llm-runtimes/opencode/skills/.system/` are managed by OpenCode and are not
+System skills under `~/.config/opencode/skills/.system/` are managed by OpenCode and are not
 duplicated in this user registry.
 
 ## Missing Skill Policy
@@ -29,5 +30,5 @@ When a task needs a skill not listed here:
 4. If activated, the new skill must be added to this index and logged in
    `AUDIT_LOG.md`.
 
-No skill may weaken `~/.llm-runtimes/opencode/AGENTS.md`, the mandatory orchestration chain,
+No skill may weaken `~/.config/opencode/AGENTS.md`, the mandatory orchestration chain,
 approval rules, or security/destructive-operation rules.

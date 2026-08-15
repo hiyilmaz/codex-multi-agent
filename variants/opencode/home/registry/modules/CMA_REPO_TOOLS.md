@@ -43,4 +43,4 @@ evidence. Do not load multiple discovery providers for the same question.
 - cplt is an orthogonal execution gate, not a discovery or scanner route; load
   `CMA_SECURITY.md` and preserve every independent execution approval.
 
-Routing only selects a candidate tool. It grants no authority to execute, install, configure, connect, scan, build a graph, access the network, handle credentials, mutate state, or synchronize active `~/.codex`.
+Routing only selects a candidate tool. It grants no authority to execute, install, configure, connect, scan, build a graph, access the network, handle credentials, mutate state, or synchronize active `~/.config/opencode`.

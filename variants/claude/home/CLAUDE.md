@@ -135,6 +135,7 @@ for simple answers or unrelated tasks.
 | SSH, root, deployment, services, remote backup | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_REMOTE_ADMIN.md` |
 | Prior decisions, workspace history, memory citations | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_MEMORY_ROUTING.md` |
 | Current APIs, releases, standards, primary-source research | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_DOCS_RESEARCH.md` |
+| Repository text/path, architecture, AST, symbols, dependency, security, or public-source discovery | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_REPO_TOOLS.md` |
 | UI, browser, screenshot, responsive or accessibility work | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_FRONTEND.md` |
 | Changelog, evidence, deferred findings, experiments, archive | `${CLAUDE_CONFIG_DIR}/registry/modules/CMA_RECORDS.md` |
 

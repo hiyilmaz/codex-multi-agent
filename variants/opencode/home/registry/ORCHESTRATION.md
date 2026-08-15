@@ -1,11 +1,11 @@
 # OpenCode Orchestration Registry
 
 **Status:** Active
-**Owner:** `~/.llm-runtimes/opencode/AGENTS.md`
+**Owner:** `~/.config/opencode/AGENTS.md`
 
 ## Source Of Truth
 
-`~/.llm-runtimes/opencode/AGENTS.md` remains the source of truth for global policy.
+`~/.config/opencode/AGENTS.md` remains the source of truth for global policy.
 
 Project `AGENTS.md` files may define narrower local deltas, but they must not
 weaken global approval, scope, evidence, destructive-operation, or orchestration
@@ -117,8 +117,8 @@ It may automatically:
 
 It must not automatically:
 
-- edit `~/.llm-runtimes/opencode/AGENTS.md`
-- edit `~/.llm-runtimes/opencode/opencode.json`
+- edit `~/.config/opencode/AGENTS.md`
+- edit `~/.config/opencode/opencode.json`
 - change the mandatory orchestration chain
 - weaken approval, security, destructive-operation, or scope rules
 - delete or rewrite existing active skills or agents

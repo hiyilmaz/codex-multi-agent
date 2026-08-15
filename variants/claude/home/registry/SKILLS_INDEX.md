@@ -14,6 +14,7 @@ runtime surface.
 | orchestration-gate | `${CLAUDE_CONFIG_DIR}/skills/orchestration-gate/SKILL.md` | Decide whether a task should skip orchestration, ask for approval, or run the mandatory chain. | active |
 | record-archive | `${CLAUDE_CONFIG_DIR}/skills/record-archive/SKILL.md` | Compact governance records at sparse lifecycle events without losing history. | active |
 | tdd-workflow | `${CLAUDE_CONFIG_DIR}/skills/tdd-workflow/SKILL.md` | Enforce test-first implementation and coverage verification for features, bug fixes, and refactors. | active |
+| claude-docs | `${CLAUDE_CONFIG_DIR}/skills/claude-docs/SKILL.md` | Consult only official Claude Code and Anthropic documentation. | active |
 
 System skills under `${CLAUDE_CONFIG_DIR}/skills/.system/` are managed by Claude Code and are not
 duplicated in this user registry.

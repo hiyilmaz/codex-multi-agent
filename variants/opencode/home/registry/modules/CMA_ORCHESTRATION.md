@@ -48,5 +48,5 @@ Routing notes:
 - Use the declared roles without model-specific aliases. Provider, model, and
   reasoning settings are inherited from the active OpenCode session.
 
-Load `~/.llm-runtimes/opencode/registry/ORCHESTRATION.md` only when detailed stage contracts or
+Load `~/.config/opencode/registry/ORCHESTRATION.md` only when detailed stage contracts or
 the complete role matrix are needed.

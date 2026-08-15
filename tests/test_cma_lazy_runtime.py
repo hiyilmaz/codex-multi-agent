@@ -20,15 +20,22 @@ COMMON_MODULES = (
     "CMA_MEMORY_ROUTING.md", "CMA_DOCS_RESEARCH.md",
     "CMA_FRONTEND.md", "CMA_RECORDS.md",
 )
-CODEX_ONLY_MODULES = ("CMA_REPO_TOOLS.md",)
-CODEX_MODULES = COMMON_MODULES + CODEX_ONLY_MODULES
+REPOSITORY_TOOL_MODULES = ("CMA_REPO_TOOLS.md",)
+CODEX_MODULES = COMMON_MODULES + REPOSITORY_TOOL_MODULES
 REPOSITORY_TOOL_ROWS = (
     "| Exact text or path | `rg` |", "| Architecture or cross-file dependency | Graphify |",
     "| Structural AST pattern | `ast-grep` |", "| Symbol references or refactor radius | Serena, explicit and lazy |",
-    "| Dependency vulnerability | OSV-Scanner |", "| SAST or secret scan | Opengrep or Betterleaks, security-triggered |",
-    "| GitHub source, release, or advisory | GitHub MCP, gated read-only |", "| Public-repo or versioned-doc fallback | DeepWiki or Context7, explicit |",
+    "| SAST or source security analysis | Opengrep, conditional |",
+    "| Dependency CVE or package vulnerability | OSV-Scanner, conditional |",
+    "| Secret exposure | Betterleaks, conditional and redacted |",
+    "| Remote repository refs, releases, PRs, issues, or advisories | GitHub, lazy and read-only |",
+    "| Public-repository conceptual knowledge | DeepWiki, lazy public-only fallback |",
+    "| Version-specific library or framework documentation | Context7, required and lazy |",
+    "| Risky or untrusted command requiring stronger isolation | cplt, only when approved and ordinary sandbox is insufficient |",
 )
 REPOSITORY_TOOL_RULES = (
+    "Use local repository evidence first and stop when it is sufficient.",
+    "Use only one external provider for one evidence need by default.",
     "Use the narrowest sufficient tool.", "Do not query multiple discovery tools for the same question.",
     "Stop discovery when sufficient evidence exists.", "Keep MCP providers and scanners outside the default task path.",
     "Report unavailable tools; never silently widen the route.",
@@ -36,6 +43,8 @@ REPOSITORY_TOOL_RULES = (
 REPOSITORY_TOOL_BOUNDARY_RULES = (
     "Source-check Graphify output before treating it as evidence.", "Load `CMA_SECURITY.md` in addition to this module for security scans.",
     "Load `CMA_DOCS_RESEARCH.md` in addition to this module for current or", "version-specific external claims.",
+    "cplt is an orthogonal execution gate, not a discovery or scanner route; load",
+    "`CMA_SECURITY.md` and preserve every independent execution approval.",
 )
 REPOSITORY_TOOL_AUTHORITY_DENIAL = (
     "Routing only selects a candidate tool. It grants no authority to execute, "
@@ -48,8 +57,8 @@ REPOSITORY_TOOL_ROUTER_ROW = (
 )
 EXPECTED_REPOSITORY_TOOL_LINES = (
     "# CMA Repository Tools Module", "## Load When",
-    "Load for repository text or path search, architecture, structural AST patterns,", "symbol references, dependency vulnerabilities, security scans, or external",
-    "repository and documentation discovery.", "## Do Not Load When",
+    "Load for repository text or path search, architecture, structural AST patterns,", "symbol references, dependency vulnerabilities, security scans, external",
+    "repository and documentation discovery, or risky command isolation.", "## Do Not Load When",
     "Do not load for simple answers or tasks that already have sufficient local", "evidence. Do not load multiple discovery providers for the same question.",
     "## Tool Selection", "| Need | Tool |", "|---|---|",
     *REPOSITORY_TOOL_ROWS,
@@ -57,6 +66,7 @@ EXPECTED_REPOSITORY_TOOL_LINES = (
     *(f"- {rule}" for rule in REPOSITORY_TOOL_RULES),
     f"- {REPOSITORY_TOOL_BOUNDARY_RULES[0]}", f"- {REPOSITORY_TOOL_BOUNDARY_RULES[1]}",
     f"- {REPOSITORY_TOOL_BOUNDARY_RULES[2]}", f"  {REPOSITORY_TOOL_BOUNDARY_RULES[3]}",
+    f"- {REPOSITORY_TOOL_BOUNDARY_RULES[4]}", f"  {REPOSITORY_TOOL_BOUNDARY_RULES[5]}",
     REPOSITORY_TOOL_AUTHORITY_DENIAL,
 )
 AGENTS = {
@@ -130,14 +140,19 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
         self.assertNotIn("Acceptance Criteria ID", text)
         self.assertNotIn("acceptance mapping table", text.lower())
 
-    def assert_repository_tool_contract(self, text: str) -> None:
+    def assert_repository_tool_contract(
+        self, text: str, authority_root: str = "~/.codex",
+    ) -> None:
+        authority_denial = REPOSITORY_TOOL_AUTHORITY_DENIAL.replace(
+            "~/.codex", authority_root
+        )
         required = (
             "# CMA Repository Tools Module",
             "## Load When",
             "## Do Not Load When",
             "## Tool Selection",
             "## Rules",
-            REPOSITORY_TOOL_AUTHORITY_DENIAL,
+            authority_denial,
             *REPOSITORY_TOOL_ROWS,
             *REPOSITORY_TOOL_RULES,
             *REPOSITORY_TOOL_BOUNDARY_RULES,
@@ -145,7 +160,11 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
         for marker in required:
             self.assertIn(marker, text)
         observed = tuple(line for line in text.splitlines() if line)
-        self.assertEqual(observed, EXPECTED_REPOSITORY_TOOL_LINES)
+        expected = tuple(
+            authority_denial if line == REPOSITORY_TOOL_AUTHORITY_DENIAL else line
+            for line in EXPECTED_REPOSITORY_TOOL_LINES
+        )
+        self.assertEqual(observed, expected)
 
     def test_records_module_defines_evidence_validator_claim_contract(self) -> None:
         self.assert_evidence_validator_claim_contract(
@@ -244,23 +263,30 @@ class CmaLazyRuntimeContractTests(unittest.TestCase):
         self.assertTrue(stat.S_ISREG(module.lstat().st_mode))
         self.assert_repository_tool_contract(module.read_text(encoding="utf-8"))
 
-    def test_repository_tool_router_is_codex_only(self) -> None:
-        reference = "~/.codex/registry/modules/CMA_REPO_TOOLS.md"
+    def test_repository_tool_router_is_available_in_supported_core_skill_variants(self) -> None:
         global_template = self.read("GLOBAL_AGENTS_TEMPLATE.md")
         codex = self.read("variants/codex/home/AGENTS.md")
         self.assertEqual(global_template.count(REPOSITORY_TOOL_ROUTER_ROW), 1)
         self.assertEqual(codex.count(REPOSITORY_TOOL_ROUTER_ROW), 1)
         self.assertEqual(global_template, codex)
-        for relative in (
-            "variants/dolphin/home/AGENTS.md",
-            "variants/claude/home/CLAUDE.md",
-            "variants/opencode/home/AGENTS.md",
-        ):
-            with self.subTest(relative=relative):
-                self.assertNotIn("CMA_REPO_TOOLS.md", self.read(relative))
-        for runtime in ("dolphin", "claude", "opencode"):
-            module = REPO_ROOT / f"variants/{runtime}/home/registry/modules/CMA_REPO_TOOLS.md"
-            self.assertFalse(module.exists())
+        references = {
+            "claude": "${CLAUDE_CONFIG_DIR}/registry/modules/CMA_REPO_TOOLS.md",
+            "opencode": "~/.config/opencode/registry/modules/CMA_REPO_TOOLS.md",
+        }
+        authority_roots = {
+            "claude": "${CLAUDE_CONFIG_DIR}",
+            "opencode": "~/.config/opencode",
+        }
+        instruction_files = {"claude": "CLAUDE.md", "opencode": "AGENTS.md"}
+        for runtime, reference in references.items():
+            with self.subTest(runtime=runtime):
+                instructions = self.read(f"variants/{runtime}/home/{instruction_files[runtime]}")
+                self.assertEqual(instructions.count(reference), 1)
+                module = REPO_ROOT / f"variants/{runtime}/home/registry/modules/CMA_REPO_TOOLS.md"
+                self.assertTrue(module.is_file())
+                self.assert_repository_tool_contract(
+                    module.read_text(encoding="utf-8"), authority_roots[runtime]
+                )
 
     def test_repository_tool_contract_rejects_table_only_policy(self) -> None:
         with self.assertRaises(AssertionError):

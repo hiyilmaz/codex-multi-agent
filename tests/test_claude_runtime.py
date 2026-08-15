@@ -40,8 +40,10 @@ EXPECTED_MODULE_NAMES = {
     "CMA_DOCS_RESEARCH.md",
     "CMA_FRONTEND.md",
     "CMA_RECORDS.md",
+    "CMA_REPO_TOOLS.md",
 }
 EXPECTED_SKILL_NAMES = {
+    "claude-docs",
     "hypothesis-workflow",
     "orchestration-gate",
     "record-archive",
@@ -126,7 +128,7 @@ class ClaudeRuntimeTests(unittest.TestCase):
             for path in CLAUDE_HOME.rglob("*")
             if path.is_file()
         }
-        self.assertEqual(len(EXPECTED_HOME_FILES), 35)
+        self.assertEqual(len(EXPECTED_HOME_FILES), 37)
         self.assertEqual(actual, EXPECTED_HOME_FILES)
 
     def test_recreate_global_subagents_prompt_matches_authoritative_claude_agents_and_token_contract(self) -> None:
