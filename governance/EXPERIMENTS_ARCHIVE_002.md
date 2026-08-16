@@ -2,797 +2,719 @@
 
 [Back to active experiments](EXPERIMENTS.md)
 
-## EXP-20260806-001 - Git Archive Executable Mode Verification
+## EXP-20260810-006 - Repository Router Trigger Boundary
 
-Date: 2026-08-06
-Status: ACCEPTED
+Date: 2026-08-10
+Status: REJECTED
 
 Problem:
-The transferred CMA source archive passed SHA-256 verification, but the remote
-installer-mode check expected exactly `755` and observed `775`, leaving the
-source-integrity gate unresolved before installation.
+The main Graphify trigger-narrowing task remains incomplete after three
+independent attempts. EXP-20260810-005 proved that a narrow Graphify description
+prevents the false-positive skill load, but the broad repository-tools router
+still reads `CMA_REPO_TOOLS.md` before an exact lookup and violates the strict
+`rg`-only contract.
 
 Evidence:
-The local and remote archive SHA-256 values are identical, the local and remote
-installer content SHA-256 values are identical, the local working-tree mode is
-`755`, and the extracted archive mode is `775` inside a root-owned mode-`700`
-staging directory.
+The first EXP-20260810-005 GREEN exact-text trace completed a `sed` read of the
+repository-tools module before its successful `rg` command. The active,
+portable, and template policies all use a router trigger beginning with
+`Repository text/path`, so exact lookups necessarily activate that module.
 
 Hypothesis:
-Git archive preserved an executable script with additional group execute/write
-mode bits, while content and executable semantics remained intact. Verifying
-the executable bits together with the root-only staging boundary is the correct
-security and integrity criterion.
+Removing exact text/path and generic repository-content vocabulary from the
+router trigger, while publishing a positive-only Graphify description, will
+keep simple lookups on their prescribed local readers and preserve explicit
+Graphify plus architecture and advanced repository-tool routing.
 
 Solution Attempt:
-Replace the overly strict exact-`755` staging assertion with checks that the
-installer is a regular root-owned file, has at least one executable bit, and is
-contained by a root-owned mode-`700` staging directory. Do not change archive
-content or installed target permissions.
+Replace the single repository-tools router row in the template, portable Codex
+policy, and active global policy; change only Graphify's frontmatter description.
+Keep the repository-tools module body, config, other variants, and Graphify body
+unchanged. This is independent solution attempt 4 of at most 5.
 
 Test:
-Re-run the revised mode assertion, verify local and remote installer hashes are
-identical, and include a negative check proving a non-executable copied mode is
-rejected.
+Capture static and fresh live exact-lookup RED evidence before publication.
+Then run fresh sequential exact-text, filename, known-file, generic-content,
+literal help, and two-file architecture probes. Validate raw JSONL lifecycle,
+exact commands and bounded paths, positive Graphify execution provenance, a
+source-verified EXTRACTED calls edge, parity, regressions, reviews, and cleanup.
 
 Success Criteria:
-- Local and remote installer content hashes match exactly.
-- The extracted installer is a regular root-owned executable file.
-- The staging directory remains `root:root` mode `700`.
-- The same assertion rejects a non-executable mode.
-- No real runtime or project installation occurs before this gate passes.
+- Exact text and filename probes each run exactly the prescribed successful
+  `rg` command, with no policy/module or Graphify activity.
+- Known-file and generic-content probes run only their prescribed bounded local
+  reader, with no policy/module or Graphify activity or out-of-corpus access.
+- Literal `/graphify --help` returns the captured Usage block byte-for-byte and
+  runs no task command.
+- The architecture probe reads the repository-tools module and Graphify skill,
+  executes the real local Graphify build on exactly two Python files, and
+  produces a source-verified `EXTRACTED` `calls` edge from
+  `consumer.render_label` to `provider.canonical_label`, without semantic,
+  subagent, network, or fabricated evidence.
+- The narrowed row retains architecture, structural AST, symbol, dependency,
+  security, and public-source triggers; template, portable, and active policies
+  are byte-identical.
+- The repository-tools module, config/trust state, Graphify body, other variants,
+  and unrelated work retain their preimages; focused/full tests, independent
+  reviews, permissions, and exact task-owned cleanup pass.
+- A retry is allowed only after an incomplete lifecycle with zero observable
+  task activity. Any completed violation rejects this attempt without retry.
 
 Result:
-The revised positive check accepted the root-owned executable installer at
-mode `775` inside the root-owned mode-`700` staging directory. Local and remote
-installer SHA-256 values both equal
-`627312caeaf016427267d4f67bda236113204818d970eec9dad14c4194526321`.
-The same checker rejected an explicit mode-`600` non-executable copy. No real
-runtime or project installation occurred during the test.
+The static contract produced meaningful RED because neither the narrow router
+row nor the positive-only Graphify description was present. However, the
+required fresh live pre-change exact-text probe already passed the immutable
+oracle: it executed exactly the prescribed `rg` command, returned the exact
+normalized line, and showed no repository-tools module or Graphify activity.
+The prescriptive prompt therefore bypassed the behavior this attempt intended
+to distinguish. No policy or Graphify production change was published, and the
+test-only contract edit was restored.
 
 Decision:
-ACCEPT
+REJECT
 
 Notes:
-This experiment is limited to the source-transfer mode assertion and does not
-expand the approved remote-installation scope.
+The user authorized autonomous continuation through at most five independent
+attempts. This attempt authorizes the bounded active policy and metadata changes
+plus exact rollback, but not dependency installation, module-body/config-schema
+changes, network/MCP/scanner use, repository-root graph construction, commit,
+push, deployment, or archive mutation. Acceptance criteria will not be weakened.
+This is failed independent attempt 4 of 5. The final attempt must use a
+non-prescriptive natural lookup prompt whose baseline reproduces the unwanted
+activation, while retaining strict trace-based command and provenance checks.
+Independent code review passed the rejection and rollback evidence. Security
+review confirmed all policy, skill, module, test, config, and trust preimages;
+four task-created subagent session logs were identified for `0600` hardening
+before exact temporary-root cleanup.
 
-## EXP-20260806-002 - Sentinel Preservation Manifest Scope
+## EXP-20260810-005 - Graphify Activation Boundary
 
-Date: 2026-08-06
-Status: ACCEPTED
+Date: 2026-08-10
+Status: REJECTED
 
 Problem:
-The isolated no-overwrite installation stopped because the before and after
-manifest files differed even though every seeded sentinel retained its hash.
+Graphify's broad frontmatter description still activates for simple repository
+content work, while EXP-20260810-004 could not be accepted because it coupled
+the activation boundary to an over-broad `rg`-only command-purity criterion.
 
 Evidence:
-The diff contains only three newly installed, previously absent skill files:
-`hypothesis-workflow`, `orchestration-gate`, and `record-archive`. All seven
-seeded managed and unrelated sentinels have identical before/after SHA-256
-values.
+EXP-20260810-003 observed a full Graphify skill load before an exact lookup.
+EXP-20260810-004 showed that a narrower description prevents Graphify false
+positives, but also showed that mandatory policy bootstrap and bounded known-file
+reading can legitimately use `sed` without making Graphify the selected tool.
 
 Hypothesis:
-The first post-install `find` expression selected new files by shared basename,
-so it compared the complete installed tree rather than the fixed sentinel set.
-Comparing an explicit sentinel path list will prove preservation without
-mistaking legitimate additions for overwrites.
+A Graphify description limited to architecture, cross-file, data-flow,
+call-path, coupling, relationship, and explicit `/graphify` requests will remove
+simple-task false positives while preserving real help and architecture flows.
 
 Solution Attempt:
-Re-run the preservation assertion over the seven exact pre-seeded paths and
-separately require that a previously absent managed skill was installed. Keep
-the installer command and isolated target unchanged.
+Change only the active Graphify frontmatter description. Keep its body, global
+policy, repository-tools module, config schema, and portable CMA assets
+unchanged.
 
 Test:
-Generate before and after hashes from the same explicit sentinel path list,
-require byte-identical manifests, verify `Skipped existing:` output, and mutate
-a copied manifest value to prove the equality check fails.
+Capture same-scope static and live exact-lookup RED evidence, then validate six
+fresh sequential sessions: exact text, filename, one known file, generic project
+content, literal `/graphify --help`, and a two-file code-only architecture
+fixture. Validate raw JSONL lifecycle, commands, outputs, graph edges, source
+behavior, permissions, config/trust parity, and cleanup.
 
 Success Criteria:
-- The seven exact sentinel hashes remain unchanged.
-- Existing managed files are reported as skipped.
-- Missing managed files are installed.
-- A deliberately altered expected hash is rejected.
-- No real runtime or project installation occurs during the test.
+- Exact text and filename probes use successful `rg` and show no Graphify load,
+  invocation, announcement, or artifact.
+- Known-file and generic-content probes use only bounded `rg`/`sed` readers and
+  show no Graphify activity.
+- Literal help returns the current Usage block byte-for-byte with zero task
+  commands.
+- The architecture probe uses exactly two Python files, performs no semantic
+  extraction or subagent work, and produces a source-verified EXTRACTED `calls`
+  edge from `consumer.render_label` to `provider.canonical_label`.
+- At most one transport-only retry is allowed only after a zero-activity
+  incomplete lifecycle; retries after task activity are forbidden.
+- Global policy, repository-tools module, config, trust entries, Graphify body,
+  source fixtures, and unrelated dirty work remain byte-identical; tests,
+  independent reviews, permissions, and exact task-owned cleanup pass.
 
 Result:
-The explicit seven-path sentinel check confirmed identical SHA-256 values for
-all pre-existing managed and unrelated files. Installer output reported
-existing managed paths as skipped, and previously absent skills were installed.
-An altered expected hash was rejected. The isolated project conflict test also
-preserved archived conflicts and the unrelated file, while the cancellation
-test produced no project mutation.
+The static pre-change assertion and fresh exact-text probe both produced
+meaningful RED evidence. After publishing the candidate description, the first
+fresh exact-text probe returned the correct normalized match and did not load
+Graphify, but its trace first read `CMA_REPO_TOOLS.md` with `sed` before running
+`rg`. This violated the immutable exact-lookup requirement that every task
+command be `rg`. Because the attempt contained completed task commands and a
+final answer, the transport-only retry rule prohibited a retry. The active
+Graphify skill was restored byte-for-byte from its verified preimage.
 
 Decision:
-ACCEPT
+REJECT
 
 Notes:
-This experiment changes only the isolated-test manifest selection.
+Approval includes exact incidental trust-entry cleanup, session/log permission
+hardening, and deletion of only the validated task-owned temporary root. It does
+not include dependency installation, policy/router/config-schema edits, graph
+building in the CMA repository root, commit, push, or deployment.
+The failure is outside the permitted Graphify-description-only scope: the
+repository-tool policy bootstrap itself caused the extra reader. The remaining
+five GREEN probes were not run after this fail-closed rejection.
+Independent code review also found that the disposable validator's unexecuted
+architecture branch could accept a fabricated graph without positive Graphify
+provenance, and that its known-file/generic path checks did not reject every
+absolute out-of-corpus read. These gaps reinforce rejection; no result from
+those branches was used as acceptance evidence.
+The focused lazy-runtime suite passed 26 tests and the full suite passed 157
+tests after rollback. Security review confirmed active skill/config parity and
+safe containment; four task-created subagent session logs were hardened from
+`0644` to `0600`, then the verified task-owned temporary root was deleted and
+its absence confirmed. The terminal record archive check returned
+`ACTION_REQUIRED`; no archive mutation was applied because it would exceed this
+experiment's approved scope.
 
-## EXP-20260806-004 - Bounded Fresh SSH Codex Install
+## EXP-20260810-004 - Narrow Graphify Skill Activation
 
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-Codex remains missing after apt completed because the original PTY stdin was
-consumed and later closed, preventing continuation in that session.
-
-Evidence:
-Node.js and npm are installed and verified through a fresh read-only SSH
-connection, while `codex` is missing. Writing to the previous session failed
-before command delivery.
-
-Hypothesis:
-A fresh non-PTY SSH invocation with the pinned npm command passed as the remote
-command argument will avoid stdin consumers and complete only the missing Codex
-installation.
-
-Solution Attempt:
-Run one bounded non-PTY SSH command that verifies the global prefix, installs
-`@openai/codex@0.146.1`, and prints executable paths and versions. Do not invoke
-apt or use a heredoc.
-
-Test:
-Require the SSH command to exit zero and then verify package identity and CLI
-version through an independent fresh SSH call.
-
-Success Criteria:
-- Only the pinned npm package is added.
-- `codex --version` reports `0.146.1`.
-- The executable resolves from npm's actual global prefix.
-- A separate verification command exits zero.
-- No service or host restart occurs.
-
-Result:
-The fresh non-PTY command installed two npm packages and exited successfully.
-The verified global prefix is `/usr/local`, the CLI resolves to
-`/usr/local/bin/codex`, and `codex --version` reports `codex-cli 0.146.1`.
-An independent SSH check confirmed `@openai/codex@0.146.1` under
-`/usr/local/lib/node_modules` and reproduced the expected CLI version.
-
-Decision:
-ACCEPT
-
-Notes:
-This is the final retry for the missing Codex package action.
-
-## EXP-20260801-003 - Root-Only Contextual Voice Notification
-
-Date: 2026-08-01
-Status: ACCEPTED
+Date: 2026-08-10
+Status: REJECTED
 
 Problem:
-The active global `Stop` hook always speaks the same message and does not
-distinguish root Codex completion, failure, user-input waiting, or subagent
-completion. Subagent turns therefore produce unwanted voice notifications.
+Graphify's broad skill description activates for exact repository text and path
+lookups that the repository-tool router assigns to `rg`, adding unnecessary
+skill loading and commands.
 
 Evidence:
-`~/.codex/hooks.json` runs `notify_stop.sh` for every matching `Stop` event.
-The script unconditionally calls macOS `say`. Official Codex hook guidance
-defines separate `Stop` and `SubagentStop` events, but `Stop` itself has no
-agent identifier. Existing subagent transcripts identify themselves through
-`session_meta.payload.source.subagent`, while root transcripts use a non-
-subagent source.
+EXP-20260810-003 rejected the routing pilot after a fresh exact-text task loaded
+the complete Graphify skill through four shell commands before running `rg`.
 
 Hypothesis:
-If the notification script reads the hook payload, suppresses transcripts
-whose session metadata marks them as subagents, and classifies the final root
-message into failure, waiting, or completion, voice notifications will occur
-only for root Codex with an appropriate message.
-
-Solution Attempt:
-Change only the active notification script. Preserve the existing trusted Stop
-hook definition and add a silent dry-run mode for deterministic tests without
-playing audio.
-
-Test:
-Run RED synthetic hook payloads against the old implementation. After the
-change, test root completion, root failure, root approval/question waiting,
-direct `SubagentStop`, subagent transcript metadata, malformed input, shell
-syntax, JSON hook output, and preservation of the hook/config definitions.
-
-Success Criteria:
-- Root completion selects `Kodex işlemi tamamladı.`
-- Root failure selects `Kodex bir hatayla karşılaştı.`
-- Root approval or question waiting selects `Kodex senden yanıt bekliyor.`
-- Subagent events and subagent transcripts produce no voice message.
-- Every invocation returns valid `{"continue":true}` hook JSON.
-- Existing hook registration and trusted config state remain unchanged.
-
-Result:
-The RED inspection found all five expected capabilities absent. After the
-change, eight silent dry-run cases passed: root completion, failure, approval
-waiting, question waiting, direct `SubagentStop`, a real subagent transcript,
-malformed payload, and a root payload without a final message. Every case
-returned valid continuation JSON, shell syntax validation passed, and the
-script retained executable mode.
-
-The active `hooks.json` and `config.toml` remained byte-identical to their
-backups, so hook registration and trusted state did not change. The previous
-script and both supporting files are recoverable from the timestamped archive.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved message option A. No subagent was spawned and no audio was
-played during validation; `CODEX_NOTIFY_TEST=1` exposed the selected message on
-stderr while preserving the production hook JSON response.
-
-## EXP-20260801-002 - Medium-Only Subagent Matrix
-
-Date: 2026-08-01
-Status: ACCEPTED
-
-Problem:
-The accepted CMA runtime uses six Sol/high routing variants and two additional
-Sol/high default roles. Higher reasoning effort increases token use and latency,
-which conflicts with the current objective of reducing subagent cost while
-retaining model-quality routing.
-
-Evidence:
-The managed and active Codex surfaces contain fourteen agent TOMLs: eight
-defaults plus six `*-high` variants. Eight of those files pin `high` reasoning.
-Official Codex guidance describes `medium` as the balanced default for most
-agents and recommends using the lowest effort that produces the needed result.
-
-Hypothesis:
-Using `medium` for every subagent, keeping Terra/medium defaults for support
-roles, and retaining only four Sol/medium model-escalation variants will reduce
-reasoning-token pressure without weakening the mandatory chain, review stages,
-approval gates, or test-integrity controls.
-
-Solution Attempt:
-Replace four Terra-role `*-high` variants with `*-sol` variants at medium,
-remove redundant code-reviewer and security-reviewer high variants, and change
-reviewer plus skill-agent-governor to medium. Update only the directly tied
-routing, registry, skill, test, and current planning surfaces before mirroring
-validated files into `/Users/iyilmaz/.codex`.
-
-Test:
-Add RED contracts requiring exactly twelve managed agent files, medium effort
-in every agent TOML, four named Sol variants, no `*-high` files or high routing,
-the unchanged mandatory chain, and portable-install packaging. Run focused and
-full suites, source-active parity checks, and a fresh-session routing probe.
-
-Success Criteria:
-- All managed and active subagent TOMLs use `medium` reasoning.
-- Exactly eight defaults and four Sol/medium variants remain.
-- No `*-high` agent or routing reference remains in active instructions.
-- Code-reviewer and security-reviewer stay Sol/medium and retain their required
-  review stages without redundant variants.
-- The mandatory chain, approval boundaries, truthful success, and test
-  integrity remain unchanged.
-- Focused, full, portable-install, parity, and fresh-session checks pass.
-- Historical experiment, evidence, changelog, and audit records remain intact.
-
-Result:
-The RED contract run executed 10 focused tests and failed seven assertions with
-one missing-file error, confirming that six high variants and two high defaults
-were still active. After implementation, the focused suite passed 10 tests and
-the complete repository suite passed 47 tests.
-
-Managed and active Codex surfaces each contain exactly 12 agent TOMLs: eight
-defaults and four Sol/medium variants. Every agent pins `medium`; no `*-high`
-file remains. Managed-to-active parity passed for all agent files and the owned
-routing, index, lazy-module, and skill files. A fresh ephemeral read-only Codex
-session independently reported 12 agents, `medium` as the only reasoning value,
-zero high variants, the four expected Sol variants, the exact mandatory chain,
-and the security no-impact contract.
-
-Both pre-change ZIP archives passed integrity checks. No project-local high
-agent override was found under `/Users/iyilmaz/WebStorm`, so project files did
-not require this runtime-matrix change.
-
-Decision:
-ACCEPT
-
-Notes:
-The main Codex session reasoning setting, project-local documents, Dolphin,
-remote hosts, auth, config, secrets, and plugin state are outside scope.
-
-## EXP-20260801-001 - Local CMA Core And Lazy Runtime
-
-Date: 2026-08-01
-Status: ACCEPTED
-
-Problem:
-The local CMA runtime loads a broad global policy surface for every task, while
-friendly agent naming and conditional model escalation are only partially or
-non-operationally represented. This increases token cost and leaves the active
-routing behavior weaker than the approved plan.
-
-Evidence:
-The approved model matrix is present in the managed Codex variant and active
-local global agent files, but Core/Lazy modules do not exist, the global policy
-still contains the full detailed guidance, `display_name` is not part of the
-documented standalone custom-agent schema, and escalation rules exist only in
-planning documents.
-
-Hypothesis:
-A compact Core CMA policy plus trigger-loaded registry modules, supported
-friendly identities, and reliable static high-risk routing will reduce
-default context while preserving the mandatory chain, approval boundaries,
-truthful reporting, and test integrity.
-
-Solution Attempt:
-Add managed Core/Lazy registry modules, reduce the Codex global policy to the
-non-negotiable core and module router, remove unsupported agent metadata, and
-encode conditional model/reasoning routing in orchestration policy. Validate
-managed source before synchronizing only the approved files into
-`/Users/iyilmaz/.codex`.
-
-Test:
-Add failing contract tests for module packaging, compact policy routing,
-supported agent metadata, the approved model matrix, escalation triggers,
-portable installation, and mandatory-chain integrity. Then run focused and
-full suites, validate source-to-active equality, and perform bounded default
-and escalated runtime probes where the client exposes selected model metadata.
-
-Success Criteria:
-- The global Codex policy contains the complete non-negotiable core and a
-  compact trigger-to-module index.
-- Eight managed modules are packaged and installed by the portable Codex
-  installer.
-- `display_name` is absent from standalone agent TOML files while friendly
-  identities remain in instructions and registry documentation.
-- The approved model matrix remains exact and no mandatory role uses Luna.
-- Routing defines explicit default and static high-risk variants without
-  skipping or reordering the mandatory chain.
-- Source tests pass before active runtime synchronization.
-- Managed and active local global owned files are checksum-equivalent after a
-  fresh targeted backup.
-- Pilot evidence separates token/latency observations from quality results.
-
-Result:
-The initial RED suite ran five tests and produced 21 failures for missing lazy
-modules, an oversized 483-line policy, unsupported metadata, absent escalation,
-and incomplete portable packaging. Later RED revisions caught an invalid chain
-rendering, missing memory routing, unreliable spawn override assumptions, and
-ambiguous read-only precedence.
-
-The final focused suite passed 9 tests and the full suite passed 46 tests in
-8.785 seconds. The global policy is now 201 lines, 1,118 words, and 8,443 bytes;
-this reduces lines by 58.4 percent, words by 52.4 percent, and bytes by 48.4
-percent. Eight lazy modules and fourteen agent TOMLs are packaged and active.
-The fourteen TOMLs comprise the approved eight defaults plus six Sol/high
-routing variants. Unsupported `display_name` metadata is absent.
-
-Managed and active owned files are byte-equivalent, except the active
-append-only audit log intentionally preserves additional local history. The
-targeted rollback manifest passed SHA-256 validation. Fresh Terra/medium and
-Sol/high sessions completed, and the final routing probe preserved the exact
-four-role chain, approvals, memory routing, and security escalation.
-
-Decision:
-ACCEPT
-
-Notes:
-Scope is limited to this repository and `/Users/iyilmaz/.codex`. Remote hosts,
-Hermes profiles, other projects, Dolphin, config, auth, secrets, and plugin
-state are excluded.
-No subagents were spawned during implementation. Static role selection and
-fresh noninteractive sessions were used for bounded runtime validation.
-
-## EXP-20260728-001 - Truthful Success Reporting
-
-Date: 2026-07-28
-Status: ACCEPTED
-
-Problem:
-The runtime rejects false-positive tests, but its general outcome reporting does
-not define a shared status-to-success contract. An agent could therefore report
-an unexecuted or unverified task as successful.
-
-Evidence:
-The global runtime policies require honesty, and the TDD and reviewer contracts
-reject hardcoded success, skipped tests, and swallowed errors. They do not yet
-define `passed`, `failed`, `unverified`, and `not_executed` or constrain
-`success=true` to verified execution evidence.
-
-Hypothesis:
-A short global reporting rule, enforced by source and portable-install contract
-tests, will prevent unsupported success claims without changing normal
-conversation or adding a mandatory output format.
-
-Solution Attempt:
-Add the same minimal outcome-reporting contract to the Codex global template,
-the Codex runtime variant, and the Dolphin runtime variant. Keep existing
-skills, agents, registries, dependencies, and orchestration behavior unchanged.
-
-Test:
-First add contract assertions that fail while the policy is absent. Then verify
-the three source policies, Codex mirror equality, portable Codex and Dolphin
-installations, the full regression suite, and the active runtime copy and
-rollback backup.
-
-Success Criteria:
-- Only `passed` may use `success=true`.
-- `passed` requires execution, inspected real output, satisfied criteria, no
-  remaining critical failure, and concrete evidence.
-- `failed`, `unverified`, and `not_executed` always use `success=false`.
-- The rule applies only to explicit task, operation, or test outcome reporting;
-  it does not impose JSON or status fields on ordinary conversation.
-- Both portable runtime variants contain the validated contract.
-- The full test suite passes before the active runtime is changed.
-- The active runtime update has a verified backup and checksum rollback path.
-
-Result:
-The initial RED run executed 10 focused tests and failed five assertions because
-the contract was absent. The first GREEN attempt still failed five assertions
-because one semantic marker crossed a Markdown line break; whitespace
-normalization fixed that test defect without removing any required marker.
-The final focused suite passed 10 tests in 1.375 seconds and the full suite
-passed 37 tests in 7.716 seconds. Codex mirror equality, portable Codex and
-Dolphin installation, and `git diff --check` passed. Independent code review
-returned `PASS`, and security review returned `NO_SECURITY_IMPACT`.
-
-The active `~/.codex/AGENTS.md` was backed up before replacement. The backup
-matched the prior SHA-256
-`34d846dc2db9c3d9f817da01bb4c199914ec243ff972220b0af07458340954ad`;
-the active file then matched the validated source SHA-256
-`882fc5dc6c62c59085a9da24ba279797e467d7301dcde9119cb1a16b2317cfe3`
-with mode `0644`.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved repository implementation and a verified, reversible update
-of the active local Codex policy. Commit, push, remote deployment, dependency,
-API, schema, skill, agent, and registry changes are outside scope.
-
-## EXP-20260727-002 - Event-Driven Record Archiving
-
-Date: 2026-07-27
-Status: ACCEPTED
-
-Problem:
-Deferred findings, experiments, and changelog files grow without bound, but
-checking or compacting them at every task closure would add recurring latency
-and cost.
-
-Evidence:
-The accepted design review found that record files need bounded active context
-without losing history. It also found that a five-date changelog window is too
-small, while keeping fifty full date sections would likely exceed the runtime's
-file-size guidance.
-
-Hypothesis:
-An event-driven `record-archive` skill with deterministic thresholds, dry-run
-checks, atomic fail-closed writes, and format-specific retention rules will
-bound active context without adding work to unrelated task closures.
-
-Solution Attempt:
-Add one reusable skill and script for Deferred Findings, experiments, and
-changelog records. Trigger checks only when a finding becomes completed, an
-experiment becomes terminal, or a new changelog date is created. Keep five
-recent completed findings, five recent terminal experiments, and twenty full
-changelog dates plus a thirty-date archive index.
-
-Test:
-Run contract tests against temporary repositories for below-threshold no-ops,
-threshold rotation, preservation, duplicate and malformed-input rejection,
-dirty-file protection, idempotence, portable installation, and runtime policy
+Replacing only the active Graphify frontmatter description with explicit
+architecture and relationship triggers plus explicit `rg` exclusions will keep
+exact lookups on `rg` while preserving literal `/graphify` and architecture
 activation.
 
+Solution Attempt:
+Change only the active Graphify skill description. Keep the skill body, active
+repository-tool router, global policy, configuration, and portable CMA assets
+unchanged.
+
+Test:
+Capture a pre-change static and fresh-session RED, then run static metadata
+checks and bounded sequential fresh-session probes for exact lookup, filename
+lookup, single-file reading, generic project content, `/graphify --help`, and a
+cross-file dependency question. Validate the JSONL traces rather than trusting
+final prose.
+
 Success Criteria:
-- No event-independent or every-task archive check is introduced.
-- Deferred Findings and experiments rotate at ten eligible records and retain
-  five eligible records in the active file.
-- Changelog rotation starts at thirty detailed dates or five hundred lines,
-  retains twenty detailed dates, and exposes up to thirty archive links.
-- Pending findings and non-terminal experiments always remain active.
-- No record is lost, duplicated, or moved to the wrong section.
-- `check` is non-mutating; `apply` is atomic, fail-closed, and idempotent.
-- Codex, Dolphin, and the active local runtime expose the same validated skill.
+- Four simple repository-content probes use only `rg` and never load or invoke
+  Graphify.
+- `/graphify --help` returns the unchanged Usage section without task commands.
+- A cross-file dependency prompt produces real Graphify activation evidence.
+- The Graphify body, router, global policy, configuration, and unrelated dirty
+  work remain byte-identical.
+- Focused CMA lazy-router regression tests and diff checks pass.
 
 Result:
-The initial RED run failed on all thirteen missing behavior and packaging
-surfaces. After implementation and two real-format compatibility revisions,
-the focused suite passed 16 tests and the full project suite passed 35 tests.
-Measured statement coverage for the bundled script is 87%. Codex, Dolphin, and
-the active local skill passed `quick_validate.py`, compiled successfully, and
-were checksum-equivalent. A read-only check against `yedekparcasor.com`
-reported Deferred Findings and Changelog below threshold and Experiments ready
-for rotation without changing that project. Dirty files, malformed formats,
-duplicates, unsupported headings, and broken symlinks failed closed.
+The metadata assertion changed from RED to GREEN without altering the Graphify
+skill body. Fresh exact-text, filename, and generic project-content runs no
+longer activated Graphify; literal help and cross-file dependency runs still
+activated it. However, the defined success criteria were not met: the exact
+run loaded the repository-tools module with `sed` before `rg`, the generic
+README run used `sed`, and the single-known-file run stalled after lifecycle
+start and was terminated without retry. The architecture probe also added one
+temporary trust entry for its disposable corpus; that exact entry was removed
+and the active config hash returned to its pre-test value. The active Graphify
+description and changelog entry were rolled back after code review.
 
 Decision:
-ACCEPT
+REJECT
 
 Notes:
-This experiment changes only record-retention automation. It does not alter the
-mandatory orchestration chain, agent reasoning defaults, or task approval
-rules.
+No installation, graph build in this repository, MCP connection, config change,
+commit, push, or deployment is authorized by this experiment.
+The global policy, repository-tools module, config, and Graphify skill returned
+to their pre-attempt hashes. Code review identified unmet acceptance criteria as
+a HIGH blocker. A narrower acceptance contract or a broader router-policy change
+would be a separate approved task.
 
-## EXP-20260727-001 - Conditional Hypothesis Workflow
+## EXP-20260810-003 - Repository Router Usage Measurement
 
-Date: 2026-07-27
+Date: 2026-08-10
+Status: REJECTED
+
+Problem:
+The active policy-only router has not been observed in a fresh Codex task, so
+its routing behavior, latency, and token use remain unverified.
+
+Evidence:
+EXP-20260810-002 verified activation but explicitly deferred tool use and cost
+evaluation. A strict router-disabled baseline would require prohibited policy
+or authentication changes.
+
+Hypothesis:
+One exact-text lookup will select only `rg`, while one simple control will use
+no tools; two ephemeral JSONL runs can measure their elapsed time and tokens
+without changing repository or active runtime state.
+
+Solution Attempt:
+Run exactly two sequential `codex exec --ephemeral --json` tasks in a read-only
+sandbox: one fixed exact-text lookup and one fixed no-tool control.
+
+Test:
+Validate synthetic failure fixtures before live execution, then require exact
+JSONL lifecycle and usage events, an allowlisted successful `rg` command for
+the routed task, zero tools for the control, distinct thread IDs, and pre/post
+state parity.
+
+Success Criteria:
+- Both original runs exit zero with exactly one valid usage event.
+- The routed run uses only the narrowest approved local command and returns the
+  exact expected path.
+- The control returns the exact sentinel with zero tool events.
+- Repository, active policy/config, and session inventories remain unchanged.
+- Results report observed time and tokens without claiming causal speedup or
+  actual account billing.
+
+Result:
+The synthetic validator produced meaningful RED before implementation and then
+passed 7/7 fixtures. The first and only live routed run exited at the Codex
+transport level with one valid usage event, but the pilot failed closed before
+the control run. Instead of selecting only `rg`, the fresh session announced
+Graphify, read all 699 lines of the Graphify skill using four shell commands,
+then ran an `rg` pipeline and emitted two agent messages. Observed usage was
+163,172 input tokens, including 132,864 cached input tokens, plus 839 output
+tokens and 294 reasoning output tokens. The exact path result was correct, but
+the route violated the narrowest-tool and minimal-command criteria. The control
+run was not executed and no retry occurred. Active policy/module parity and
+repository status were checked afterward; the only repository change is this
+experiment record. Exact monotonic latency and full pre/post inventory parity
+are unverified because validation stopped before the runner persisted them.
+
+Decision:
+REJECT
+
+Notes:
+No retry, installation, MCP connection, scan, graph build, policy change,
+commit, or push occurred. The ephemeral thread identifier is absent from the
+persisted session tree. The failure indicates a routing conflict: the broad
+Graphify skill trigger overrides the compact exact-text route and adds material
+context cost. Independent code and security reviews returned PASS. The exact
+task-owned private harness and raw JSONL directory was removed after review.
+Any correction is a separate task and approval gate.
+
+## EXP-20260810-002 - Active Repository Tool Router Pilot
+
+Date: 2026-08-10
 Status: ACCEPTED
 
 Problem:
-The runtime has evidence, retry, TDD, and review controls, but it does not yet
-provide the conditional experiment workflow tracked by ORCH-005. Making the
-workflow mandatory for every task would add duplicate records and latency.
+The approved repository-tool router exists only in the managed Codex source.
+The active local `~/.codex` runtime cannot be evaluated until its policy and
+module are synchronized, but activation must preserve the current runtime and
+provide a verified rollback point.
 
 Evidence:
-`docs/ORCHESTRATION_IMPROVEMENT_TASKS.md` keeps ORCH-005 pending and limits
-experiment escalation to failed attempts, unclear evidence, competing
-hypotheses, regressions, or measured comparisons.
+The active policy differs from the approved template by exactly the missing
+router row, and the active `CMA_REPO_TOOLS.md` module is absent. The active
+runtime contains 7.8 GB of recoverable files plus one live IPC socket. A live
+copy cannot be an atomic point-in-time snapshot, and macOS `ditto` intentionally
+excludes sockets and pipes.
 
 Hypothesis:
-A concise global trigger combined with a reusable `hypothesis-workflow` skill
-will add traceable experiments only when difficulty or uncertainty justifies
-the extra process, without changing routine task flow or the mandatory agent
-chain.
+A private, verified backup of all recoverable active runtime state followed by
+preimage-bound atomic publication of only the module and router row will enable
+a reversible usage pilot without widening runtime authority.
 
 Solution Attempt:
-Package the conditional skill for Codex and Dolphin, register it globally,
-link it from runtime policy, preserve existing evidence and changelog paths,
-and explicitly prohibit proactive experiment-file creation for routine work.
+Create a unique external `0700` backup with source-before, payload, and
+source-after manifests, explicitly classify volatile and excluded special
+entries, validate stable parity, and write the completion marker last. Direct
+`ditto` was rejected after a socket error/FIFO hang; `rsync` and `bsdtar`
+attempts were then rejected for macOS metadata drift. The final method builds a
+simplified BOM containing only recoverable paths and applies BOM-filtered
+`ditto`, preventing special-file access while preserving required metadata.
+Then publish the module and policy atomically, with the policy as the activation
+point and fixture-proven rollback on partial failure.
 
 Test:
-Run focused contract tests, the complete unit suite, skill validation, and
-temporary Codex and Dolphin installations. Verify the active local Codex
-runtime after synchronization.
+Capture active RED drift, run disposable backup/corruption/unique-name and
+partial-sync rollback fixtures, validate the real backup and active source
+parity, run focused and full CMA tests, and complete independent code and
+security reviews.
 
 Success Criteria:
-- Routine first-pass work does not activate the experiment workflow.
-- Defined escalation triggers activate prior-record review and a dated ID.
-- Project `AGENTS.md` does not need to declare the skill.
-- Existing `CHANGELOG_PATH` and `EVIDENCE_PATH` remain authoritative.
-- The mandatory agent chain and `medium` reasoning defaults remain unchanged.
-- Codex and Dolphin temporary installs contain the validated skill.
-- Tests reject unconditional activation and missing test-integrity guardrails.
+- The experiment record predates the first backup attempt.
+- A private external backup contains every recoverable stable entry with
+  verified content and metadata parity.
+- Live sockets, pipes, and changing files are truthfully classified rather than
+  reported as stable backup parity.
+- Active policy and module match their approved repository sources exactly.
+- No unrelated active surface, tool installation, tool execution, fresh-session
+  claim, commit, or push occurs.
+- Rollback fixtures, focused/full tests, and independent reviews pass.
 
 Result:
-The corrected RED run failed on all missing behavior surfaces: skill files,
-global policy, registry links, and portable installation. After implementation,
-the focused suite passed 7 tests and the full suite passed 19 tests. Both
-packaged skills and the active global skill passed `quick_validate.py`. Codex
-and Dolphin temporary installs contained identical skill contracts.
-`~/.codex/AGENTS.md`, the active skill, and active registry policy were
-checksum-equivalent to their source templates after targeted synchronization.
-The existing active audit history remained intact.
+The approved planner and TDD stages completed. Active RED was captured. The
+first disposable backup fixture rejected direct `ditto`; subsequent real
+`rsync` and `bsdtar` staging attempts were rejected for xattr/creation-metadata
+drift and preserved without completion markers. A BOM-filtered `ditto` fixture
+preserved content, symlink target, mode, xattr, and ACL while excluding
+socket/FIFO objects; corruption and destination collision were also rejected.
+The atomic sync fixture passed wrong-preimage, symlink, both partial-publication
+rollback, target-drift rejection, and positive postimage checks. The private
+recoverable backup completed with an explicit special-file and system-metadata
+boundary. Active policy and module hashes now match their approved repository
+sources. The hardened fixture passed both partial-publication rollback cases and
+target-drift rejection. Focused 26-test and full 157-test suites passed, and
+independent code and security reviews returned PASS. No repository tool or
+fresh Codex session was executed; runtime usefulness and cost remain a separate
+usage evaluation.
 
 Decision:
 ACCEPT
 
 Notes:
-This experiment changes one main behavior: conditional activation of a
-traceable hypothesis cycle. It does not alter approval, scope, destructive
-operation, retry, orchestration, or security boundaries. The prior active
-policy and registry files are recoverable from
-`~/.codex/archive/hypothesis-workflow-20260727_004001/`.
+The user approved a live recoverable backup and accepted explicit exclusion of
+ephemeral socket/FIFO objects. A complete runtime restore remains separately
+gated and requires quiescence.
 
-## EXP-20260803-001 - Independent Opt-In GLM Evidence Validator
+## EXP-20260810-001 - Selective CMA-ARK Rollback
 
-Date: 2026-08-03
-Status: ACCEPTED
+Date: 2026-08-10
+Status: ROLLED_BACK
 
 Problem:
-Evidence validation is useful for selected projects, but embedding it in CMA
-policy, templates, or the default completion path would change every project.
+The CMA-ARK work expanded a simple lazy-tool integration into a large inactive
+adapter, hook, lifecycle, and host-evidence stack. The implementation adds
+substantial maintenance and review cost while no CMA-ARK hook, skill, or managed
+runtime path is active.
 
 Evidence:
-The rejected first attempt coupled validation to CMA runtime templates and
-failed review on MCP initialization, portable paths, hook preservation, and
-missing tests. The approved scope requires an independent installation with no
-automatic project activation.
+The ARK and CMA-ARK implementation surfaces are entirely untracked at the
+current Git HEAD, while tracked changelog and experiment ledgers contain mixed
+ARK and unrelated CMA changes. The approved assessment found roughly 7,500
+lines in the CMA-ARK integration layer versus roughly 1,400 lines in ARK, with
+115 adapter tests but no active integration surface.
 
 Hypothesis:
-A standalone ACP client installed under `~/.codex/evidence-validator`, combined
-with project-local opt-in configuration and hooks, can validate changed evidence
-without changing CMA instructions, evidence creation rules, global hooks, or
-inactive projects.
+A selective, recoverable rollback can return ARK to one planning-only proposal
+without losing audit history or changing unrelated dirty CMA work. Moving the
+implementation to a private checksum-bound external backup and applying exact
+preimage transforms to mixed tracked files should be safer than a repository
+reset or broad patch reversal.
 
 Solution Attempt:
-Implement and test an independent validator, project enable/disable/status
-commands, hash-based session evidence detection, strict GLM result parsing, and
-project-local hook merging. Install it globally but activate only a temporary
-pilot project.
+Create an external private rollback manifest and RED-first acceptance checker,
+move only approved ARK/CMA-ARK implementation artifacts into its payload, remove
+only the four ARK ignore rules, transition the thirteen historical ARK
+experiment statuses to `ROLLED_BACK`, add one truthful changelog entry, and
+retain exactly one non-executable planning proposal.
 
 Test:
-Run unit and integration tests against temporary projects and a fake ACP agent,
-then run a real GLM smoke test using the existing `glm-acp-agent` setup. Verify
-that CMA files, the active global hook, and real project files remain unchanged.
+Require meaningful RED before mutation, exact source-to-backup hash and metadata
+parity, planning-only repository surface, deterministic tracked-file postimages,
+anti-hardcoded-success mutation probes, full remaining root regressions,
+read-only record checks, diff integrity, and independent code and security
+reviews.
 
 Success Criteria:
-- No CMA policy, template, installer, or evidence-creation instruction changes.
-- No real project is activated automatically.
-- Enable and disable preserve unrelated project hooks and are idempotent.
-- Only session-created or session-modified evidence is sent for validation.
-- Only schema-valid `PASS` permits completion; every uncertain path is
-  `UNVERIFIED`.
-- The existing global notification hook remains byte-identical.
-- Focused tests, regression tests, real GLM smoke validation, code review, and
-  security review complete without blocking findings.
+- Every approved implementation artifact is absent from the repository and
+  recoverable from a private verified external backup.
+- Exactly one CMA-ARK planning proposal remains and grants no implementation,
+  runtime, activation, tool-execution, commit, or push authority.
+- All thirteen historical ARK experiment records occur once and have current
+  status `ROLLED_BACK` without rewriting their historical evidence or decisions.
+- All unrelated tracked and non-ignored untracked CMA state remains
+  byte-identical; generated ignored files are outside this rollback claim.
+- RED, GREEN, mutation probes, remaining regressions, record validation, and
+  independent reviews pass.
 
 Result:
-The independent validator was installed under `~/.codex/evidence-validator`
-without changing global CMA instructions, Codex configuration, or the existing
-global notification hook. The final focused suite passed 24/24 with no skipped
-tests. A temporary project completed real pinned GLM ACP manual validation with
-`PASS`, then its changed evidence completed the real Stop hook with `{}`. The
-temporary project was disabled and moved to Trash. Final independent code and
-security reviews both returned PASS with no blocking findings.
+The approved ARK and CMA-ARK implementation surfaces were moved to a private
+checksum-bound recovery backup, leaving one non-executable planning proposal.
+Meaningful RED, final acceptance, all nine mutation probes, 152 remaining root
+regressions under Python 3.10, record checks, diff integrity, and independent
+code and security reviews passed. An initial Python 3.9 run failed on existing
+Python 3.10 union-type syntax and was not counted as success.
 
 Decision:
-ACCEPT
+ROLLBACK
 
 Notes:
-The global installation makes the validator available only. Project activation,
-commit, and push remain outside this task.
+The user explicitly approved the selective rollback and mandatory orchestration
+chain. Commit, push, backup deletion, global runtime changes, and any future ARK
+implementation or activation remain outside scope.
 
-## EXP-20260806-010 - Portable Codex Subagent Restoration Prompt
+## EXP-20260809-012 - Disposable CMA-ARK Host Evidence Wrapper
 
-Date: 2026-08-06
-Status: ACCEPTED
+Date: 2026-08-09
+Status: ROLLED_BACK
 
 Problem:
-The current Codex runtime has a verified token-conscious 12-agent matrix, but
-there is no installed CMA prompt for restoring that matrix without embedding a
-specific user's absolute home path or re-generating the full agent bodies.
+EXP-20260809-011 accepted a deterministic same-run evidence contract, but no
+test-only wrapper or disposable host harness implements it. The accepted design
+therefore cannot yet prove that real hook/candidate evidence and a paired Codex
+JSONL lane are bound, non-compensating, private, and truthfully cleaned up.
 
 Evidence:
-The managed Codex variant and active runtime contain eight default agent TOMLs
-plus four conditional Sol variants, all at medium reasoning. The portable
-installer rewrites a selected runtime home but does not currently install a
-`prompts/` tree or prefer an active `CODEX_HOME` when no explicit target is
-provided.
+The inactive hook candidate can already produce a real plan-only artifact, and
+its focused tests prove zero routed-tool execution. The repository has no host
+evidence wrapper or harness, canonical `UserPromptSubmit` activation remains
+absent, and the accepted schema has not yet been exercised by a same-child
+disposable boundary.
 
 Hypothesis:
-A concise restoration prompt derived from the authoritative agent TOMLs,
-installed through a dynamically resolved runtime home, will make recovery
-portable while preserving the current model quality and reducing repeated
-discovery, generated output, and reasoning-token pressure.
+A fixed isolated wrapper plus a three-pair disposable host harness can implement
+the accepted contract without widening runtime authority. Executing the real
+candidate/coordinator path inside each fake-host child and independently
+validating exact artifacts, JSONL, identity, hashes, cleanup, and final status
+will reject missing, altered, dirty, or hardcoded evidence.
 
 Solution Attempt:
-Add a Codex-only restoration prompt, teach the shared variant installer to
-manage optional prompt trees and prefer an explicit target, then `CODEX_HOME`,
-then the selected variant's current-user default. Preserve no-overwrite and
-symlink protections. Validate source before narrowly synchronizing only the
-prompt into the active Codex home.
+Add separate bounded wrapper, contract-validation, and harness modules plus a
+disposable fake Codex host fixture and RED-first tests. Keep the canonical hook,
+candidate, coordinator, adapter, ARK, trust configuration, dependencies, and
+routed-tool authority unchanged. If truthful missing-artifact failure cannot be
+represented by the accepted schema, stop before implementation and request a
+narrow contract correction instead of fabricating evidence.
 
 Test:
-Add RED contracts for the prompt's exact live TOML-derived inventory, portable
-runtime resolution, real installer output, no-overwrite preservation, and
-prompt-directory symlink rejection. Then run focused, related, and complete
-regressions, shell syntax and diff checks, active source-target hashes, and
-independent code and security reviews.
+Capture meaningful RED from absent wrapper/harness behavior. Then run focused
+positive, negative, boundary, cleanup, same-child binding, hardcoded-success,
+three-run stability, and branch-coverage checks followed by relevant hook,
+adapter, ARK, root-governance, code-review, and security-review regressions.
 
 Success Criteria:
-- No fixed username or `/Users/.../.codex` path appears in the prompt.
-- Exactly eight default roles and four conditional Sol variants retain their
-  current friendly identities, models, medium reasoning, and sandboxes.
-- The mandatory chain remains unchanged and no high-reasoning role is added.
-- Installer resolution is explicit target, active `CODEX_HOME`, then the
-  selected current-user default.
-- Existing prompt files are preserved without force and prompt-directory
-  symlink escapes fail before outside mutation.
-- Source tests pass before a narrow, hash-verified active prompt sync.
-- Config, auth, agent TOMLs, registries, skills, other providers, commit, push,
-  and deployment remain unchanged.
+- Every disposable pair invokes the real wrapper and real inactive candidate
+  exactly once while executing no routed tool.
+- Candidate and Codex lanes are independently required and bound to the same
+  run, session/thread identity, fixed query, prompt, reviewed files, and hashes.
+- Three fresh pairs pass without retry or replacement and share one normalized
+  candidate hash.
+- Private artifacts are exact, bounded, mode-safe, hashed before deletion, and
+  absent after successful cleanup; cleanup failure cannot report success.
+- Missing hook execution, dirty JSONL, identity/hash drift, timeout, stderr,
+  nonzero exit, malformed input, or hardcoded success fails closed.
+- Focused branch coverage is at least 80%, relevant regressions pass, and
+  independent code and security reviews have no blocking findings.
+- No canonical activation, trust action, real Codex session, global change,
+  dependency, routed-tool execution, commit, or push occurs.
 
 Result:
-The initial five-test RED run produced four failures and one missing-file
-error for the absent prompt, missing installer transport, ignored
-`CODEX_HOME`, and missing prompt-directory preflight. The first implementation
-then passed the focused 5/5 checks, related suites at 17/17, 21/21, and 11/11,
-and the complete 111/111 regression suite. Shell syntax and diff checks passed.
+Planner and TDD review independently confirmed a blocking contract gap before
+implementation began. When the hook does not run, the accepted
+contract correctly leaves both pass-only candidate artifacts absent. A valid
+assessment cannot then provide their required raw hashes or normalized candidate
+hash, while `final_result` still requires `assessment_sha256`. Hashing a sentinel
+or fabricating passing-shaped failure artifacts would violate the contract.
+The minimum truthful correction retains the field but permits
+`assessment_sha256=null` only in a failed or unverified final result when no
+valid assessment could be constructed; a passing final still requires a
+lowercase 64-character assessment hash. The user approved that correction; its
+meaningful RED failed 1/9 on the old schema and the corrected design passed 9/9.
 
-The approved narrow activation installed only the new prompt into the resolved
-active Codex home. Its SHA-256 matched the managed source and the protected
-runtime surface hash remained unchanged. Independent code review then found
-that the symlink test did not yet prove fail-before-write behavior. A second
-meaningful RED test reproduced policy overwrite before the symlink failure.
-Adding `prompts` to the pre-write managed-directory validation made that test
-and the focused 5/5 checks pass while preserving both target and outside
-sentinels.
+The wrapper/harness RED then failed because the three implementation modules
+were absent. The first implementation slice passes 5/5 contract tests and 2/2
+real wrapper-to-candidate tests. The disposable harness passes 5/6 tests, but
+three clean real candidate runs produce different normalized hashes even though
+their query hashes are identical. Source inspection confirms that
+`plan_sha256` covers the coordinator-generated UUID request ID, so it is
+intentionally different on every invocation. The accepted empty volatile-field
+allowlist is therefore incompatible with the real candidate. Excluding
+`plan_sha256` only from cross-run normalization, while retaining and validating
+every raw per-run plan hash, is the narrowest feasible correction; changing the
+real coordinator request identity would exceed this test-only scope. The user
+approved that correction. The resulting focused suite reached 19/19 with 84%,
+81%, and 84% branch coverage for wrapper, contract, and harness sources.
 
-After remediation, the installer suite passed 17/17 and the complete suite
-passed 111/111. Shell syntax and diff checks passed. Code re-review and security
-review both passed with no remaining blocking finding; security review
-confirmed fail-before-write path containment, no-overwrite behavior, quoted
-runtime resolution, and no credential, auth, dependency, external-service, or
-destructive-operation change.
+The approved containment correction gives the candidate one wrapper-owned
+process group and makes the candidate, coordinator, adapter, and plan-only ARK
+boundary inherit it. Timeout and semantic-failure paths now terminate the full
+group and reap direct children. A checked-in reviewed manifest binds the exact
+hook-definition bytes plus wrapper, candidate, coordinator, contract, and
+schema hashes before contract import; ownership, permission, path, type, and
+bytes-only drift checks fail closed.
+
+Final verification passed 27/27 focused host-evidence tests with 84% combined
+branch coverage (wrapper 89%, contract 81%, harness 84%), 115/115 adapter tests,
+and the previously completed 55/55 relevant root contracts. Independent code
+and security re-reviews returned PASS with no blocking findings. Canonical hook
+activation, trust, real Codex sessions, global changes, dependencies, routed
+tool execution, commit, and push did not occur.
 
 Decision:
-ACCEPT
+ACCEPTED
 
 Notes:
-The user approved Codex source, tests, records, and narrow active prompt
-synchronization. Claude adaptation is planning-only after Codex closure.
+This experiment owns only the test-only wrapper/harness implementation and its
+focused tests and records. Real activation and three fresh Codex sessions remain
+separate approval gates.
 
-## EXP-20260806-011 - Portable Claude Subagent Restoration Prompt
+## EXP-20260809-011 - Deterministic CMA-ARK Host Evidence Contract
 
-Date: 2026-08-06
-Status: ACCEPTED
+Date: 2026-08-09
+Status: ROLLED_BACK
 
 Problem:
-The portable Claude CMA variant has the verified 12-agent Sonnet/Opus matrix
-but lacks an installed recovery prompt that derives the current Markdown/YAML
-definitions without embedding a machine-specific user path or duplicating full
-agent bodies.
+EXP-20260809-010 correctly rolled back canonical hook activation after the
+first fresh Codex session omitted bound plan fields from its final response and
+JSONL trace. Later diagnosis established that the acceptance gate conflated
+hook `additionalContext`, which is model context, with deterministic final or
+JSONL evidence.
 
 Evidence:
-The Claude source contains eight canonical agents and four conditional Opus
-variants, all at medium effort. The shared installer now transports optional
-prompt trees safely, but the Claude package has no prompt to install and its
-exact manifest remains 34 files.
+The inactive hook candidate directly returns the exact target, query and plan
+digests, `success=true`, and `execution_performed=false` in the documented
+`UserPromptSubmit` envelope. Official OpenAI documentation defines that output
+as extra developer context, defines `codex exec --json` as an emitted event
+stream, and recommends `--output-schema` for stable final-response fields; it
+does not define the model response as canonical hook evidence.
 
 Hypothesis:
-A Claude-native restoration prompt derived from authoritative frontmatter and
-installed only into an explicitly selected isolated runtime will provide
-portable recovery with bounded token use while preserving models, effort,
-tools, permissions, orchestration, and active native Claude isolation.
+A same-run two-lane acceptance contract will provide deterministic evidence
+without widening runtime authority: a test-only external wrapper will be the
+actual hook command, validate the candidate/coordinator plan artifact, and bind
+it to its paired ephemeral read-only Codex JSONL behavior. Neither lane may
+rescue a failure in the other, and model output will remain non-authoritative.
 
 Solution Attempt:
-Add one Claude prompt and document it. Reuse the existing provider-neutral
-installer prompt transport without changing installer behavior unless RED
-evidence requires it. Validate source and an isolated installation before
-narrowly synchronizing the prompt to the current user's isolated CMA Claude
-runtime, never the active native Claude home.
+Define same-host identity binding, a machine-readable schema bundle for the
+external evidence artifacts and final result, three-run stability, private
+temporary lifecycle, independent gating, failure rules, and future TDD contract
+in the CMA-ARK design. Keep production hook/coordinator code, canonical
+activation, trust, App Server, dependencies, and routed-tool behavior unchanged.
 
 Test:
-Add RED contracts for the 35-file manifest, actual frontmatter-derived role
-rows, target-resolution order, token/model rules, exact chain, explicit-runtime
-installation, no-overwrite preservation, and provider-neutral symlink
-preflight. Run focused Claude and installer suites, complete regressions,
-syntax/diff checks, isolated source-target hashes, and independent reviews.
+Capture meaningful RED failures from new documentation-contract tests before
+updating the design. Then run the focused design test, relevant adapter and root
+regressions, `git diff --check`, independent code review, and security review.
 
 Success Criteria:
-- The prompt contains no fixed username or machine-specific absolute path.
-- Exactly 12 roles preserve their actual identity, model, medium effort, tools,
-  and permission mode, including four conditional Opus replacements.
-- Target resolution is explicit target, non-empty `CLAUDE_CONFIG_DIR`, then
-  the current user's `${HOME}/.claude`.
-- No Codex agent format, Codex model identifier, `-sol` role, unsupported token
-  field, extra chain stage, or broad escalation is introduced.
-- The installer copies the prompt to an explicit isolated runtime, preserves
-  existing prompts without force, and rejects prompt symlinks before writes.
-- Source validation precedes a narrow hash-verified sync to the isolated CMA
-  Claude runtime; `${HOME}/.claude` remains unchanged.
-- Settings, credentials, native Claude, SDK, dependencies, commit, push, and
-  deployment remain unchanged.
+- Canonical candidate evidence and Codex behavioral events are separate,
+  independently required lanes bound to the same host run and reviewed hook.
+- Four private temporary artifacts have exact schemas, hashes, normalization,
+  cleanup, and fail-closed assessment rules.
+- Three candidate runs and three Codex runs are required; no later run can
+  replace a failed required run.
+- Final model text and `--output-schema` output are presentation only and never
+  authenticate plan identity, digest binding, or zero execution.
+- App Server remains deferred and production hook/coordinator code, activation,
+  trust, dependencies, and routed-tool authority remain unchanged.
+- New tests fail against the pre-change design, then focused and relevant
+  regressions pass with no blocking code or security review findings.
 
 Result:
-The initial source RED produced one manifest failure and one missing-file error:
-the package had 34 files and no Claude restoration prompt. The installer RED
-kept the Codex, no-overwrite, and symlink cases green while the Claude explicit
-install subcase failed because no source or installed prompt existed.
-
-After adding only the Claude-native prompt and README entry, the focused source
-checks passed 2/2 and provider-neutral installer checks passed 3/3. The Claude
-suite passed 17/17, installer suite 17/17, orchestration suite 11/11, and the
-complete suite 112/112. Shell syntax and diff checks passed. No shared installer
-implementation change was required.
-
-The isolated CMA Claude runtime did not previously exist, so broad installation
-was avoided. Only its `prompts/` directory and the approved prompt were created.
-The source and isolated prompt SHA-256 values match, the isolated runtime
-contains no other file, and the native `${HOME}/.claude` prompt path remains
-absent.
-
-Code review found a high-severity cross-runtime delegation risk: an explicit
-target could differ from the active `CLAUDE_CONFIG_DIR` while Sam remained
-scoped to the active runtime. After explicit user approval, a meaningful RED
-contract required fail-closed target equality, isolated-process continuation,
-and governor use only after the effective config directory equals the resolved
-target. The corrected contract passed and the prior isolated prompt was saved
-in a hash-verified recoverable backup before narrow replacement.
-
-After remediation, the Claude suite passed 17/17, installer suite 17/17, and
-complete suite 112/112; shell syntax and diff checks passed. Code re-review and
-security review both passed. The updated source and isolated prompt SHA-256 is
-`b6e1b926d4f47e8bd5d886eb450378792f4d12fbe05e4fa6ec326978334e17e8`,
-and native Claude state remains unchanged.
+The documentation contract produced the required meaningful RED: the existing
+two tests passed while all four initial evidence-contract tests failed on
+absent design requirements. The first bounded design then passed 6/6 focused
+tests after a whitespace-only harness correction for Markdown wrapping. Code
+review exposed missing same-host identity binding, narrative-only artifact
+schemas, and phrase-only test weakness. The remediated contract added a parsed
+machine-readable schema test; code re-review passed. Security review then found
+that contradictory success/lane/cleanup states remained schema-valid and that
+embedding a fresh run ID in the candidate query made the three-run stability
+rule unsatisfiable. The remediated contract uses conditional result variants, a
+single post-comparison session/thread identity, and a fixed candidate query with
+the run ID outside it. The current focused suite passes 8/8, alongside 6/6
+plan-only hook candidate tests and 3/3 passive CMA-ARK contract tests. Direct
+Draft 2020-12 validation accepts the coherent assessment and rejects both a
+failed-lane passing assessment and failed-cleanup passing final result.
+`git diff --check` also passes. Independent code and security re-reviews passed
+with both security blockers closed. No wrapper, fresh Codex session, hook
+activation, trust change, routed tool, dependency, commit, or push occurred.
+Final governance regressions passed 11/11 orchestration, 7/7 hypothesis, and
+19/19 record-archive tests. The terminal-record check reported every managed
+record below its archive threshold, so no archive apply was required.
 
 Decision:
 ACCEPT
 
 Notes:
-The user approved source, tests, records, and isolated CMA Claude prompt
-synchronization only.
+This experiment is documentation and test-contract scope only. Wrapper
+implementation and real three-session validation require a distinct approval.
+
+## EXP-20260809-010 - Canonical CMA-ARK Hook Activation
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+EXP-20260809-009 proved a deterministic plan-only `UserPromptSubmit` transport
+and a descriptor-anchored disposable lifecycle, but the canonical CMA repository
+still has no active prompt hook. The existing pilot intentionally rejects the
+canonical root, so the approved activation cannot be installed or rolled back
+through the reviewed lifecycle.
+
+Evidence:
+The canonical `.codex/hooks.json` contains only empty `SessionStart` and `Stop`
+events, `.codex/cma-ark-user-prompt.py` is absent, and the pilot accepts only
+`install|rollback --target` against a marked disposable repository. Codex CLI
+0.147.0 reports stable hook support. Official OpenAI documentation requires
+review and trust of the exact non-managed hook definition through `/hooks` and
+records trust against its current hash.
+
+Hypothesis:
+Fixed no-target `repo-install` and `repo-rollback` operations, built on the
+existing descriptor-relative lifecycle and separated from the bounded CLI,
+will permit exact canonical activation and recovery without reactivating the
+failed repo skill or granting execution authority. A user-reviewed exact hook
+definition should then produce deterministic fresh-session plans with
+`execution_performed=false` and no routed tool execution.
+
+Solution Attempt:
+Split the lifecycle primitives into one adjacent private module, keep the pilot
+as a thin isolated CLI/router, and add fixed canonical operations that derive
+only their own repository root. Prove the lifecycle first in copied layouts,
+then rehearse canonical install and rollback, reinstall exact bytes, use the
+supported `/hooks` trust flow without bypass, and run three fresh plan-only
+sessions.
+
+Test:
+Capture RED evidence for the absent repo operations. Verify copied-layout
+install, idempotency, exact preservation, rollback, reinstall, path and content
+drift refusal, atomic failure reporting, hostile environment isolation, and
+anti-hardcoded-success behavior. Run focused branch coverage, adapter, ARK,
+and root regressions before canonical rehearsal. Verify the exact live hook in
+three fresh Codex sessions after trust.
+
+Success Criteria:
+- Repo operations derive one fixed canonical root and reject all caller targets.
+- Disposable operations retain their marker and canonical-refusal behavior.
+- Install and rollback mutate only the exact owned hook entry and script,
+  preserve unrelated config, and truthfully report committed cleanup failures.
+- The installed script is byte-identical to the reviewed candidate and mode
+  `0600`; no skill activation, global skill, dependency, MCP/cplt, or Graphify
+  execution is added.
+- Exact trust uses the supported `/hooks` review only; no trust bypass, manual
+  trust-state edit, or unrelated hook approval occurs.
+- Three fresh sessions return usable matching CMA-ARK plans with
+  `execution_performed=false`, no routed tool execution, retry, or fallback.
+- Focused branch coverage is at least 80%, relevant regressions pass, and code
+  plus security review have no blocking findings.
+
+Result:
+The missing canonical operations produced the expected initial RED: all three
+copied-layout tests failed because the existing parser rejected `repo-install`
+with exit 2. The bounded implementation then passed 23/23 focused tests with
+80.70% combined CLI/lifecycle branch coverage, 83/83 adapter tests, 33/33 ARK
+tests, and 166/166 root regressions. Code and security review both passed after
+three false-state cleanup paths were found and closed. The real canonical
+lifecycle installed, restored the original config SHA-256 exactly on rollback,
+and reinstalled the byte-identical mode-`0600` hook with no lock/temp residue.
+Exact trust was then granted only to the displayed project hook through
+`/hooks`; no broad trust or bypass was used. The first fresh ephemeral
+read-only Codex session exited 0 and returned a five-step generic `rg` plan with
+no tool calls, but its JSONL trace omitted the required target/query/plan
+digests, `success=true`, and literal `execution_performed=false` fields. It was
+therefore not a usable bound CMA-ARK plan. The remaining two sessions were not
+executed. The governed rollback removed the hook entry and script, restored the
+original config SHA-256
+`49ebbad6f600dbb37355f63e80bde9457a77023891a6bbca4157dee381abd071`,
+and left no lock/temp or skill surface.
+
+Decision:
+ROLLBACK
+
+Notes:
+The hook lifecycle implementation remains as a tested inactive recovery tool,
+but canonical activation is rejected by the fresh-host acceptance gate. The
+Codex-owned exact-definition trust record is inert after config removal and was
+not manually edited. Commit, push, deployment, global skill changes, routed
+tool execution, and the remaining two fresh sessions did not occur.

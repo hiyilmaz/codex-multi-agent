@@ -2,745 +2,717 @@
 
 [Back to active experiments](EXPERIMENTS.md)
 
-## EXP-20260809-007 - CMA-ARK Activation Identity Hardening
+## EXP-20260811-003 - Conditional Security Core Skills
 
-Date: 2026-08-09
-Status: ROLLED_BACK
+Date: 2026-08-11
+Status: ACCEPTED
 
 Problem:
-The inactive CMA-ARK candidate can invoke a passive adapter launcher that
-selects a user-owned Homebrew Python interpreter and resolves shell/runtime
-commands through writable PATH segments. A forged or replaced child boundary
-could therefore return a self-consistent plan before future repo activation.
-The activation design also lacks an executable disposable install/rollback
-pilot.
+CMA has protected local-intelligence core skills, but its three distinct
+security evidence needs still lack narrow, inactive skill contracts and
+independent validation: source SAST, dependency vulnerabilities, and secret
+exposure.
 
 Evidence:
-The final security review for EXP-20260809-006 accepted the inactive candidate
-but retained adapter entrypoint/symlink identity, child interpreter, and
-writable-PATH resolution as blocking gates for any `.agents/skills/cma-ark/`
-activation. Live inspection confirmed the adapter prefers the user-owned
-`/opt/homebrew/bin/python3` symlink from a group-writable directory.
+The canonical registry already assigns Opengrep to SAST, OSV-Scanner to
+dependency vulnerability analysis, and Betterleaks to secret detection. The
+current repository router combines some security routes, while no canonical or
+native skill projections exist for these three scanners. Official tool sources
+confirm distinct evidence models: rule-driven source findings, extracted
+package vulnerability matching, and redaction-capable secret detection. The
+user approved exactly one bounded line-limit exception for EXP-20260811-003 in
+the already over-800-line experiment log. This exception applies only to this
+record and does not authorize editing, reordering, refactoring, archiving,
+cleaning, or maintaining existing records.
 
 Hypothesis:
-Fixing both launchers to root-owned `/usr/bin/python3`, making the runtime
-Python 3.9 compatible, independently binding and revalidating every child
-identity, and proving manifest-owned install/rollback only in a disposable
-repository will close the activation blockers without activating the skill or
-adding dependencies.
+Three short instruction-only skills with conditional triggers, exact negative
+boundaries, fail-closed tool absence, and secret-safe output contracts can
+preserve semantic parity across inactive Codex, Claude, and OpenCode candidates
+without installing, configuring, activating, or running scanners.
 
 Solution Attempt:
-Use isolated literal launchers, a system-first fixed PATH, complete
-launcher/source/interpreter/tool identity verification before and immediately
-before spawn, and a repo-owned pilot that refuses the canonical CMA root and
-publishes or removes only an exact three-file candidate manifest in a
-disposable repository.
+Add canonical Opengrep, OSV-Scanner, and Betterleaks definitions; native inactive
+candidate projections; three compact routing rows; and a bounded read-only
+validator with independent trigger, parity, authority, redaction, and runtime
+isolation tests. Do not change the registry, profiles, TDD, active runtime, or
+scanner configuration.
 
 Test:
-Capture RED failures for launcher selection, Python 3.9 compatibility,
-identity drift and symlink substitution, missing disposable pilot, atomic
-publication, idempotency, and drift-safe rollback. Then require real
-black-box planning with zero tool execution, at least 80 percent branch
-coverage, relevant adapter/ARK/CMA regressions, and independent code and
+Capture meaningful RED for exactly 17 absent Phase 7 surfaces. Validate explicit
+and natural positive triggers, negative and overlap routes, fail-closed tool
+absence, Betterleaks redaction, output contracts, registry metadata, native
+metadata, normalized semantic parity, bounded no-follow inputs, compact routing,
+truthful status, and active runtime isolation. Run focused coverage, applicable
+and full regressions, code review, and security review without executing a
+scanner.
+
+Success Criteria:
+- Each canonical skill contains every required standard field and matches its
+  protected registry entry.
+- Source security, dependency CVE, and secret exposure route to exactly one
+  primary scanner by default; scanners remain conditional.
+- Required-tool absence stops unavailable and unverified with `success=false`,
+  without scanner substitution or widened scope.
+- Security outputs require finding type, optional supplied severity, location,
+  short explanation, and remediation direction; Betterleaks never exposes a
+  matched secret value.
+- Native candidates preserve semantic parity without implicit activation,
+  runtime writes, tool installation, configuration, plugin, or MCP changes.
+- Focused coverage, full tests, independent code/security reviews, and exact
+  active-runtime manifest comparison pass.
+
+Result:
+Meaningful RED failed only for the expected 17 absent Phase 7 production
+surfaces. The three instruction-only skills and inactive native projections
+were then added without installing, configuring, activating, or executing a
+scanner. Independent validation now rejects semantic drift, incomplete
+negative sets, fake overlap labels, unsafe unavailable-tool behavior, raw
+secret output, native activation widening, routing drift, symlinks, deep JSON,
+and malformed bounded input types. Final validation passed 40/40 focused tests
+with 85% validator branch coverage and 279/279 full tests. Direct per-skill CLI
+validation returned exact truthful passed payloads, code and security reviews
+passed after their findings were closed, and the active Codex, Claude, and
+OpenCode skill/config manifest remained byte-identical to its pre-task baseline.
+
+Decision:
+ACCEPTED. Phase 7 establishes Opengrep for conditional source SAST,
+OSV-Scanner for conditional dependency vulnerability evidence, and Betterleaks
+for conditional redacted secret detection. Each evidence need has one primary
+scanner by default, all unavailable-tool paths stop fail-closed, and no active
+runtime or scanner state was changed.
+
+Notes:
+The line-limit exception is exclusive to EXP-20260811-003. Experiment-log
+maintenance remains a separate task. Scanner execution, Phase 8, and TDD
+simplification are not authorized.
+
+## EXP-20260811-002 - Local Repository Intelligence Core Skills
+
+Date: 2026-08-11
+Status: ACCEPTED
+
+Problem:
+CMA has a protected core-skill standard, registry, and three platform profiles,
+but Graphify, Serena, and ast-grep do not yet have narrow canonical contracts,
+native inactive projections, or independent trigger and parity validation.
+
+Evidence:
+The registry already assigns architecture analysis to Graphify, symbol
+intelligence to Serena, and structural search to ast-grep. The approved profiles
+define native projection constraints, while the current repository-tool router
+keeps exact text and path lookup on `rg`. No tool-specific core-skill definitions
+or projections exist under `core-skills/`. The user approved exactly one bounded
+line-limit exception for EXP-20260811-002 in the already over-800-line experiment
+log. This exception applies only to this record and does not authorize editing,
+reordering, refactoring, archiving, cleaning, or maintaining existing records.
+
+Hypothesis:
+Three short instruction-only canonical skills plus native inactive Codex,
+Claude, and stable-V1 OpenCode projections can preserve semantic parity and
+route one primary local evidence need per skill without installing, configuring,
+activating, or silently substituting tools.
+
+Solution Attempt:
+Add canonical Graphify, Serena, and ast-grep definitions; project each into the
+repository-owned native candidate locations defined by the approved profiles;
+add only compact routing references; and add one read-only validator with
+independent per-skill tests. Do not add scripts to the skills, change TDD, or
+touch active runtime configuration.
+
+Test:
+Capture meaningful RED before implementation. For each skill validate explicit
+and natural positive triggers, required negative and overlap cases, fail-closed
+tool absence, registry metadata, native platform metadata, and normalized
+semantic parity across Codex, Claude, and OpenCode. Run focused coverage,
+applicable regressions, the full suite, code review, security review, and active
+runtime isolation checks.
+
+Success Criteria:
+- Each canonical skill contains all required standard fields and matches its
+  protected registry entry.
+- Exact text/path remains `rg`; architecture, symbol intelligence, and
+  structural AST evidence select one distinct primary skill by default.
+- Every required negative trigger and overlap case rejects the wrong skill.
+- Missing required tools report `availability=unavailable`,
+  `status=unverified`, `success=false`, and stop without fallback.
+- Native projections preserve normalized semantics without byte-identity
+  requirements, implicit activation, installation, configuration, or runtime
+  writes.
+- Routing remains compact; focused and applicable full tests plus independent
+  code and security reviews pass.
+
+Result:
+Meaningful RED first failed only for the 18 absent Phase 6 surfaces. Two later
+code-review regressions proved that prompt labels were self-fulfilling and that
+synchronized invalid registry semantics could pass; both then failed closed.
+Security RED reproduced hidden or duplicate instructions, synchronized unsafe
+authority text, routing symlinks and authority widening, unknown Codex metadata,
+unsafe native descriptions, and deeply nested JSON before each bypass was
+closed.
+
+The final implementation contains three instruction-only canonical skills and
+nine inactive native projections. Exact text and path lookup remains on `rg`;
+Graphify, Serena, and ast-grep have distinct architecture, symbol, and
+structural-AST routes. Required-tool absence stops unavailable and unverified
+with `success=false`, without fallback, installation, or configuration. The
+read-only validator enforces registry authority, independent prompt routing,
+exact safety and unavailable contracts, native metadata, normalized semantic
+parity, bounded no-follow reads, and compact routing authority.
+
+Final verification passed 20/20 focused tests with 85% branch coverage and
+239/239 full repository tests. Skill format checks, cache-isolated compilation,
+direct CLI validation, diff checks, code review, security review, and exact
+pre/post active runtime manifests passed. No active Codex, Claude, or OpenCode
+skill or configuration was changed.
+
+Decision:
+ACCEPTED
+
+Notes:
+The line-limit exception is exclusive to EXP-20260811-002. Experiment-log
+maintenance remains a separate task. Phase 7 and TDD simplification are not
+authorized.
+
+## EXP-20260811-001 - Minimal OpenCode Core Skill Profile
+
+Date: 2026-08-11
+Status: ACCEPTED
+
+Problem:
+CMA has a canonical core-skill standard, protected registry, and native Codex
+and Claude profiles, but no stable OpenCode representation contract for future
+protected core-skill projections.
+
+Evidence:
+Current official stable OpenCode V1 documentation defines native Agent Skills
+through `SKILL.md`, project/global/compatibility discovery, model-visible skill
+descriptions, on-demand loading through the `skill` tool, and `allow`, `ask`,
+or `deny` skill permissions. The repository launcher delegates to stable
+`opencode`, and the installed binary reports `1.18.16`; official OpenCode V2 is
+a separate changing beta invoked as `opencode2`. Stable V1 does not document a
+per-skill explicit-only or autoinvoke-off field. The user approved exactly one
+bounded exception to add EXP-20260811-001 to the already over-800-line log.
+This exception applies only to this record and does not authorize editing,
+reordering, refactoring, archiving, cleaning, or otherwise maintaining existing
+experiment records.
+
+Hypothesis:
+One inactive stable-V1-native JSON profile plus a small stdlib-only read-only
+validator can preserve every canonical semantic field, registry authority,
+lazy loading, approval-gated future activation, platform limitations, and
+routing-only global guidance without creating or activating any skill, agent,
+plugin, MCP, permission, or runtime configuration.
+
+Solution Attempt:
+Add `core-skills/profiles/opencode.json`,
+`bin/cma-opencode-core-skill-profile`, and focused
+`tests/test_opencode_core_skill_profile.py`. The profile is representation-only.
+The validator may read and report but must never install, configure, project,
+enable, disable, activate, sync, prune, repair, or mutate state.
+
+Test:
+Capture meaningful RED for the absent profile and validator. Validate all 15
+canonical mappings, exact registry authority, stable-V1 native structure and
+discovery, the documented lack of explicit-only metadata, lazy approval-gated
+future activation, strict types, metadata fingerprint isolation,
+unavailable-tool behavior, routing, agent/plugin/MCP/config separation,
+secret-safe dependency reuse, and active-runtime isolation. Run focused branch
+coverage, Phase 2-5 and full regressions, static checks, code review, and
 security review.
 
 Success Criteria:
-- Root-owned fixed interpreters and system-first command resolution replace
-  ambient Homebrew/local launcher selection.
-- Every adapter, ARK, interpreter, target, and selected-tool identity mismatch
-  fails before adapter execution or before success reporting.
-- Disposable install publishes exactly the candidate manifest and rollback
-  removes only unchanged installer-owned files.
-- The canonical CMA repository never gains `.agents/skills/cma-ark`.
-- No global runtime, dependency, execution capability, commit, or push change
-  occurs.
+- Every canonical field maps exactly once to supported stable-V1 OpenCode
+  targets; V2-only or unknown fields fail clearly.
+- `registry.json` remains the sole core/protected authority and OpenCode
+  metadata cannot change canonical semantics.
+- The profile remains inactive with zero projections or configuration writes;
+  future use is exact-ID user routing plus native `skill: ask`, without claiming
+  undocumented explicit-only enforcement.
+- Required-tool absence stops unverified with `success=false`; no tool install,
+  configuration, activation, emulation, or widened evidence route is allowed.
+- Candidate values, paths, tracebacks, secrets, and dependency substitutions do
+  not leak through validator output.
+- No active OpenCode state, OpenCode variant, canonical source, Codex/Claude
+  profile, TDD, sync, archive, tool-specific skill, or Phase 6 surface changes.
+- Focused tests and coverage, applicable and full regressions, code review, and
+  security review pass before acceptance.
 
 Result:
-RED tests reproduced ambient Python import injection, writable activation
-ancestors, concurrent installer-state races, file and directory identity drift,
-and false `not_applied` results after committed install/rollback mutations. The
-fixed implementation passed 58/58 adapter and disposable-pilot tests with 80%
-pilot branch coverage and 91% combined branch coverage. ARK passed 33/33 tests,
-the root ARK contracts passed 14/14, the candidate skill validator passed, and
-independent code and security reviews ended with no blocking findings. The
-canonical repository remained unactivated.
+Meaningful RED failed only for the absent OpenCode profile and validator. The
+completed profile maps all 15 canonical fields once, remains inactive with zero
+projections, targets stable V1 only, and records the lack of a documented
+explicit-only switch. The read-only validator rejects semantic drift, V2-only
+or behavioral metadata, registry type confusion, unavailable-tool widening,
+write-like flags, sibling-validator substitution, symlinked or replaced JSON
+inputs, inputs above 1 MiB, more than 64 levels, more than 50,000 nodes, and
+parser recursion without tracebacks, path disclosure, or candidate-value
+leakage. Focused tests passed 14/14 with 89% branch coverage; Phase 2-5 tests
+passed 62/62; the full suite passed 219/219. JSON, cache-isolated compilation,
+direct CLI, diff/static, canonical-source identity, OpenCode variant isolation,
+code review, and security review passed. No active OpenCode file was modified.
 
 Decision:
-ACCEPT. Keep the hardened launcher, runtime identity binding, and disposable
-install/rollback pilot as inactive repository-owned infrastructure. Any real
-`.agents/skills/cma-ark` activation remains a separate explicit approval and
-validation task.
-
-## EXP-20260809-006 - Inactive CMA-ARK Plan Skill Candidate
-
-Date: 2026-08-09
-Status: ROLLED_BACK
-
-Problem:
-The accepted CMA-ARK activation design has no reviewable Codex skill candidate.
-Creating a discovered skill now would grant premature runtime authority, while
-leaving only prose cannot prove explicit-only metadata, plan-only behavior, or
-the fixed adapter boundary.
-
-Evidence:
-`EXP-20260809-005` accepted a non-discovered candidate as the next separately
-approved task. Governor preflight found no duplicate CMA-ARK skill but corrected
-the candidate layout so the directory and skill name both remain `cma-ark`.
-
-Hypothesis:
-A three-file candidate under
-`adapters/cma-ark/skill-candidate/cma-ark/`, initialized with the official skill
-creator and restricted to strict `text-search` planning, can provide a
-reviewable workflow without activation or execution authority.
-
-Solution Attempt:
-Create only `SKILL.md`, explicit-only `agents/openai.yaml`, and a stdlib
-plan coordinator. The coordinator accepts one bounded query object, verifies a
-fixed isolated Python bootstrap, calls only the passive adapter's `plan`
-operation for the canonical CMA root, validates the complete response, and
-returns normalized zero-execution evidence.
-
-Test:
-Capture meaningful RED failures for the absent candidate, then verify exact
-skill metadata, input bounds, bootstrap ordering, fixed process arguments,
-correlated adapter protocol, forged-success rejection, real fixed-adapter
-black-box planning, sentinel zero execution, at least 80 percent branch
-coverage, and all relevant regressions.
-
-Success Criteria:
-- The candidate exists only in the non-discovered name-matched source path.
-- Implicit invocation, `run`, approval/state, other intents, and tool execution
-  remain unavailable.
-- Invalid bootstrap, input, process, or adapter evidence fails closed before
-  any wider action.
-- The real black-box plan reports `execution_performed=false` while sentinel
-  tools remain untouched.
-- No activation, registry, audit, global, dependency, commit, or push change is
-  made.
-
-Result:
-The candidate was initialized through the official skill creator and retained
-exactly three non-discovered files. Meaningful RED tests first exposed the
-missing candidate behavior, incomplete provenance type validation, post-hoc
-subprocess buffering, an ineffective zero-tool sentinel, boolean/integer JSON
-type confusion, and raw-query disclosure. The scoped fixes added exact
-correlation types, bounded streaming, a disposable-repository sentinel that is
-selected but never executed, and digest-only query reporting.
-
-The final focused suite passed 11/11 with 89 percent branch coverage. The
-complete adapter suite passed 40/40, ARK passed 33/33, scoped CMA governance
-regressions passed, the official skill validator passed, and `git diff
---check` passed. Independent code and security re-reviews returned PASS. The
-candidate remains absent from both repository discovery locations and made no
-global, registry, dependency, commit, push, or deployment change.
-
-Decision:
-ACCEPT
+ACCEPTED
 
 Notes:
-This acceptance covers only the inactive source candidate. Future
-`.agents/skills/cma-ark/` activation remains blocked until the adapter
-entrypoint and symlink identity, child interpreter, and writable-PATH command
-resolution are pinned and independently verified. Activation requires a new
-task and explicit approval.
+The line-limit exception is exclusive to EXP-20260811-001. Existing experiment
+records remain unchanged and unarchived. Experiment-log maintenance is a
+separate future task requiring explicit approval.
 
-## EXP-20260809-005 - Explicit CMA-ARK Activation Boundary
+## EXP-20260810-011 - Minimal Claude Core Skill Profile
 
-Date: 2026-08-09
-Status: ROLLED_BACK
-
-Problem:
-The passive CMA-ARK adapter is implemented, but activation ownership, Codex
-skill scope, authenticated approval, capability rollout, sensitive output,
-Graphify coordination, and rollback are not yet defined as one executable
-governance contract.
-
-Evidence:
-The adapter and integration documents explicitly leave activation pending. The
-active user-global skill index has no CMA-ARK entry, no repository activation
-surface exists, and the final Phase 3 security review retained these items as
-activation gates.
-
-Hypothesis:
-A repo-local, non-discovered skill candidate with explicit-only invocation and
-a plan-only, text-search-first pilot can define the narrowest activation
-boundary without granting execution authority or creating a second router.
-
-Solution Attempt:
-Define the activation architecture, trust boundaries, staged capabilities,
-future test contract, governor checks, and rollback order in documentation.
-Do not create the candidate, activate a skill, change user-global state, or
-implement the coordinator in this experiment.
-
-Test:
-Start with a failing documentation contract, then require the completed design
-to encode explicit invocation, repo-only scope, outer identity binding,
-single-use approval, output handling, Graphify serialization, rollback, and
-out-of-scope boundaries. Run relevant CMA and ARK regressions plus independent
-code and security review.
-
-Success Criteria:
-- The initial pilot is limited to explicit `text-search` against exactly the
-  canonical CMA root.
-- Implicit invocation, direct run, approval reuse, retry, fallback, and global
-  promotion remain prohibited.
-- `structure` and `explore` have separate evidence gates.
-- Repo skill discovery remains plan-only until trusted host/user-role approval,
-  isolated Python bootstrap, and atomic replay/rate controls are proven.
-- The design does not create an active skill or mutate user-global state.
-- Rollback and future activation tests are deterministic and fail closed.
-
-Result:
-The documentation contract first failed because the activation design was
-absent. After the initial design passed 2/2 focused checks, code review found a
-HIGH target-scope widening and later two installation containment/idempotency
-findings. Security review found authenticated-approval, Python bootstrap,
-atomic replay/rate, rollback ownership, and adversarial-output gaps. Each
-affected contract was reopened with a meaningful failing assertion, narrowed,
-and reverified. The final design limits repo activation to a plan-only,
-canonical-root text-search pilot; execution remains fail-closed until trusted
-host attestation and all named runtime gates are implemented. Final code and
-security re-reviews returned PASS.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment defines architecture and future acceptance gates only. It does
-not create the candidate, install a discovered skill, implement the
-coordinator, authorize execution, or mutate user-global state.
-
-## EXP-20260809-004 - Passive CMA-ARK Adapter Implementation
-
-Date: 2026-08-09
-Status: ROLLED_BACK
-
-Problem:
-The approved CMA-ARK process-boundary design is not executable. CMA has no
-passive adapter that validates the v1 contract, binds an ARK plan to explicit
-approval evidence, or normalizes ARK subprocess results without duplicating
-routing.
-
-Evidence:
-`docs/CMA_ARK_ADAPTER_DESIGN.md` is accepted, while `adapters/cma-ark/` does not
-exist. The integration plan therefore still reports implementation pending.
-
-Hypothesis:
-A standard-library-only, one-request-per-process adapter using the fixed
-repository-owned `ARK/bin/ark` boundary can enforce the approved request,
-binding, approval, protocol, and exit contracts while leaving ARK as the sole
-router and remaining inactive by default.
-
-Solution Attempt:
-Add the passive adapter and RED-first unit, subprocess-integration, and
-black-box tests under `adapters/cma-ark/`. Do not modify functional ARK sources,
-activate a skill or registry entry, add dependencies, or implement the excluded
-CMA Graphify coordinator.
-
-Test:
-Capture meaningful RED failures before production files exist. Then verify
-exact request framing, fixed paths, plan/run binding, drift rejection, ARK
-protocol and exit normalization, bounded subprocess behavior, passive state,
-at least 80 percent adapter branch coverage, the unchanged ARK manifest, ARK
-tests, and relevant CMA governance regressions.
-
-Success Criteria:
-- Only the three approved read-only intents can reach ARK.
-- Planning performs no tool execution; denied runs perform no ARK run; an
-  approved unchanged plan executes exactly once.
-- Request, response, provenance, digest, status, and exit contracts fail closed.
-- Fixed launcher, config, source, target, tool, and graph identities are bound
-  and revalidated without request-controlled execution settings.
-- The adapter remains passive and stateless; activation and caller-side
-  Graphify serialization remain explicitly pending.
-- Adapter branch coverage is at least 80 percent and all scoped regressions pass.
-
-Result:
-The initial RED suite failed because the adapter package and launcher were
-absent. The completed stdlib adapter then passed 29 focused unit, subprocess,
-protocol, drift, and real fixed-ARK black-box tests with 82.81 percent branch
-coverage. The root passive contract passed 3/3, the unchanged ARK manifest
-passed 9/9, ARK passed 33/33, and orchestration, hypothesis, and record
-regressions passed 11/11, 7/7, and 19/19. Review fixes added symlink-free fixed
-resource revalidation, a bounded ARK JSON envelope large enough for both
-maximum tool streams, truthful unsupported-version status, and selected-tool
-PATH re-resolution before run. Final code and security reviews returned PASS.
-
-Decision:
-ACCEPT
-
-Notes:
-Approval JSON is propagated evidence, not authentication. The documented
-post-check/pre-exec race and direct-response repository-output exposure remain
-residual activation risks rather than claims solved by this implementation.
-Activation still requires authenticated approval and target authorization,
-interpreter identity binding, sensitive-response handling, replay/rate control,
-tested Graphify serialization, and acceptance of the documented final
-check-to-exec race. Graphify runtime behavior remains unverified because its
-executable is unavailable on the adapter's fixed PATH in this environment.
-
-## EXP-20260809-003 - CMA-ARK Adapter Process Boundary
-
-Date: 2026-08-09
-Status: ROLLED_BACK
-
-Problem:
-The first Phase 3 design review found that the adapter contract mixes a direct
-ARK Python-import boundary with ARK process-exit passthrough semantics, omits an
-exact run/error response schema, and claims tool-identity drift detection while
-the canonical plan leaves tool identity unverified.
-
-Evidence:
-The mandatory code review returned three HIGH findings and one MEDIUM finding.
-It identified the conflicting direct-import and `ark_exit_code` statements,
-missing result/error types and examples, a null selected-tool digest despite
-TOCTOU claims, and non-canonical digest placeholders.
-
-Hypothesis:
-Using the fixed repository-owned ARK CLI as the adapter's only ARK boundary,
-defining exact plan/run/error response examples, and requiring a resolved tool
-content/stat identity before a runnable plan will make exit origin, result
-normalization, and drift limits deterministic without duplicating ARK routing.
-
-Solution Attempt:
-Revise only the Phase 3 design contract. Bind the adapter to the absolute
-`ARK/bin/ark` launcher and config, define normalized result items and nullable
-error correlation fields, preserve the actual ARK subprocess exit separately
-from tool result exits, require a SHA-256/stat identity for runnable tools, use
-valid canonical digest examples, and state the residual post-check/pre-exec race.
-
-Test:
-Run a RED validator against the current contradictory design, then parse and
-validate all revised JSON examples, field types, digest encodings, exit origins,
-result cardinality, tool-identity requirements, and cross-document status. Run
-the monorepo contract and independent code/security review.
-
-Success Criteria:
-- The design chooses exactly one ARK integration boundary.
-- Plan, successful run, and malformed-request responses have deterministic
-  exact schemas and origin-aware exit fields.
-- A runnable plan cannot use an unverified or null selected-tool identity.
-- Canonical examples use valid encodings and only `explore` has a concurrency key.
-- TOCTOU guarantees are limited to observable pre-execution revalidation.
-- Existing ARK functional files and monorepo contracts remain unchanged.
-
-Result:
-The CLI-only boundary, exact request/plan/run/error schemas, canonical plan
-digest, tool and target identity binding, failed-run execution semantics, and
-honest truncation limits passed machine-readable validators. The monorepo
-contract passed 9/9 and diff/whitespace checks passed. The user-approved bounded
-continuation defined the complete POSIX/macOS ARK process range, signal-derived
-negative exits, wrapped tool-signal relation, and origin-aware overlap with
-adapter-reserved codes. Final code review and security review returned PASS.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment changes documentation only. Adapter implementation, activation,
-global configuration, dependencies, MCP, cplt, commit, and push remain outside scope.
-Revision after the first re-review: define `plan_sha256` over one exact canonical
-`plan` object shared by plan/run rather than either wire request; bind target
-device/inode identity; treat every spawned ARK run as execution even on failure;
-remove truncation booleans unavailable through the CLI contract; and define the
-exact normalized ARK plan and step schemas.
-Final revision after the second re-review: include adapter version, ARK schema,
-config/source digests, and selected-tool realpath inside the hashed plan binding
-rather than only in unhashed response provenance.
-User-approved bounded continuation: define the full observable ARK process-exit
-domain, distinguish normal and signal termination, preserve the original tool
-exit from valid ARK JSON, and make overlapping adapter-reserved codes
-unambiguous through nullable `ark_exit_code`.
-Security review retained non-blocking activation gates: approval JSON is not
-authentication; interpreter path and recursive source-manifest algorithms need
-pinning before activation; direct bounded output may expose repository secrets;
-the post-check/pre-exec race remains; and Graphify serialization depends on a
-tested CMA coordinator.
-
-## EXP-20260808-002 - Task Transition Gate Synchronization
-
-Date: 2026-08-08
+Date: 2026-08-10
 Status: ACCEPTED
 
 Problem:
-The active Codex global policy already stops at distinct task boundaries, but
-the portable Codex, Dolphin, Claude, and OpenCode policy sources do not all
-carry the same rule. A newly installed or refreshed runtime can therefore
-resume automatic task progression or interpret approval inconsistently.
+CMA has a canonical core-skill standard, protected registry, and Codex variant
+profile, but no native Claude representation contract for future protected core
+skill projections.
 
 Evidence:
-`~/.codex/AGENTS.md` contains the complete Task Transition Gate, while
-`GLOBAL_AGENTS_TEMPLATE.md` and the four portable variant policies do not share
-that complete block. Active Dolphin, OpenCode, and native Claude CMA policy
-surfaces also lack it.
+Current official Anthropic documentation defines Claude Code skills through
+`SKILL.md`, user/project/managed/plugin discovery, explicit `/name` invocation,
+description-driven model invocation, `disable-model-invocation`, plugin and MCP
+boundaries, scoped settings, and `CLAUDE.md` loading. No Claude core-skill
+profile or focused validator exists. The user approved exactly one bounded
+exception to add this EXP-20260810-011 record to the already over-800-line log.
+The exception applies only to EXP-011, does not authorize editing, reordering,
+refactoring, archiving, or cleaning existing records, keeps Phase 4 unchanged,
+and reserves experiment-log maintenance for a separate approved task.
 
 Hypothesis:
-Adding one canonical semantic gate to every portable global policy and safely
-synchronizing only the three stale active runtime policy files will make task
-boundaries consistent without pausing the already approved steps inside one
-bounded task or overwriting unrelated runtime state.
+One inactive Claude-native JSON profile plus a small stdlib-only read-only
+validator can preserve all canonical semantics, registry authority,
+explicit-only lazy activation, native discovery, plugin/MCP separation, and
+routing-only `CLAUDE.md` guidance without creating or activating any skill or
+runtime integration.
 
 Solution Attempt:
-Add the canonical gate after Scope Lock in all five source policies, document
-the behavior, and update only stale active policies through targeted,
-permission-preserving backups. Preserve the already-correct active Codex file
-and the user-owned native Claude loader byte-for-byte.
+Add `core-skills/profiles/claude.json`,
+`bin/cma-claude-core-skill-profile`, and focused
+`tests/test_claude_core_skill_profile.py`. The profile is representation-only.
+The validator may read and report but must never install, configure, project,
+enable, disable, activate, sync, prune, repair, or mutate state.
 
 Test:
-Capture RED semantic policy, portable-install, and documentation tests; then
-verify focused and complete regressions, exact source/install contracts,
-targeted active-runtime parity, backup hashes, preserved modes, unchanged
-Codex and Claude loader hashes, diff integrity, and independent code/security
-review.
+Capture meaningful RED for the absent profile and validator, then validate all
+canonical mappings, exact registry authority, native Claude structure and
+discovery, explicit-only activation, strict types, metadata fingerprint
+isolation, unavailable-tool behavior, `CLAUDE.md` routing, plugin/MCP/agent
+boundaries, secure read-only dependency reuse, and active-runtime isolation.
+Run focused branch coverage, applicable and full regressions, static/diff
+checks, code review, and security review.
 
 Success Criteria:
-- Every portable policy enforces the six task-transition obligations.
-- The rule distinguishes a next distinct task from steps inside the same
-  explicitly approved bounded task.
-- Portable installs for Codex, Dolphin, Claude, and OpenCode expose the gate.
-- Active Codex and the Claude loader remain byte-identical to their pre-update
-  state; every changed active policy has an exact recoverable backup.
-- User documentation and changelog match verified behavior.
-- All tests and independent reviews pass without weakened assertions.
+- All 15 canonical fields map exactly once to supported Claude-native targets.
+- Future core skills use deterministic `name`, `description`,
+  `disable-model-invocation: true`, and `user-invocable: true` without any
+  implicit opt-in, disabled core ID, settings override, or projection.
+- `registry.json` remains the sole core/protected authority; Claude metadata,
+  plugins, agents, MCP, or SDK filters cannot change canonical semantics.
+- Unknown mappings, type confusion, permission-granting metadata, silent tool
+  fallback/setup, mutation commands, and dependency substitution fail closed.
+- No tool-specific skill, active Claude state, Claude variant, canonical
+  source, Codex/OpenCode profile, TDD, sync, archive, MCP, or Phase 5 surface
+  changes.
+- Focused tests and branch coverage, applicable and full regressions, code
+  review, and security review pass before acceptance.
 
 Result:
-The initial semantic, portable-install, and documentation run produced 13
-expected RED subtest failures. The canonical gate was then added to all five
-source policies and the four user guides. A code-review finding exposed that
-the first negative fixture failed only because positive markers were absent;
-the replacement fixture kept the complete valid policy and added a conflicting
-every-step approval rule, reproduced the false pass, and now fails through an
-explicit conflict check.
+Initial focused discovery produced meaningful RED because the Claude profile
+and validator did not exist. The implementation then passed the native
+structure, exact canonical mapping, registry authority, explicit-only lazy
+activation, metadata isolation, unavailable-tool, routing, integration,
+read-only, and dependency-substitution contracts.
 
-The focused suite passed 4/4 and the complete suite passed 145/145 without
-skips; `git diff --check` passed. Portable installs for all four variants expose
-the gate. Active Dolphin, OpenCode, and Claude CMA policies differ from their
-verified pre-state backups only by the canonical block, retain modes `0644`,
-`0644`, and `0600`, and have exact backups under the private `0700` recovery
-directory. Active Codex and the user-owned Claude loader retained their
-pre-update hashes and modes. Final independent code and security reviews
-returned PASS.
+The first security review found that raw Phase 2 registry findings could echo a
+sensitive candidate value to stdout. A focused regression reproduced the leak
+with a controlled sentinel before the validator reduced dependency findings to
+validated `code` and optional `field` values. Code and security re-reviews both
+passed after the fix.
+
+Final verification passed 14/14 focused tests with 92% branch coverage for
+`bin/cma-claude-core-skill-profile`, 48/48 Phase 2-4 core-skill regressions, and
+205/205 full repository tests. JSON parsing, cache-free source compilation,
+direct CLI validation, diff checks, and exact active Claude, Claude variant,
+canonical-source, and Codex-profile hashes passed. No active Claude state,
+Claude variant, tool-specific skill, plugin, MCP, agent, scanner, TDD, sync,
+archive, OpenCode profile, or Phase 5 surface was changed.
 
 Decision:
 ACCEPT
 
 Notes:
-The user approved Plan A and the mandatory orchestration chain. Commit and push
-remain outside scope.
+The line-limit exception is exclusive to EXP-20260810-011. Existing experiment
+records remain unchanged and unarchived. Experiment-log maintenance is a
+separate future task requiring explicit approval.
 
-## EXP-20260808-003 - Additive Multi-Variant Project Initialization
+## EXP-20260810-010 - Minimal Codex Core Skill Profile
 
-Date: 2026-08-08
+Date: 2026-08-10
 Status: ACCEPTED
 
 Problem:
-`codex-project-init --variant opencode` was applied to an already initialized
-project and reset shared project state. The command treats every variant
-selection as an exclusive new/reset initialization, so the same data-loss risk
-applies when adding Codex, Dolphin, Claude, or OpenCode to a project that
-already uses another runtime.
+CMA Core Skill Standard v1 and the protected core registry are provider-neutral,
+but they do not yet define a testable, native Codex representation, discovery,
+or lazy activation contract for future core-skill projections.
 
 Evidence:
-The init conflict list always archives `AGENTS.md`, `.codex/config.toml`, the
-shared prompt, and `.codex/template-state.json`, then copies a blank project
-template. Manifest schema 1 stores one `variant`; OpenCode replaces the Codex
-config entry instead of coexisting with it. The original project files remain
-recoverable in the private init archive and their hashes were captured before
-rollback.
+Current official OpenAI documentation defines Codex skills through `SKILL.md`,
+optional `agents/openai.yaml`, repository/user/admin/system discovery scopes,
+explicit and implicit invocation, and `AGENTS.md` instruction layering. The
+repository has no Codex core-skill profile or focused profile validator. The
+user approved exactly one bounded exception to add this EXP-010 record to the
+already over-800-line experiment log; the exception applies only to EXP-010,
+does not authorize edits or archiving of existing records, does not change
+Phase 3 scope, and requires later log maintenance to be separately approved.
 
 Hypothesis:
-If init distinguishes first/reset initialization from additive variant
-activation, preserves shared files byte-for-byte, and records an ordered set of
-active variants in a backward-compatible manifest migration, every supported
-runtime can coexist without resetting project configuration or customized
-variant files.
+A single inactive JSON profile plus a small stdlib-only read-only validator can
+preserve every canonical semantic field, protected ownership, explicit-only
+lazy activation, native Codex structure, and routing-only global guidance
+without creating skills, projecting files, or touching active runtime state.
 
 Solution Attempt:
-Restore the exact pre-init project state, make existing-project init additive
-by default, require an explicit reset flag for destructive reinitialization,
-and evolve template state to represent multiple active variants plus the union
-of their managed files. Preserve customized and unrelated files.
+Add `core-skills/profiles/codex.json`,
+`bin/cma-codex-core-skill-profile`, and focused
+`tests/test_codex_core_skill_profile.py`. The profile is representation-only;
+the validator may read and report but must never install, project, sync,
+activate, disable, configure, prune, repair, or mutate anything.
 
 Test:
-Capture RED tests that initialize each variant after another variant and assert
-unchanged shared hashes, coexisting variant surfaces, manifest migration from
-schema 1, explicit reset behavior, customized-file preservation, symlink
-failure, and idempotency. Then run focused project-init/upgrade tests, the full
-regression suite, live additive OpenCode init on this repository, diff
-integrity, and security-oriented recovery checks.
+Capture meaningful RED for the absent profile and validator. Then validate the
+complete canonical mapping, registry authority for core/protected status,
+official native structure and discovery, explicit-only lazy activation,
+unknown mapping rejection, non-semantic UI metadata isolation, fail-closed
+unavailable-tool behavior, routing-only global guidance, strict JSON types,
+and read-only operation. Run focused coverage, Phase 2-3 regression, the full
+suite, diff integrity checks, code review, and security review.
 
 Success Criteria:
-- Adding any supported variant never replaces an existing `AGENTS.md` or
-  removes another variant's project files.
-- Codex, Dolphin, Claude, and OpenCode can all be represented as active in one
-  project manifest.
-- Schema 1 state migrates without losing file ownership or customization
-  evidence.
-- Destructive reset remains possible only through an explicit reset option and
-  keeps a private recovery archive.
-- The erroneous local init effects are fully reversed before the corrected
-  additive OpenCode activation is applied.
-- Relevant and complete tests pass without weakened assertions or skipped
-  cases.
+- All required canonical fields map exactly once to supported Codex targets.
+- `registry.json` remains authoritative for core/protected semantics and no
+  Codex-native metadata is misrepresented as the protection source.
+- Future core skills remain discoverable and explicit-callable, load lazily,
+  default to `allow_implicit_invocation: false`, and are never disabled by this
+  inactive profile.
+- Unknown mappings, behavioral `default_prompt`, silent fallback, tool setup,
+  type confusion, mutation commands, and runtime/config writes fail closed.
+- No tool-specific skill, variant projection, active runtime/config, MCP,
+  scanner, permission, TDD, Claude, OpenCode, sync, archive, or Phase 4 surface
+  is created or changed.
+- Focused tests and branch coverage, applicable and full regressions, code
+  review, and security review pass before acceptance.
 
 Result:
-The erroneous local init was reversed first: `AGENTS.md`, Codex config, the
-shared prompt, and schema-1 template state matched their captured pre-init
-hashes, the generated OpenCode project file was removed, and the private reset
-archive was moved into the external recovery backup. The valid global OpenCode
-runtime installation was retained.
+The valid repository discovery command first produced meaningful RED with 13
+tests discovered, two explicit missing-profile/missing-validator failures, and
+11 controlled skips. An earlier package-style unittest command was discarded
+because this repository's `tests/` directory is not a Python package and it
+failed at import rather than at the intended behavior boundary.
 
-Meaningful RED tests reproduced blank `AGENTS.md` replacement, loss of other
-variant state, customized OpenCode config overwrite, the single-variant
-manifest limitation, absent explicit-reset behavior, incomplete standalone
-schema-1 migration, and same-second reset archive reuse. The implementation now
-uses additive existing-project init, ordered multi-variant schema 2 state,
-backward-compatible schema-1 migration, explicit `--reset`, and unique private
-init/upgrade archives.
+The initial implementation passed 13/13 focused tests. Code review then found
+three fail-open gaps: self-shrunk registries, structured JSON type confusion,
+and missing `AGENTS.md` layering semantics. New regression tests reproduced all
+three before the profile added the bounded official layering contract and the
+validator reused the exact Phase 2 registry validator with type-safe mapping
+checks. Code re-review passed.
 
-Focused project-init/upgrade tests passed 33/33 and the complete regression
-suite passed 152/152 without skips. Bash syntax, Python compilation, and diff
-integrity passed. Live additive OpenCode init on this repository preserved the
-exact `AGENTS.md`, `.codex/config.toml`, and shared-prompt hashes, produced
-`variants: [codex, opencode]`, kept the OpenCode config, used a `0700` recovery
-archive, and was idempotent on a second run. Security-oriented symlink,
-customized-config, secret-redaction, explicit-reset, and recovery tests passed.
+Security review then found symlink-based sibling-validator substitution,
+unwanted bytecode persistence risk, and unstructured dependency-load failures.
+New tests reproduced the substitution and traceback paths before the loader was
+anchored to the resolved real script, restricted to a regular non-symlink
+sibling, changed to cache-free in-memory source execution, and made dependency
+failures redacted and structured. Final code and security re-reviews passed.
+
+Final verification passed 19/19 focused tests with 84% branch coverage for
+`bin/cma-codex-core-skill-profile`, 34/34 Phase 2-3 focused regressions, and
+191/191 full repository tests. JSON parsing, compilation, direct CLI validation,
+diff checks, exact active-runtime hashes, and the Codex variant tree hash all
+passed. No active `~/.codex` file, Codex variant file, tool-specific skill, MCP,
+scanner, permission, TDD, sync, archive, Claude, OpenCode, or Phase 4 surface
+was changed.
 
 Decision:
 ACCEPT
 
 Notes:
-The user approved a direct implementation without an orchestration chain.
-Global OpenCode runtime installation is valid and remains in scope; only the
-project-reset behavior is being rolled back and redesigned.
+The line-limit exception is exclusive to EXP-20260810-010. No existing
+experiment record may be modified, archived, refactored, or cleaned up in this
+task. Experiment-log maintenance remains a separate future task requiring
+explicit approval.
 
-## EXP-20260808-004 - Fail-Closed Result Semantics
+## EXP-20260810-009 - Minimal Core Skill Governance
 
-Date: 2026-08-08
-Status: ROLLED_BACK
-
-Problem:
-The first ARK implementation passed its source tests but independent code review found configuration type gaps, zero-execution success paths, and optional documentation flags that did not affect routing.
-
-Evidence:
-`config.py` accepted boolean schema version `true`, leaked `TypeError` for malformed collection types including a nested Serena mode value, allowed runtime root `.`, and accepted malformed GitHub identities. `run --intent docs` returned exit code 0 despite `success=false`. An empty security profile returned `passed` with no steps. DeepWiki and Context7 enable flags produced identical plans. Security review later found ambient cplt credentials, sensitive scanner output emission, unbounded subprocesses, and a Graphify output symlink escape.
-
-Hypothesis:
-Enforcing one fail-closed invariant across parsing and routing—invalid input becomes `ConfigError`, and no executed or executable work can never be `passed`—will remove all four review findings without widening ARK's MVP.
-
-Solution Attempt:
-Add RED regression tests for malformed configuration types and identities, runtime-root containment, no-execution CLI exits, empty security profiles, explicit enabled documentation providers, credential-free cplt isolation, suppressed security findings, bounded subprocesses, and Graphify output containment; then make the smallest config/router/CLI changes required.
-
-Test:
-Run focused config, routing, and CLI tests before and after implementation, followed by the full suite, branch coverage, live CLI probes, and independent code review.
-
-Success Criteria:
-All new regression tests fail before the fix and pass afterward; invalid configuration exits 2 without traceback; every `run` path with zero steps exits nonzero; empty security cannot report success; docs flags and provider selection change the plan; full branch coverage remains at least 80%.
-
-Result:
-The regression cycles reproduced the configuration, result-semantics, credential exposure, sensitive-output, symlink, memory-bound, locale, process-group, and closed-pipe timeout findings before each scoped fix. The final suite passed 33/33 with 91% branch coverage. Reopened code review and security review both returned PASS with no blocking findings.
-
-Decision:
-ACCEPT
-
-Notes:
-The attempt remained limited to reviewer-identified config, router, runner, tests, and records. External tools and live MCP transports remain out of scope. Security review retained two non-blocking advisories: broader ambient environment exposure for non-cplt local tools and theoretical same-user symlink TOCTOU races.
-
-Migration note: This record was originally ARK-local `EXP-20260808-001`; it was remapped because that ID already belongs to CMA's Provider-Neutral OpenCode Runtime Variant.
-
-## EXP-20260809-001 - ARK Monorepo Test Discovery
-
-Date: 2026-08-09
-Status: ROLLED_BACK
-
-Problem:
-The documented root-relative ARK test command fails after monorepo adoption because CMA's root `tests` package shadows `ARK/tests` during unittest discovery.
-
-Evidence:
-Fresh coverage execution from the CMA root collected 28 ARK tests but produced one `_FailedTest`: `ARK/tests/test_cli.py` could not import `tests.test_config`. The same ARK suite previously passed 33/33 from the ARK working directory.
-
-Hypothesis:
-Declaring `ARK` as unittest's explicit top-level directory with `-t ARK` will preserve root-relative commands while resolving `tests.*` imports to `ARK/tests` instead of CMA's root test package.
-
-Solution Attempt:
-Require `-t ARK` in root-relative ARK discovery commands and leave ARK production code and tests byte-identical.
-
-Test:
-First add a failing monorepo contract assertion for `-t ARK`, then rerun the contract, the 33-test ARK suite, and fresh branch coverage from the CMA root.
-
-Success Criteria:
-All 33 ARK tests collect and pass from the CMA root, branch coverage remains at least 80%, no import or fixture error occurs, and the functional ARK hash manifest remains unchanged.
-
-Result:
-The contract first failed because neither authoritative command included `-t ARK`. With the explicit top-level directory, all 33 ARK tests passed from the CMA root with no import errors and fresh branch coverage reached 85%. The functional ARK hash manifest remained unchanged.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment changes only test invocation documentation and its monorepo contract; it does not authorize ARK runtime wiring or functional code changes.
-
-## EXP-20260809-002 - ARK Monorepo CLI Config Resolution
-
-Date: 2026-08-09
-Status: ROLLED_BACK
-
-Problem:
-The documented root-relative `ARK/bin/ark` commands resolve the default `ark.json` against the CMA working directory instead of the ARK module directory.
-
-Evidence:
-Independent code review executed `ARK/bin/ark doctor --json` from the CMA root. It exited 2 with `cannot read configuration` for the nonexistent root `ark.json`, while the contract test checked only textual command prefixes.
-
-Hypothesis:
-Passing the existing module config explicitly as `--config ARK/ark.json` in every root-relative command will make the documented interface executable without changing the already-reviewed launcher or runtime behavior.
-
-Solution Attempt:
-Make the monorepo contract execute the documented doctor command, require the explicit config argument on every example, and update the README and integration plan commands only.
-
-Test:
-Capture a RED failure by executing the current documented command from the CMA root, then require exit 0 and valid successful JSON after the documentation change. Rerun ARK, contract, and complete CMA suites.
-
-Success Criteria:
-Every documented ARK command names `ARK/ark.json`; the documented doctor command exits 0 from the CMA root with `status=passed` and `success=true`; functional ARK hashes remain unchanged.
-
-Result:
-The executable contract first reproduced exit 2 and the missing root `ark.json`. After adding the explicit config argument, the documented doctor command exited 0 from the CMA root with `status=passed` and `success=true`; the contract passed 9/9, the ARK suite passed 33/33, and functional ARK hashes remained unchanged.
-
-Decision:
-ACCEPT
-
-Notes:
-Automatic CMA routing, launcher behavior changes, global activation, and external tool installation remain outside this experiment.
-
-## EXP-20260804-003 - Atomic Evidence Claim Contract
-
-Date: 2026-08-04
+Date: 2026-08-10
 Status: ACCEPTED
 
 Problem:
-CMA requires one material claim per bullet and direct proof outside Claims, but
-does not explicitly prevent one bullet from combining independently verifiable
-outcomes. Codex can therefore enter repeated EV validation cycles or weaken a
-claim into a statement that output was reported.
+CMA Core Skill Standard v1 defines protected, lazy, provider-neutral skills,
+but no canonical registry or executable read-only checks currently make core
+ownership, removal protection, missing entries, governance drift, semantic
+parity, custom-skill separation, or no-prune behavior testable.
 
 Evidence:
-An observed Codex/EV run repeatedly split test, review, gateway-health, and
-admin-capability assertions before GLM could bind each claim to direct proof.
-The final validation passed, but the repeated rewrites exposed missing atomic
-claim semantics in CMA rather than a need to weaken EV.
+`core-skills/STANDARD.md` is the canonical semantic standard, while Codex,
+Claude, and OpenCode runtime trees contain only existing platform-owned assets.
+There is no `core-skills/registry.json`, governance validator, or focused core
+registry test. The user explicitly approved a one-record exception to append
+this experiment to the already over-800-line active record without refactoring
+or archiving it.
 
 Hypothesis:
-If CMA requires one independently verifiable outcome per claim, one coherent
-verbatim proof excerpt for that outcome, and semantic preservation during
-splitting, future evidence will bind cleanly without narrowing acceptance
-meaning or expanding EV.
+A single canonical JSON registry plus a small stdlib-only read-only validator
+will make protected core ownership and governance drift independently testable
+without creating skill implementations, variant projections, pruning, repair,
+sync, runtime configuration, or a management subsystem.
 
 Solution Attempt:
-Add four prospective atomic-claim clauses to the existing Claims contract and
-verify the managed and portable records modules. Do not rewrite historical
-reports, alter EV, or synchronize the active global runtime.
+Add `core-skills/registry.json`, `bin/cma-core-skill-governance`, and focused
+`tests/test_core_skill_governance.py`. The validator may only validate the
+registry, compare baseline/candidate registries, and compare synthetic normalized
+Codex, Claude, and OpenCode inventories. It must never write, remove, prune,
+repair, synchronize, install, configure, or activate anything.
 
 Test:
-Add source and portable-install contract tests before changing the records
-module. Include negative checks showing that formatting-only wording and a
-reporting-only downgrade do not satisfy the contract. Run focused and full CMA
-regression suites, independent code and security reviews, and EV validation of
-the new evidence report.
+Capture meaningful RED from focused tests written before the registry and
+validator. Then verify the valid registry, missing protected entries, accidental
+removal rejection, duplicate IDs, invalid core/protected metadata, custom-skill
+separation, semantic versions, governance drift, semantic-not-byte parity, and
+no-prune/no-mutation behavior. Run focused coverage, the applicable full suite,
+diff checks, code review, and security review.
 
 Success Criteria:
-- Each claim bullet contains exactly one independently verifiable outcome.
-- One coherent verbatim proof excerpt outside Claims directly proves it.
-- Splitting preserves every original acceptance outcome.
-- Outcome claims cannot be weakened into reporting-only meta-claims.
-- Managed and portable records modules are byte-identical and satisfy the rule.
-- No EV, active global runtime, historical evidence, dependency, commit, push,
-  or deployment change occurs.
+- The registry contains exactly the ten approved core capabilities with required
+  metadata and Context7 alone marked as an optional capability.
+- Removal of a protected entry fails with explicit approval required; missing,
+  duplicate, invalid, and drifted entries fail with deterministic provenance.
+- Byte-different normalized inventories for Codex, Claude, and OpenCode pass
+  when semantics match and fail on semantic drift.
+- User/custom skills remain outside protected-core ownership and all input files
+  remain byte-identical after passing and failing checks.
+- No pruning, mutation, approval-bypass, repair, sync, skill implementation,
+  projection, TDD-policy, install, runtime, archive, daemon, or Phase 3 surface
+  is introduced.
+- Focused tests, branch coverage, full regressions, code review, and security
+  review pass before acceptance.
 
 Result:
-The targeted source and portable tests first failed 2/2 because the records
-module lacked the independently verifiable outcome clause. After the four
-prospective semantics were added, both targeted tests passed. The focused CMA
-records suite passed 17/17, the complete CMA suite passed 55/55, and
-`git diff --check` completed cleanly. Independent code and security reviews
-both passed. EV first returned `UNVERIFIED` for negated review-proof prose;
-after each PASS result was placed in its own direct proof sentence, the same
-six atomic claims returned `PASS` with `success=true` and no diagnostics.
+The initial focused run produced meaningful RED: 12 tests ran with exit 1 and
+failed on explicit missing-registry and missing-validator assertions, not import,
+syntax, permission, or transport errors. The first implementation passed 12/12
+focused tests and direct validator branch coverage reached 81%. Two additional
+pre-review boundary tests then produced behavioral RED for record-only protected
+removal and a custom/core ID collision before their scoped fixes.
+
+Code review found that a self-shrunk empty roster and invalid capability/tool
+optionality could pass, and that display-name parity was omitted. New mutation
+tests reproduced both failures before the validator locked the exact ten-ID
+roster, Context7-only optional capability rule, required invocation dependencies,
+and display-name semantic parity. Code re-review passed. Security review then
+confirmed Python boolean/integer equality allowed numeric `0`/`1` to spoof JSON
+policy and core/protected booleans. Four new type-confusion cases failed before
+recursive type-strict comparison was added; security re-review passed.
+
+Final verification passed 15/15 focused tests. Direct positive and negative CLI
+execution measured 83% branch coverage for `bin/cma-core-skill-governance`.
+The full repository suite passed 172/172 in 42.930 seconds with exit 0. JSON
+parsing, executable mode, file-size bounds, and `git diff --check` passed. The
+validator remained read-only and no skill implementation, projection, pruning,
+approval bypass, repair, sync, install, runtime, archive, daemon, permission,
+or Phase 3 surface was added.
 
 Decision:
 ACCEPT
 
 Notes:
-This experiment is intentionally limited to the prospective CMA records
-contract and its verification.
-Detailed evidence is recorded in
-`docs/reports/EVIDENCE_EXP-20260804-003_ATOMIC_CLAIM_CONTRACT_20260804.md`.
+Only the user-approved single experiment-record exception applies. Existing
+unrelated dirty work must remain unchanged. Commit, push, active-runtime sync,
+and Phase 3 are not authorized. Full skill-body semantic parity remains not
+executed because Phase 2 intentionally created no skills or projections.
 
-## EXP-20260805-001 - Optional Evidence Mode
+## EXP-20260810-008 - Planner-to-TDD Structured Evidence Envelope v0
 
-Date: 2026-08-05
-Status: ACCEPTED
+Date: 2026-08-10
+Status: REJECTED
 
 Problem:
-CMA projects declare an evidence path but have no explicit switch controlling
-automatic evidence creation or validation. Evidence can therefore add cost and
-friction to low-risk work even after EV hooks are disabled.
+The planner and tdd-guide contracts require bounded handoffs and discourage
+repeated broad discovery, but they have no structured, identity-bound way for
+the TDD guide to consume a planner source fact. The same current repository
+fact can therefore be independently rediscovered between the two stages.
 
 Evidence:
-The user approved optional evidence with exactly `enable | disable`, selected
-`disable` as the default, and requested the setting across all active CMA
-projects under `/Users/iyilmaz/WebStorm`.
+This experiment will first replay the real EXP-20260804-002 temporal-TDD
+bugfix against the immutable pre-fix Git tree
+`2f0f84e768504eddc6895cf27899ab46c64808de` at commit
+`ff6592e171b3fb6827141f44aa5b45bad960797f`. Candidate mutation is forbidden
+unless the unchanged planner and TDD contracts produce a complete behavioral
+RED trace containing at least one non-verification duplicate canonical fact.
 
 Hypothesis:
-An explicit fail-closed project field with missing treated as disabled will
-make evidence genuinely optional without weakening evidence quality when the
-mode is enabled or when the user explicitly requests it.
+When planner supplies current, source-identity-bound discovery evidence in a
+minimal Envelope v0, tdd-guide will consume that evidence and avoid repeating
+the same discovery operation unless it identifies an explicit unresolved gap,
+while producing an equal-or-stronger test contract.
 
 Solution Attempt:
-Add `EVIDENCE_MODE: disable` to the project template and active CMA project
-configuration blocks. Gate only automatic evidence-report creation and
-automatic EV use in the records module. Preserve explicit user requests and
-all existing evidence quality rules.
+If and only if behavioral RED passes, define Envelope v0 in the portable Codex
+orchestration registry, require the default planner to emit it, require the
+default tdd-guide to validate and consume it, and add fail-closed contract tests.
+Limit production/test scope to
+`variants/codex/home/registry/ORCHESTRATION.md`,
+`variants/codex/home/agents/planner.toml`,
+`variants/codex/home/agents/tdd-guide.toml`, and
+`tests/test_cma_lazy_runtime.py`. Do not synchronize active runtime files or
+add storage, helpers, runtimes, tools, scanners, MCPs, or graph behavior.
 
 Test:
-Add RED tests for fresh-project defaults, configuration guidance, source and
-portable records semantics, missing values, invalid values, and explicit user
-requests. Run focused and full CMA suites, verify an explicit 17-project
-manifest, and preserve excluded archives, backups, worktrees, and variants.
+Run fresh sequential planner and tdd-guide baseline sessions on a read-only
+complete repository fixture using the approved natural prompt. Normalize exact
+and evidence-equivalent discovery by canonical fact key, path, query/range, and
+source identity. If meaningful RED passes, add static negative contract tests,
+capture their failure, make the minimum candidate change, rerun static tests,
+replay the identical live task, compare AC-TEMP-1 through AC-TEMP-7, run focused
+and full regressions, then complete code and security review.
 
 Success Criteria:
-- Only literal `enable` activates automatic evidence creation and validation.
-- Literal `disable` and a missing field keep automation disabled.
-- Invalid explicit values are reported and never enable automation.
-- Explicit user evidence requests remain applicable in either mode.
-- Fresh projects and all 17 active CMA projects declare `disable` exactly once.
-- Excluded copies and unrelated dirty changes remain untouched.
-- Active global CMA runtime, dependencies, commits, pushes, and deployment
-  remain unchanged.
+- Baseline planner-to-TDD duplicate discovery count is at least one and the TDD
+  contract completes normally without source invalidation.
+- Static candidate tests fail before implementation and reject plausible
+  weakened, stale, conflicting, unresolved-gap, schema, and chain contracts.
+- Candidate duplicate discovery count is zero; current sufficient evidence IDs
+  are consumed and every new discovery is tied to a named unresolved gap.
+- Envelope top-level fields are limited to the eight approved v0 fields and its
+  measured transport cost does not exceed the duplicate evidence it replaces.
+- AC-TEMP-1 through AC-TEMP-7 and positive, negative, boundary, regression,
+  meaningful-RED, anti-hardcoding, and no-weakened-oracle protections remain.
+- Focused and full tests, code review, and security review pass; active runtime,
+  config, mandatory chain, and unrelated work remain unchanged.
 
 Result:
-The initial targeted run failed 3/3 because fresh projects omitted the field
-and the source and portable records modules lacked the mode contract. After the
-minimal framework change, the targeted tests passed 3/3, project-upgrade tests
-passed 6/6, and CMA lazy-runtime tests passed 20/20. The explicit rollout
-manifest verified exactly one `EVIDENCE_MODE: disable` declaration in each of
-17 active CMA projects. The complete CMA suite passed 60/60 and
-`git diff --check` completed cleanly. Code review passed. Security review
-confirmed that the project declarations are staged but not yet enforced by the
-active global runtime because its `CMA_RECORDS.md` lacks the new mode gate.
-After separate option A approval, the previous active records module was backed
-up at
-`~/.codex/archive/cma-evidence-mode-20260805_135615/CMA_RECORDS.md` with SHA-256
-`c3d4813491a493775db57f24b451e13c5b9168c5a15445113d1f33a72e9299ea`.
-Only the four EVIDENCE_MODE clauses were added to the active module; its new
-SHA-256 is
-`e8d6a962ea74990028baedea10f183726484e8fe64ba5f4995bb1c1d1921c065`
-and mode remains `0644`. Reopened code and security reviews both passed with
-no blocking findings.
+Behavioral RED passed on the locked 325-node fixture with manifest
+`7dd6c6e5817d6a5eccc740e63c79bb28d87a302784bc6987c71c4306fa3671b2`.
+Planner completed with six tool calls and TDD completed with four; TDD
+re-read the records contract, TDD module, installer, and existing test seams
+already identified by planner, giving a conservative duplicate count of four.
+The first focused invocation was a transport-only import error; the corrected
+unchanged four-test command then produced meaningful static RED because the
+orchestration registry lacked Envelope v0. After the minimum four-file
+candidate, five focused contract/chain tests passed.
+
+Live candidate planner emitted a parseable eight-field envelope, but expanded
+the historical two-file task to six unrelated policy/test/changelog paths.
+Candidate TDD reported consuming `E1` through `E4` and claimed no additional
+discovery, while its complete JSONL trace contained one compound command that
+re-hashed and re-ran `rg` against all four supplied evidence paths. Excluding
+the hashes as identity checks still leaves four evidence-equivalent discovery
+repetitions, so the required candidate duplicate count of zero was not met.
+The candidate TDD contract also omitted the AC-TEMP-2 exact-once/ordering
+obligation and the AC-TEMP-4 fenced/quoted-heading boundary.
+
+Code review returned three HIGH blocking findings: failed primary behavioral
+gate, empty/untyped source and evidence identity, and weakened-contract tests
+that accepted duplicate/quoted headings and appended contradictory prose.
+Security review confirmed fail-open evidence laundering, bypassable presence
+tests, false provenance in `consumed_evidence_ids`, and an unverified path/
+symlink containment exposure. No correction was attempted because the approved
+stop conditions require rejection without a second solution attempt.
+
+All four candidate production/test files were restored byte-for-byte with
+their original `0644` modes. Post-rollback focused tests passed 26/26 and the
+full suite passed 157/157. Active runtime files were not synchronized.
 
 Decision:
-ACCEPT
+REJECT
 
 Notes:
-Active global runtime synchronization was performed only after separate option
-A approval. No evidence report was created because this project now declares
-`EVIDENCE_MODE: disable` and the user did not explicitly request one.
+The hypothesis is unsupported by this v0 policy-only envelope: the observed
+duplicate was not removed, the audit claim contradicted the trace, and the
+minimal schema/tests did not safely bind trusted evidence. The changelog is
+unchanged because the candidate was rejected. Exact preimages, runtime hashes,
+fixture, traces, and temporary validation artifacts were task-owned under a
+private `0700` root and were removed after rollback verification. No later
+optimization phase is authorized by this experiment.
+
+## EXP-20260810-007 - Direct Local Lookup Fast Path
+
+Date: 2026-08-10
+Status: REJECTED
+
+Problem:
+The main Graphify/router task has four rejected independent attempts. Natural
+exact lookups still activate the broad repository-tools router and Graphify,
+while a prescriptive command prompt can mask that routing behavior.
+
+Evidence:
+EXP-20260810-005 reproduced a module read and Graphify false positive with a
+natural lookup prompt. EXP-20260810-006 was rejected before publication because
+its command-prescriptive baseline already passed and could not distinguish the
+candidate. This is the fifth and final permitted attempt.
+
+Hypothesis:
+An explicit pre-router fast path directing exact repository text, filename, and
+path lookups to local `rg`, combined with an advanced-only router row and a
+positive-only Graphify description, will make natural simple lookups lightweight
+without breaking advanced routing or explicit Graphify behavior.
+
+Solution Attempt:
+Add one literal fast-path rule before the lazy-router table; narrow its
+repository-tools row in the template, portable Codex policy, and active global
+policy; change only Graphify frontmatter description. Preserve module and skill
+bodies. No sixth attempt is permitted.
+
+Test:
+Require static RED and a completed natural live behavioral RED before publishing
+production changes. Then run focused static GREEN and six fresh sequential
+trace-validated probes: exact text, filename, known file, generic content,
+literal help, and a real two-file architecture graph. Finish with regressions,
+parity, independent reviews, permission hardening, and exact cleanup.
+
+Success Criteria:
+- Baseline natural exact lookup returns the correct match and shows a module or
+  Graphify false-positive; otherwise publish nothing and reject.
+- GREEN exact and filename probes use only contained successful `rg` commands,
+  return exact results, and show no module or Graphify activity.
+- Known/generic probes use only bounded contained `rg`/`sed` readers and show no
+  module or Graphify activity.
+- Help returns the captured Usage block byte-for-byte with zero task commands.
+- Architecture loads the exact module and skill, executes real Graphify on two
+  Python sources, and creates a fresh source-verified `EXTRACTED` calls edge
+  without semantic, subagent, network, or fabricated evidence.
+- Literal fast path precedes the router; advanced triggers remain; all three
+  policies are byte-identical; module/body/config/other variants retain preimages.
+- Focused/full tests, reviews, permissions, and task-owned cleanup pass. Any
+  completed violation rejects and rolls back without retry.
+
+Result:
+Both required RED gates passed. The natural baseline returned the correct exact
+match but first read the complete Graphify skill and repository-tools module and
+announced Graphify routing. After publishing the candidate, the focused 26-test
+suite passed; fresh exact-text and filename probes used only contained `rg`, and
+the known-file probe used one bounded `sed`, all with correct outputs and no
+module or Graphify activity. The generic-content probe returned the correct
+value but executed two composed shell commands containing `rg`, `sed`, `ls`, and
+`wc`, violating the immutable bounded-reader and no-shell-composition criteria.
+No retry was permitted after completed task activity. Remaining help and
+architecture probes were not run. All candidate policy, metadata, and test
+changes were restored to their verified preimages.
+
+Decision:
+REJECT
+
+Notes:
+One retry is allowed only for an incomplete zero-activity transport failure.
+Authorized scope excludes installs, module-body/config-schema changes, network,
+MCP/scanners, repository-root graph construction, commit, push, deployment, and
+archive mutation. Acceptance criteria will not be weakened.
+This was failed independent attempt 5 of 5. Per the user-defined ceiling, no
+sixth attempt or further candidate change will be started.
+Independent code review passed the rejection, trace evidence, and exact rollback.
+Security review confirmed no changed trust-boundary residue or task-created graph
+artifact and identified four subagent session logs for `0600` hardening before
+removing only the verified task-owned temporary root.
+The terminal archive check returned `ACTION_REQUIRED` (`active=5`, `archive=41`,
+`moved=7`); no archive mutation was applied because it is outside this task.
