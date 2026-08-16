@@ -2,6 +2,14 @@
 
 ## Pending
 
+- ID: DF-20260817-0000-001
+  Type: SECURITY_HARDENING
+  Discovered At: 2026-08-17
+  Source Task: Independent codex-tools CMA integration
+  Location: tools/codex-tool-installer/src/codex_tool_installer/config.py
+  Summary: Config transactions reject lexical symlink components, but a concurrently replaceable ancestor could still be swapped between validation and path-based backup/replace operations. Normal private native Codex homes limit exploitability; custom CMA homes are rejected.
+  Recommended Fix: Anchor transaction reads, backups, replacement, and rollback to validated directory descriptors with no-follow/openat-style operations and inode identity checks.
+
 ## Completed
 
 - ID: DF-20260716-0535-001

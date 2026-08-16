@@ -2,6 +2,71 @@
 
 [Terminal experiment archive](EXPERIMENTS_ARCHIVE.md)
 
+## EXP-20260817-001 - Independent Codex Tools Integration
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+The selected `codex-tools` installer is coupled to the ToolSmith benchmark
+workspace, and its default install path attempts to reconfigure healthy
+user-owned MCP entries. That prevents safe reuse as an independent CMA tool.
+
+Evidence:
+The P9 implementation passed its existing 41 tests and reported all 11 tools
+healthy in read-only checks, but a real non-interactive install exited nonzero
+after attempting to configure the healthy user-owned DeepWiki, GitHub, and
+Context7 MCP entries. The Codex config remained unchanged.
+
+Hypothesis:
+Extracting the installer as a self-contained package, adding an MCP
+`verify-only` ownership mode, and exposing it through an explicit CMA adapter
+will preserve CMA ownership while supporting both standalone and optional
+user-requested installation.
+
+Solution Attempt:
+Create `tools/codex-tool-installer` without ToolSmith runtime dependencies; add
+portable CLI, ownership, path, release-integrity, and idempotency contracts;
+add `bin/cma-tools`; and add an opt-in `--tools-mode` setup path. Do not mutate
+the active user Codex home, credential stores, remote MCP services, or host
+package managers during validation.
+
+Test:
+Capture meaningful RED for the new ownership and CMA adapter contracts, then
+run focused tests, branch coverage, the full project suite, shell syntax,
+packaging outside the repository, and independent code and security reviews.
+
+Success Criteria:
+- The package installs and runs independently of CMA and ToolSmith paths.
+- CMA mode verifies MCP entries without writing config or credentials.
+- Standalone mode changes only installer-marker-owned MCP entries and fails
+  closed on user-owned collisions.
+- JSON option placement is consistent and configuration paths fail closed on
+  symlinks or non-regular targets.
+- Downloaded releases use pinned HTTPS artifacts with verified checksums.
+- Package branch coverage is at least 80 percent and all project tests pass.
+
+Result:
+The independent package preserved the original 41-test baseline and expanded
+it to 56 passing tests with 80 percent branch coverage. Meaningful RED exposed
+missing ownership modes, option parity, symlink handling, release integrity,
+and adapter behavior. Code and security reviews then exposed four path and
+lifecycle issues plus mutable upstream references and ambient executable
+substitution; regression tests reproduced each blocking finding before the
+fixes. Final code and security re-reviews passed. A real isolated `uv tool`
+install, version/help execution, and uninstall succeeded outside the repo while
+preserving an unrelated sentinel. The full CMA suite passed 355/355, shell
+syntax and diff checks passed, and no active Codex config, credentials, remote
+MCP service, sudo command, or host package manager was mutated.
+
+Decision:
+ACCEPT
+
+Notes:
+Real Ubuntu 24 installation remains a separate live validation on an exact
+approved host. This experiment does not authorize writes to `~/.codex`.
+DF-20260817-0000-001 records the non-blocking directory-swap hardening opportunity.
+
 ## EXP-20260816-001 - Multi-Runtime Registry Write Containment
 
 Date: 2026-08-16
