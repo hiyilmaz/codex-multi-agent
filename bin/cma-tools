@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: cma-tools <check|dry-run|install> [--yes] [--codex-home <path>]
+
+Runs codex-tools with CMA-owned MCP configuration in verify-only mode. The
+install action first installs the bundled independent package with uv.
+EOF
+}
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PACKAGE_ROOT="$REPO_ROOT/tools/codex-tool-installer"
+MODE="${1:-}"
+ASSUME_YES="false"
+CODEX_HOME_ARG=()
+
+if [[ -z "$MODE" ]]; then usage >&2; exit 2; fi
+shift
+case "$MODE" in
+  check|dry-run|install) ;;
+  -h|--help) usage; exit 0 ;;
+  *) echo "FAILED: unsupported tools mode: $MODE" >&2; usage >&2; exit 2 ;;
+esac
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --yes) ASSUME_YES="true"; shift ;;
+    --codex-home)
+      if [[ $# -lt 2 || -z "$2" ]]; then echo "FAILED: --codex-home requires a path" >&2; exit 2; fi
+      CODEX_HOME_ARG=(--codex-home "$2")
+      shift 2
+      ;;
+    *) echo "FAILED: unknown option: $1" >&2; exit 2 ;;
+  esac
+done
+
+if [[ "$MODE" == "install" ]]; then
+  if [[ ! -f "$PACKAGE_ROOT/pyproject.toml" ]]; then
+    echo "FAILED: bundled codex-tools package is unavailable: $PACKAGE_ROOT" >&2
+    exit 1
+  fi
+  if [[ "$ASSUME_YES" != "true" ]]; then
+    if [[ ! -t 0 ]]; then echo "FAILED: install requires --yes in non-interactive mode" >&2; exit 1; fi
+    printf "Install the bundled codex-tools package with uv? [y/N] " >&2
+    read -r answer
+    case "$answer" in y|Y|yes|YES) ;; *) echo "Cancelled."; exit 0 ;; esac
+  fi
+  if ! command -v uv >/dev/null 2>&1; then
+    echo "FAILED: uv is required; install it separately, then retry" >&2
+    exit 1
+  fi
+  uv tool install --force --python 3.11 "$PACKAGE_ROOT"
+  UV_TOOL_BIN="$(uv tool dir --bin 2>/dev/null || true)"
+  TOOL_COMMAND="$UV_TOOL_BIN/codex-tools"
+  if [[ -z "$UV_TOOL_BIN" || ! -x "$TOOL_COMMAND" ]]; then
+    echo "FAILED: uv did not publish the installed codex-tools entry point" >&2
+    exit 1
+  fi
+fi
+
+if [[ "$MODE" != "install" ]]; then
+  PACKAGE_SOURCE="$PACKAGE_ROOT/src"
+  if [[ ! -f "$PACKAGE_SOURCE/codex_tool_installer/__main__.py" ]]; then
+    echo "FAILED: bundled codex-tools package is unavailable: $PACKAGE_ROOT" >&2
+    exit 1
+  fi
+
+  PYTHON_COMMAND=""
+  for candidate in python3.13 python3.12 python3.11 python3; do
+    if [[ -z "$candidate" ]] || ! command -v "$candidate" >/dev/null 2>&1; then
+      continue
+    fi
+    if "$candidate" -I -S -c 'import sys; raise SystemExit(sys.version_info < (3, 11))' >/dev/null 2>&1; then
+      PYTHON_COMMAND="$candidate"
+      break
+    fi
+  done
+  if [[ -z "$PYTHON_COMMAND" ]]; then
+    echo "FAILED: Python 3.11 or newer is required to run bundled codex-tools" >&2
+    exit 1
+  fi
+  PYTHON_BOOTSTRAP='import runpy, sys; sys.path.insert(0, sys.argv.pop(1)); runpy.run_module("codex_tool_installer", run_name="__main__", alter_sys=True)'
+fi
+
+case "$MODE" in
+  check) exec "$PYTHON_COMMAND" -I -S -c "$PYTHON_BOOTSTRAP" "$PACKAGE_SOURCE" --mcp-mode verify-only "${CODEX_HOME_ARG[@]}" check ;;
+  dry-run) exec "$PYTHON_COMMAND" -I -S -c "$PYTHON_BOOTSTRAP" "$PACKAGE_SOURCE" --mcp-mode verify-only "${CODEX_HOME_ARG[@]}" --dry-run ;;
+  install) exec "$TOOL_COMMAND" --mcp-mode verify-only "${CODEX_HOME_ARG[@]}" --non-interactive install ;;
+esac

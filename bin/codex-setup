@@ -3,8 +3,8 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: codex-setup [--runtime-home <path>] [--variant <id>]
-       codex-setup [--codex-home <path>] [--variant <id>]
+Usage: codex-setup [--runtime-home <path>] [--variant <id>] [--tools-mode <mode>]
+       codex-setup [--codex-home <path>] [--variant <id>] [--tools-mode <mode>]
 
 Runs an interactive setup for the selected runtime variant and optional project
 initialization.
@@ -16,6 +16,7 @@ TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 VARIANTS_CONFIG="$TEMPLATE_DIR/variants/config.toml"
 RUNTIME_HOME=""
 VARIANT_ID=""
+TOOLS_MODE="skip"
 VARIANT_IDS=()
 
 while [[ $# -gt 0 ]]; do
@@ -26,6 +27,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --variant)
       VARIANT_ID="$2"
+      shift 2
+      ;;
+    --tools-mode)
+      TOOLS_MODE="$2"
       shift 2
       ;;
     -h|--help)
@@ -39,6 +44,24 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+case "$TOOLS_MODE" in
+  skip|check|install) ;;
+  *)
+    echo "FAILED: --tools-mode must be skip, check, or install." >&2
+    exit 1
+    ;;
+esac
+
+if [[ "$TOOLS_MODE" != "skip" && -n "$VARIANT_ID" && "$VARIANT_ID" != "codex" ]]; then
+  echo "FAILED: codex-tools integration is available only for the native Codex variant." >&2
+  exit 1
+fi
+
+if [[ "$TOOLS_MODE" != "skip" && -n "$RUNTIME_HOME" ]]; then
+  echo "FAILED: codex-tools integration requires the native Codex home; custom runtime homes are not supported." >&2
+  exit 1
+fi
 
 if [[ -n "$RUNTIME_HOME" && -z "$VARIANT_ID" ]]; then
   echo "FAILED: --runtime-home requires --variant; each model has its own runtime home." >&2
@@ -280,11 +303,30 @@ else
   VARIANT_IDS=("$VARIANT_ID")
 fi
 
+if [[ "$TOOLS_MODE" != "skip" ]]; then
+  CODEX_SELECTED="false"
+  for variant in "${VARIANT_IDS[@]}"; do
+    if [[ "$variant" == "codex" ]]; then CODEX_SELECTED="true"; fi
+  done
+  if [[ "$CODEX_SELECTED" != "true" ]]; then
+    echo "FAILED: --tools-mode requires the native Codex variant." >&2
+    exit 1
+  fi
+fi
+
 RUNTIME_HOMES=()
+TOOLS_CODEX_HOME=""
 for variant in "${VARIANT_IDS[@]}"; do
   DEFAULT_RUNTIME_HOME="$(variant_default_home "$variant")"
   selected_home="$(ask_value "$variant runtime home dizini" "${RUNTIME_HOME:-$DEFAULT_RUNTIME_HOME}")"
   selected_home="$(expand_home_path "$selected_home")"
+  if [[ "$variant" == "codex" ]]; then
+    TOOLS_CODEX_HOME="$selected_home"
+    if [[ "$TOOLS_MODE" != "skip" && "$selected_home" != "$(expand_home_path "$DEFAULT_RUNTIME_HOME")" ]]; then
+      echo "FAILED: codex-tools integration requires the native Codex home: $(expand_home_path "$DEFAULT_RUNTIME_HOME")" >&2
+      exit 1
+    fi
+  fi
   RUNTIME_HOMES+=("$selected_home")
   echo
   if ask_yes_no "$variant runtime template kurulsun mu?" "y"; then
@@ -332,6 +374,16 @@ if ask_yes_no "Bir proje içine CMA yapısı kurulsun mu?" "n"; then
   PROJECT_VARIANT_ARGS=()
   for variant in "${VARIANT_IDS[@]}"; do PROJECT_VARIANT_ARGS+=(--variant "$variant"); done
   "$TEMPLATE_DIR/bin/codex-project-init" "${PROJECT_VARIANT_ARGS[@]}" "$PROJECT_PATH"
+fi
+
+if [[ "$TOOLS_MODE" != "skip" ]]; then
+  echo
+  echo "Codex tools mode: $TOOLS_MODE"
+  if [[ "$TOOLS_MODE" == "install" ]]; then
+    CODEX_HOME="$TOOLS_CODEX_HOME" "$TEMPLATE_DIR/bin/cma-tools" install --yes
+  else
+    CODEX_HOME="$TOOLS_CODEX_HOME" "$TEMPLATE_DIR/bin/cma-tools" "$TOOLS_MODE"
+  fi
 fi
 
 echo
