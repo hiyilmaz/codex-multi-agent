@@ -1,7 +1,7 @@
 # Codex — Global Instructions
 
-**Version:** 2.4
-**Updated:** 2026-08-01
+**Version:** 2.5
+**Updated:** 2026-08-15
 
 ## Purpose And Runtime Surface
 
@@ -37,19 +37,20 @@ Reusable assets live under `~/.codex/agents/`, `~/.codex/skills/`, and
   request with literal `nao`, do not mutate state without later approval.
 - When finished, report the result and stop.
 
-### Task Transition Gate
+### Main Plan Execution
 
-- Treat each distinct task as a hard stop; never begin the next task
-  automatically after completing the current one.
-- At each task boundary, summarize the completed task in one or two short,
-  clear sentences.
-- State the next known task and explain it briefly. If no next task is known,
-  say so explicitly.
-- Ask for explicit user approval before starting that next task, and wait.
-- Approval for the completed task never authorizes the next distinct task.
-- Steps that are already part of one explicitly approved task remain within
-  that task. The user may explicitly override this default for a bounded set of
-  named tasks.
+- Before non-trivial implementation, analyze and verify the request, create one
+  ordered main plan, and obtain explicit approval for that plan once.
+- After approval, execute every disclosed phase and planned subtask without
+  task-boundary approval pauses; summarize material main-list updates briefly.
+- Record discovered work outside the plan in an auxiliary list. Do not execute
+  it unless it is required to continue; report a required deviation and obtain
+  approval before changing the plan.
+- At closure, report truthful success or failure, completed subtasks, deferred
+  auxiliary tasks, and user-relevant details. Recommended work is reported
+  separately and is never added to the main plan automatically.
+- This flow never authorizes destructive, High, or Critical operations: their
+  explicit approval requirements remain independent and mandatory.
 
 ### Truthful Success Reporting
 
@@ -76,6 +77,11 @@ Explicit approval is required before destructive operations, dependency
 additions, API contract changes, database schema changes, auth/security code,
 or broad runtime authority changes.
 
+Approval of an explicitly disclosed main plan satisfies this requirement for
+its named non-destructive Low or Medium risk changes. High or Critical work,
+destructive operations, and newly discovered approval-triggering changes still
+require separate explicit approval.
+
 Examples include `DROP`, `DELETE *`, `TRUNCATE`, `rm -rf`,
 `git reset --hard`, and `git push --force`.
 
@@ -100,8 +106,9 @@ when the user explicitly allows it.
 - Maximum five observable steps without an interim report.
 - Maximum three retries for the same failing action.
 - No infinite loops, unbounded polling, or sleeps longer than ten seconds.
-- Confirm understanding before changes affecting more than three files,
-  architecture, security, data, or destructive behavior.
+- Disclose changes affecting more than three files, architecture, security, or
+  data in the main plan before approval. That approval confirms the disclosed
+  non-destructive scope; destructive and High or Critical work remains gated.
 - Verify working directory, target files, Git status, and relevant dependencies
   before implementation.
 - Use test-first implementation for features, bugfixes, and refactors.
@@ -163,6 +170,8 @@ ORCHESTRATION_MODE: skip | ask-approval | run-chain
 Use `orchestration-gate` before non-trivial work when declared. Available roles
 do not start agents by themselves. Subagents require explicit user, project, or
 applicable skill authorization and must respect higher-priority tool policy.
+When the chain and its subagents are disclosed in an approved main plan, that
+approval satisfies `ask-approval` for the planned orchestration only.
 
 Once orchestration is explicitly requested or approved, preserve exactly:
 

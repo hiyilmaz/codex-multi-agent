@@ -16,54 +16,129 @@ POLICIES = (
 
 
 class TaskTransitionGateTests(unittest.TestCase):
+    def main_plan_section(self, text: str) -> str:
+        start = text.index("### Main Plan Execution")
+        end = text.find("\n### ", start + 1)
+        return text[start : end if end >= 0 else len(text)]
+
     def assert_task_transition_gate(self, text: str) -> None:
-        normalized = " ".join(text.split())
+        normalized = " ".join(self.main_plan_section(text).split())
         required = (
-            "### Task Transition Gate",
-            "Treat each distinct task as a hard stop",
-            "never begin the next task automatically after completing the current one",
-            "summarize the completed task in one or two short, clear sentences",
-            "State the next known task and explain it briefly",
-            "If no next task is known, say so explicitly",
-            "Ask for explicit user approval before starting that next task, and wait",
-            "Approval for the completed task never authorizes the next distinct task",
-            "Steps that are already part of one explicitly approved task remain within that task",
+            "### Main Plan Execution",
+            "Before non-trivial implementation, analyze and verify the request",
+            "create one ordered main plan",
+            "obtain explicit approval for that plan once",
+            "execute every disclosed phase and planned subtask",
+            "without task-boundary approval pauses",
+            "summarize material main-list updates briefly",
+            "auxiliary list",
+            "Do not execute it unless it is required to continue",
+            "report a required deviation and obtain approval before changing the plan",
+            "report truthful success or failure",
+            "completed subtasks",
+            "deferred auxiliary tasks",
+            "user-relevant details",
+            "Recommended work is reported separately",
+            "never added to the main plan automatically",
+            "destructive, High, or Critical operations",
+            "explicit approval requirements remain independent and mandatory",
         )
         for marker in required:
             self.assertIn(" ".join(marker.split()), normalized)
 
         forbidden = (
-            "ask again between every step",
-            "ask for approval between every step",
-            "ask for approval before every step",
-            "ask for explicit user approval before each step",
-            "wait for approval between each step",
+            "Treat each distinct task as a hard stop",
+            "Ask for explicit user approval before starting that next task",
+            "plan approval authorizes destructive",
+            "execute recommended work automatically",
+            "change the plan before approval",
+            "always report success",
         )
         lowered = normalized.lower()
         for marker in forbidden:
-            self.assertNotIn(marker, lowered)
+            self.assertNotIn(marker.lower(), lowered)
+
+    def assert_english_guide_contract(self, section: str) -> None:
+        normalized = " ".join(section.split())
+        for marker in (
+            "Main Plan Execution",
+            "disclosed non-destructive Low/Medium work",
+            "planned orchestration",
+            "Work discovered outside the approved plan stays on an auxiliary list",
+            "not executed unless it is required to continue",
+            "A required deviation is reported and approved before the plan changes",
+            "Recommended work is reported separately",
+            "never added to the main plan automatically",
+            "Destructive and High/Critical",
+            "separate approval",
+        ):
+            self.assertIn(marker, normalized)
 
     def test_all_canonical_policies_define_the_complete_gate(self) -> None:
         self.assertEqual(len(POLICIES), 4)
         self.assertIn("variants/opencode/home/AGENTS.md", POLICIES)
+        sections = []
         for relative in POLICIES:
             with self.subTest(path=relative):
-                self.assert_task_transition_gate(
-                    (REPO_ROOT / relative).read_text(encoding="utf-8")
+                text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+                self.assert_task_transition_gate(text)
+                normalized = " ".join(text.split())
+                self.assertIn(
+                    "Approval of an explicitly disclosed main plan satisfies "
+                    "this requirement for its named non-destructive Low or "
+                    "Medium risk changes",
+                    normalized,
                 )
+                self.assertIn(
+                    "approval satisfies `ask-approval` for the planned "
+                    "orchestration only",
+                    normalized,
+                )
+                sections.append(" ".join(self.main_plan_section(text).split()))
+        self.assertEqual(len(set(sections)), 1)
 
     def test_partial_or_every_step_gate_is_rejected(self) -> None:
         partial = (
-            "### Task Transition Gate\n"
-            "Ask for explicit user approval before starting the next task, and wait.\n"
+            "### Main Plan Execution\n"
+            "Obtain explicit approval for that plan once.\n"
         )
         with self.assertRaises(AssertionError):
             self.assert_task_transition_gate(partial)
 
-        contradictory = (REPO_ROOT / POLICIES[0]).read_text(encoding="utf-8")
-        contradictory += "\nAsk again between every step of the current task.\n"
-        with self.assertRaises(AssertionError):
-            self.assert_task_transition_gate(contradictory)
+        canonical = (REPO_ROOT / POLICIES[0]).read_text(encoding="utf-8")
+        for claim in (
+            "Plan approval authorizes destructive operations.",
+            "Execute recommended work automatically.",
+            "Change the plan before approval.",
+            "Always report success.",
+        ):
+            contradictory = canonical.replace(
+                "### Truthful Success Reporting",
+                f"{claim}\n\n### Truthful Success Reporting",
+            )
+            with self.subTest(claim=claim), self.assertRaises(AssertionError):
+                self.assert_task_transition_gate(contradictory)
+
+    def test_each_main_plan_acceptance_clause_is_mandatory(self) -> None:
+        canonical = (REPO_ROOT / POLICIES[0]).read_text(encoding="utf-8")
+        normalized = " ".join(self.main_plan_section(canonical).split())
+        acceptance_markers = (
+            "Before non-trivial implementation, analyze and verify the request",
+            "create one ordered main plan",
+            "execute every disclosed phase and planned subtask",
+            "summarize material main-list updates briefly",
+            "Record discovered work outside the plan in an auxiliary list",
+            "obtain approval before changing the plan",
+            "report truthful success or failure",
+            "Recommended work is reported separately",
+            "explicit approval requirements remain independent and mandatory",
+        )
+        for marker in acceptance_markers:
+            with self.subTest(marker=marker):
+                mutated = normalized.replace(marker, "", 1)
+                self.assertNotEqual(mutated, normalized)
+                with self.assertRaises(AssertionError):
+                    self.assert_task_transition_gate(mutated)
 
     def test_portable_installs_expose_the_complete_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -93,25 +168,51 @@ class TaskTransitionGateTests(unittest.TestCase):
                         (runtime / policy).read_text(encoding="utf-8")
                     )
 
-    def test_user_guides_explain_the_task_boundary(self) -> None:
-        english = ("README.md", "USAGE_GUIDE.md", "COMMAND_REFERENCE.md")
-        for relative in english:
+    def test_user_guides_explain_the_main_plan_contract(self) -> None:
+        english = {
+            "README.md": ("### Main Plan Execution", "\n\nInstallable runtime variants"),
+            "USAGE_GUIDE.md": ("## Main Plan Execution", "\n---"),
+            "COMMAND_REFERENCE.md": (
+                "## Main Plan Execution",
+                "\n## Recommended Workflows",
+            ),
+        }
+        for relative, (start_marker, end_marker) in english.items():
             text = (REPO_ROOT / relative).read_text(encoding="utf-8")
             with self.subTest(path=relative):
-                self.assertIn("Task Transition Gate", text)
-                self.assertIn("next distinct task", text)
-                self.assertIn("explicit approval", text)
-                self.assertIn("same explicitly approved bounded task", text)
+                start = text.index(start_marker)
+                end = text.index(end_marker, start)
+                section = " ".join(text[start:end].split())
+                self.assert_english_guide_contract(section)
+                for marker in (
+                    "A required deviation is reported and approved before the plan changes",
+                    "never added to the main plan automatically",
+                ):
+                    mutated = section.replace(marker, "", 1)
+                    with self.subTest(marker=marker), self.assertRaises(
+                        AssertionError
+                    ):
+                        self.assert_english_guide_contract(mutated)
 
         turkish = (REPO_ROOT / "TURKCE_KURULUM_REHBERI.md").read_text(
             encoding="utf-8"
         )
-        turkish = " ".join(turkish.split())
+        start = turkish.index("### Ana Plan Yürütme")
+        end = turkish.index("\n`orchestration-gate`", start)
+        turkish = " ".join(turkish[start:end].split())
         for marker in (
-            "Görev Geçiş Kapısı",
-            "sıradaki farklı göreve",
-            "açık kullanıcı onayı",
-            "aynı açıkça onaylanmış sınırlı görevin",
+            "Ana Plan Yürütme",
+            "başlangıçta bir kez açık kullanıcı onayı",
+            "yeniden onay istemeden",
+            "Destructive",
+            "ayrı açık onay zorunluluğu",
+            "Low/Medium",
+            "planlanmış orkestrasyonu",
+            "yardımcı görev listesinde tutulur",
+            "zorunlu değilse uygulanmaz",
+            "plan değiştirilmeden önce raporlanır ve onaylanır",
+            "Önerilen görevler ayrı raporlanır",
+            "hiçbir zaman otomatik eklenmez",
         ):
             self.assertIn(marker, turkish)
 
