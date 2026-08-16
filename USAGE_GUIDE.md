@@ -232,7 +232,8 @@ Use `ACTIVE_RULE_SETS`, `ACTIVE_SKILLS`, `ACTIVE_AGENT_ROLES`, and
 Valid orchestration modes:
 
 - `skip`: do not use orchestration by default.
-- `ask-approval`: ask before running the mandatory chain for non-trivial work.
+- `ask-approval`: include the mandatory chain in the main plan and obtain the
+  single initial plan approval before running it for non-trivial work.
 - `run-chain`: run the mandatory chain for non-trivial work when explicitly
   authorized by the project or user and active tool policy permits it.
 
@@ -313,12 +314,18 @@ that item.
 
 ---
 
-## Task Transition Gate
+## Main Plan Execution
 
-After completing a distinct task, CMA gives a one- or two-sentence summary,
-states and briefly explains the next distinct task (or says that none is
-known), then requests explicit approval and waits. The gate does not interrupt
-steps within the same explicitly approved bounded task.
+CMA asks for approval once for a disclosed main plan, then executes every
+planned phase and subtask without task-boundary pauses. Material list updates,
+auxiliary discoveries, recommended work, and the truthful terminal result are
+reported. The initial approval covers disclosed non-destructive Low/Medium work
+and planned orchestration. Destructive and High/Critical operations still
+require separate approval.
+Work discovered outside the approved plan stays on an auxiliary list and is
+not executed unless it is required to continue. A required deviation is
+reported and approved before the plan changes. Recommended work is reported
+separately and is never added to the main plan automatically.
 
 ---
 

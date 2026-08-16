@@ -274,16 +274,24 @@ ORCHESTRATION_MODE: ask-approval
 Geçerli değerler:
 
 - `skip`: varsayılan olarak orchestration kullanılmaz.
-- `ask-approval`: ciddi işlerde zincir başlatılmadan önce onay istenir.
+- `ask-approval`: zincir ana planda açıklanır ve ciddi işlerde yalnızca ilk ana
+  plan onayı alınır.
 - `run-chain`: proje veya kullanıcı açıkça yetki verdiyse ciddi işlerde zincir
   başlatılır; aktif tool politikası ayrıca onay istiyorsa önce onay alınır.
 
-### Görev Geçiş Kapısı
+### Ana Plan Yürütme
 
-CMA farklı bir görevi tamamladığında sonucu bir veya iki kısa cümleyle özetler,
-sıradaki farklı göreve geçmeden önce bu görevi kısaca açıklar, açık kullanıcı
-onayı ister ve bekler. Bu kapı, aynı açıkça onaylanmış sınırlı görevin zaten
-onaylanmış adımları arasında gereksiz duraklama oluşturmaz.
+CMA doğrulanmış ana plan için başlangıçta bir kez açık kullanıcı onayı ister.
+Onaydan sonra planlanmış fazları ve alt görevleri görev sınırlarında yeniden
+onay istemeden tamamlar. Ana liste güncellemeleri, yardımcı görevler, önerilen
+görevler ve nihai başarı/başarısızlık sonucu raporlanır. Destructive ve
+High/Critical işlemler için ayrı açık onay zorunluluğu devam eder. İlk plan
+onayı, planda açıklanan destructive olmayan Low/Medium işleri ve planlanmış
+orkestrasyonu kapsar.
+Onaylı plan dışında bulunan işler yardımcı görev listesinde tutulur ve ana
+görevin devamı için zorunlu değilse uygulanmaz. Zorunlu bir plan sapması, plan
+değiştirilmeden önce raporlanır ve onaylanır. Önerilen görevler ayrı raporlanır
+ve ana görev listesine hiçbir zaman otomatik eklenmez.
 
 `orchestration-gate` skill'i bu kararın verilmesi için kullanılır.
 `tdd-workflow` her runtime varyantında bulunur ve test-first geliştirme akışını

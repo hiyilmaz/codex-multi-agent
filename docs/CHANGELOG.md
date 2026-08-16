@@ -2,6 +2,13 @@
 
 ## 2026-08-15
 
+- [FEAT] EXP-20260815-003 replaced per-task transition pauses with one approved
+  ordered main plan across Codex, Claude, and OpenCode policy 2.5. Disclosed
+  phases, Low/Medium non-destructive work, and planned orchestration now run
+  continuously; plan deviations, destructive work, and High/Critical decisions
+  remain separately gated. Public guides, active global policies, private
+  rollback material, clause-removal/contradiction tests, 343/343 full tests,
+  code review, and security review all passed.
 - [FEAT] Added the official Claude project projection to the CMA repository:
   `CLAUDE.md`, `.claude/settings.json`, and the schema-2 manifest now declare
   the ordered `codex`, `claude`, and `opencode` variants. Existing Codex and

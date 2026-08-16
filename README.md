@@ -54,7 +54,9 @@ ORCHESTRATION_MODE: skip | ask-approval | run-chain
 
 The default project template uses `ask-approval`. The `orchestration-gate`
 skill decides whether a task should skip orchestration, ask for approval, or
-run the mandatory chain. It must not bypass active tool or approval policy.
+run the mandatory chain. When that chain is disclosed in the approved main
+plan, the initial approval covers its planned agents and non-destructive Low or
+Medium risk work; destructive and High/Critical work remains separately gated.
 
 Every runtime variant packages `tdd-workflow`. The `tdd-guide` agent defines
 the focused test strategy, and the skill enforces the test-first
@@ -71,12 +73,18 @@ agents default to `medium` reasoning. Passing tests alone do not prove
 completion; review also checks acceptance criteria, observable behavior, and
 test integrity.
 
-### Task Transition Gate
+### Main Plan Execution
 
-After completing a distinct task, CMA gives a one- or two-sentence summary,
-states and briefly explains the next distinct task (or says that none is
-known), then requests explicit approval and waits. The gate does not interrupt
-steps within the same explicitly approved bounded task.
+CMA requests approval once for a disclosed main plan, then completes its
+planned phases without task-boundary pauses. It reports material list updates,
+auxiliary discoveries, recommended work, and a truthful terminal result.
+That approval also covers disclosed non-destructive Low/Medium work and planned
+orchestration. Destructive and High/Critical operations still require separate
+approval.
+Work discovered outside the approved plan stays on an auxiliary list and is
+not executed unless it is required to continue. A required deviation is
+reported and approved before the plan changes. Recommended work is reported
+separately and is never added to the main plan automatically.
 
 Installable runtime variants live under `variants/`:
 

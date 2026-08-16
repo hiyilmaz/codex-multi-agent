@@ -249,12 +249,17 @@ git status --short
 git diff --stat
 ```
 
-## Task Transition Gate
+## Main Plan Execution
 
-After completing a distinct task, CMA gives a one- or two-sentence summary,
-states and briefly explains the next distinct task (or says that none is
-known), then requests explicit approval and waits. The gate does not interrupt
-steps within the same explicitly approved bounded task.
+Approve a disclosed main plan once; CMA then executes its planned phases
+continuously. Auxiliary discoveries and recommendations are reported without
+expanding the plan. The approval covers disclosed non-destructive Low/Medium
+work and planned orchestration. Destructive and High/Critical operations still
+require separate approval.
+Work discovered outside the approved plan stays on an auxiliary list and is
+not executed unless it is required to continue. A required deviation is
+reported and approved before the plan changes. Recommended work is reported
+separately and is never added to the main plan automatically.
 
 ## Recommended Workflows
 
