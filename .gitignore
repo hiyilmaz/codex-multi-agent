@@ -1,5 +1,36 @@
-001.md
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Secrets
+.env
+.env.*
+
+# Python
 __pycache__/
 *.py[cod]
-Codex-Multi-Agent-full-backup-*.zip
+.venv/
+venv/
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node
+node_modules/
+
+# Tools / local state
+.serena/
 graphify-out/
+
+# Claude / OpenCode local files
+.claude
+.opencode
+CLAUDE.md
+
+# Project-local
+001.md
+Codex-Multi-Agent-full-backup-*.zip
