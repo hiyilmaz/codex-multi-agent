@@ -99,6 +99,17 @@ For guided installation, use the interactive setup:
 bin/codex-setup
 ```
 
+Development-tool installation is opt-in and native-Codex-only:
+
+```bash
+bin/codex-setup --variant codex --tools-mode check
+bin/codex-setup --variant codex --tools-mode install
+```
+
+The default is `--tools-mode skip`. Direct standalone installation is
+`uv tool install ./tools/codex-tool-installer`; CMA usage should go through
+`bin/cma-tools` so MCP configuration remains verify-only.
+
 The setup wizard asks whether to install all catalog models first. Answering
 yes installs every active variant without individual variant prompts; answering
 no asks once for each variant. An explicit `--variant` keeps the single-variant

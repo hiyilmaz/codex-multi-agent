@@ -16,6 +16,7 @@ bin/codex-user-install --help
 bin/codex-user-install --list-variants
 bin/codex-project-init --help
 bin/codex-project-upgrade --help
+bin/cma-tools --help
 ```
 
 Available runtime variants:
@@ -59,6 +60,47 @@ For the native Codex target only (`$HOME/.codex`), setup delegates to
 protected core tools additively, makes Context7 required/lazy, keeps cplt
 explicit-only, and leaves xcodebuildmcp disabled. Custom runtime homes and
 other variants remain isolated; restart Codex after installation.
+
+Optionally check or install development tools during native Codex setup:
+
+```bash
+bin/codex-setup --variant codex --tools-mode check
+bin/codex-setup --variant codex --tools-mode install
+```
+
+The default is `--tools-mode skip`. Tool mode is rejected for custom runtime
+homes and non-Codex variants.
+
+## Independent Development Tools
+
+CMA-owned use keeps MCP configuration read-only:
+
+```bash
+bin/cma-tools check
+bin/cma-tools dry-run
+bin/cma-tools install
+```
+
+The install action requires `uv`, installs the bundled Python 3.11 package,
+then installs/verifies CLI tools while keeping MCP in `verify-only` mode.
+Read-only modes never bootstrap missing dependencies.
+
+Standalone use is independent of CMA after installation:
+
+```bash
+uv tool install ./tools/codex-tool-installer
+codex-tools --version
+codex-tools --mcp-mode manage check
+```
+
+Standalone `manage` mode writes only missing or installer-marker-owned MCP
+tables; user-owned collisions fail closed.
+
+Remove the independent installer command without removing third-party tools:
+
+```bash
+uv tool uninstall codex-tool-installer
+```
 
 ## Runtime Installation
 

@@ -146,6 +146,38 @@ dosyalar ezilsin mi?” sorusuna `n` yanıtını ver.
 
 ## 2. Başka Bilgisayarda Kurulum
 
+### Ubuntu 24 üzerinde bağımsız `codex-tools`
+
+Depoyu Ubuntu 24 makineye kopyaladıktan sonra Python 3.11 ve `uv` hazır
+olmalıdır. Araç paketi CMA çalışma zamanından bağımsız kurulabilir:
+
+```bash
+cd /path/to/Codex-Multi-Agent
+uv tool install ./tools/codex-tool-installer
+codex-tools --version
+codex-tools check
+```
+
+CMA içinde MCP ayarlarının sahibi CMA olarak kalır:
+
+```bash
+bin/cma-tools check
+bin/cma-tools dry-run
+bin/cma-tools install
+```
+
+Kurulum sihirbazına isteğe bağlı eklemek için:
+
+```bash
+bin/codex-setup --variant codex --tools-mode check
+bin/codex-setup --variant codex --tools-mode install
+```
+
+Varsayılan `--tools-mode skip` değeridir. CMA adaptörü MCP kayıtlarını yalnızca
+doğrular; değiştirmez. Bağımsız `codex-tools` kullanımı ise varsayılan
+`manage` modunda yalnızca eksik veya kendi işaretiyle sahip olduğu MCP
+tablolarını yönetir ve kullanıcıya ait isim çakışmasında durur.
+
 Yeni bilgisayarda bu repo aynı şekilde alınır:
 
 ```bash

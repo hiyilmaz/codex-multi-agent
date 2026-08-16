@@ -29,6 +29,7 @@ It is self-contained and does not depend on another agent runtime.
 | `TURKCE_KURULUM_REHBERI.md` | Turkish quick setup guide |
 | `docs/openai-codex/` | Local updateable index of official OpenAI Codex docs |
 | `bin/` | User-global and project init helper scripts |
+| `tools/codex-tool-installer/` | Independent `codex-tools` Python package |
 
 ---
 
@@ -122,6 +123,23 @@ and Context7 MCP entries; xcodebuildmcp remains disabled. Custom runtime homes
 and custom runtime homes remain portable. Native Claude and OpenCode activation
 projects the same ten skills into their official user skill locations.
 Restart Codex or begin a new session after native activation.
+
+The development-tool installer is optional and separate from runtime template
+installation. CMA keeps ownership of skills and MCP configuration, so its
+adapter always uses MCP verify-only mode:
+
+```bash
+bin/cma-tools check
+bin/cma-tools dry-run
+bin/cma-tools install
+```
+
+For a standalone installation without the CMA adapter:
+
+```bash
+uv tool install ./tools/codex-tool-installer
+codex-tools --mcp-mode manage check
+```
 
 Default targets:
 

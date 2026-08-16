@@ -1,5 +1,30 @@
 # Changelog
 
+[Older entries](CHANGELOG_ARCHIVE.md)
+
+## Archive Index (Previous 30 Dates)
+
+- [2026-06-10](CHANGELOG_ARCHIVE.md#2026-06-10)
+- [2026-05-22](CHANGELOG_ARCHIVE.md#2026-05-22)
+
+## 2026-08-17
+
+- [FIX] `bin/cma-tools check` and `dry-run` now execute the bundled Python
+  package instead of a potentially stale `codex-tools` executable from
+  `PATH`; install still executes UV's newly published entry point. Added a
+  dedicated CMA tools usage and troubleshooting guide. Adapter tests passed
+  7/7, package tests passed 56/56, full CMA regressions passed 358/358, and
+  live read-only `check` / `dry-run` both completed successfully.
+- [FEAT] EXP-20260817-001 added the independent Python 3.11+
+  `codex-tool-installer` package and opt-in `bin/cma-tools` / setup integration.
+  CMA keeps MCP ownership through enforced verify-only mode; standalone mode
+  manages only missing or installer-marker-owned MCP tables. Config and release
+  paths fail closed on unsafe symlinks, direct releases are version/checksum
+  pinned, package sources use immutable versions or commits, and the adapter
+  executes only UV's newly installed entry point. Package tests passed 56/56
+  with 80% branch coverage, full CMA regressions passed 355/355, isolated UV
+  install/uninstall passed, and independent code/security reviews passed.
+
 ## 2026-08-16
 
 - [FEAT] EXP-20260816-001 interactive setup and project init now ask whether all active catalog
@@ -526,22 +551,3 @@
 
 - [FIX] Install Dolphin launcher into the selected runtime home as
   `llm-dolphin`.
-
-## 2026-06-10
-
-- [FIX] Rewrite installed variant template paths to the selected runtime home.
-- [INFRA] Move installable runtime templates under `variants/` with `codex`
-  and `dolphin` variant selection.
-- [DOCS] Added global assistant conduct guidance to the Codex home instruction
-  templates.
-
-## 2026-05-22
-
-- [FEAT] Added interactive setup with status-message defaults and YOLO-mode
-  preference guarded by mandatory destructive-operation approvals.
-- [DOCS] Added a Turkish setup guide covering fresh user-global installation
-  and project-local initialization.
-- [INFRA] Added the portable template installer for the user-global Codex
-  runtime surface.
-- [INFRA] Removed the external runtime layer from the active Codex model and
-  documented the simplified `~/.codex` skill/agent registry structure.
