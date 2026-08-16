@@ -27,6 +27,7 @@ EOF
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 VARIANT_ID=""
+VARIANT_IDS=()
 PROJECT_PATH=""
 RESET="false"
 
@@ -37,7 +38,7 @@ while [[ $# -gt 0 ]]; do
         echo "FAILED: --variant requires a value" >&2
         exit 1
       fi
-      VARIANT_ID="$2"
+      VARIANT_IDS+=("$2")
       shift 2
       ;;
     --reset)
@@ -70,21 +71,45 @@ if [[ -z "$PROJECT_PATH" ]]; then
   exit 1
 fi
 
-if [[ -z "$VARIANT_ID" ]]; then
-  VARIANT_ID="$(awk -F= '
-    $1 ~ /^[[:space:]]*default_variant[[:space:]]*$/ {
-      value=$2
-      gsub(/[[:space:]"]/, "", value)
-      print value
-      exit
-    }
-  ' "$TEMPLATE_DIR/variants/config.toml")"
+ask_yes_no() {
+  local prompt="$1" answer
+  while true; do
+    printf "%s [y/N] " "$prompt"
+    read -r answer
+    case "$answer" in
+      y|Y|yes|YES) return 0 ;;
+      n|N|no|NO|"") return 1 ;;
+      *) echo "Lütfen y veya n girin." >&2 ;;
+    esac
+  done
+}
+
+catalog_variant_ids() {
+  "$TEMPLATE_DIR/bin/codex-user-install" --list-variants | awk -F '\t' '{ print $1 }'
+}
+
+if [[ ${#VARIANT_IDS[@]} -eq 0 ]]; then
+  CATALOG_VARIANTS=()
+  while IFS= read -r variant; do CATALOG_VARIANTS+=("$variant"); done < <(catalog_variant_ids)
+  if ask_yes_no "Tüm modeller kurulsun mu?"; then
+    VARIANT_IDS=("${CATALOG_VARIANTS[@]}")
+  else
+    for variant in "${CATALOG_VARIANTS[@]}"; do
+      if ask_yes_no "$variant kurulsun mu?"; then VARIANT_IDS+=("$variant"); fi
+    done
+  fi
+  if [[ ${#VARIANT_IDS[@]} -eq 0 ]]; then
+    echo "No runtime variants selected; nothing changed."
+    exit 0
+  fi
 fi
 
-if ! "$TEMPLATE_DIR/bin/codex-user-install" --list-variants | awk -F '\t' -v id="$VARIANT_ID" '$1 == id { found=1 } END { exit !found }'; then
-  echo "FAILED: unknown variant: $VARIANT_ID" >&2
-  exit 1
-fi
+for variant in "${VARIANT_IDS[@]}"; do
+  if ! "$TEMPLATE_DIR/bin/codex-user-install" --list-variants | awk -F '\t' -v id="$variant" '$1 == id { found=1 } END { exit !found }'; then
+    echo "FAILED: unknown variant: $variant" >&2
+    exit 1
+  fi
+done
 
 mkdir -p "$PROJECT_PATH"
 PROJECT_PATH="$(cd "$PROJECT_PATH" && pwd)"
@@ -94,11 +119,10 @@ PROJECT_DIRECTORIES=(
   "$PROJECT_PATH/.codex/archive"
   "$PROJECT_PATH/.codex/prompts"
 )
-if [[ "$VARIANT_ID" == "claude" ]]; then
-  PROJECT_DIRECTORIES+=("$PROJECT_PATH/.claude")
-elif [[ "$VARIANT_ID" == "opencode" ]]; then
-  PROJECT_DIRECTORIES+=("$PROJECT_PATH/.opencode")
-fi
+for variant in "${VARIANT_IDS[@]}"; do
+  [[ "$variant" == "claude" ]] && PROJECT_DIRECTORIES+=("$PROJECT_PATH/.claude")
+  [[ "$variant" == "opencode" ]] && PROJECT_DIRECTORIES+=("$PROJECT_PATH/.opencode")
+done
 for directory in "${PROJECT_DIRECTORIES[@]}"; do
   if [[ -L "$directory" ]]; then
     echo "FAILED: refusing symbolic link for project directory: $directory" >&2
@@ -119,12 +143,10 @@ if [[ -e "$PROJECT_PATH/AGENTS.md" && ! -f "$PROJECT_PATH/AGENTS.md" ]]; then
   exit 1
 fi
 if [[ -f "$PROJECT_PATH/AGENTS.md" && "$RESET" != "true" ]]; then
-  echo "Existing project detected; adding variant without resetting shared files."
-  exec "$TEMPLATE_DIR/bin/codex-project-upgrade" \
-    --apply \
-    --add-variant \
-    --variant "$VARIANT_ID" \
-    "$PROJECT_PATH"
+  echo "Existing project detected; adding variants without resetting shared files."
+  UPGRADE_VARIANT_ARGS=()
+  for variant in "${VARIANT_IDS[@]}"; do UPGRADE_VARIANT_ARGS+=(--variant "$variant"); done
+  exec "$TEMPLATE_DIR/bin/codex-project-upgrade" --apply --add-variant "${UPGRADE_VARIANT_ARGS[@]}" "$PROJECT_PATH"
 fi
 if [[ -e "$PROJECT_PATH/.codex/template-state.json" && "$RESET" != "true" ]]; then
   echo "FAILED: template state exists without AGENTS.md; use --reset only for an intentional recovery reset" >&2
@@ -152,13 +174,11 @@ if [[ "$RESET" == "true" ]]; then
     ".claude/settings.json"
     ".opencode/opencode.json"
   )
-elif [[ "$VARIANT_ID" == "claude" ]]; then
-  CONFLICTS+=(
-    "CLAUDE.md"
-    ".claude/settings.json"
-  )
-elif [[ "$VARIANT_ID" == "opencode" ]]; then
-  CONFLICTS+=(".opencode/opencode.json")
+else
+  for variant in "${VARIANT_IDS[@]}"; do
+    [[ "$variant" == "claude" ]] && CONFLICTS+=("CLAUDE.md" ".claude/settings.json")
+    [[ "$variant" == "opencode" ]] && CONFLICTS+=(".opencode/opencode.json")
+  done
 fi
 
 if [[ "$RESET" == "true" ]]; then
@@ -205,37 +225,41 @@ mkdir -p "$PROJECT_PATH/.codex/prompts"
 
 cp "$TEMPLATE_DIR/PROJECT_AGENTS_TEMPLATE.md" "$PROJECT_PATH/AGENTS.md"
 cp "$TEMPLATE_DIR/PROJECT_CONFIG_PROMPT.md" "$PROJECT_PATH/.codex/prompts/fill-project-configuration.md"
-if [[ "$VARIANT_ID" == "opencode" ]]; then
-  mkdir -p "$PROJECT_PATH/.opencode"
-  cp "$TEMPLATE_DIR/OPENCODE_PROJECT_CONFIG_EXAMPLE.json" "$PROJECT_PATH/.opencode/opencode.json"
-elif [[ "$VARIANT_ID" == "codex" ]]; then
-  cp "$TEMPLATE_DIR/CODEX_CONFIG_EXAMPLE.toml" "$PROJECT_PATH/.codex/config.toml"
-fi
-if [[ "$VARIANT_ID" == "claude" ]]; then
-  mkdir -p "$PROJECT_PATH/.claude"
-  cp "$TEMPLATE_DIR/PROJECT_CLAUDE_TEMPLATE.md" "$PROJECT_PATH/CLAUDE.md"
-  cp "$TEMPLATE_DIR/CLAUDE_SETTINGS_EXAMPLE.json" "$PROJECT_PATH/.claude/settings.json"
-fi
-"$TEMPLATE_DIR/bin/codex-project-upgrade" --record-initial-state --variant "$VARIANT_ID" "$PROJECT_PATH" >/dev/null
+for variant in "${VARIANT_IDS[@]}"; do
+  if [[ "$variant" == "opencode" ]]; then
+    mkdir -p "$PROJECT_PATH/.opencode"
+    cp "$TEMPLATE_DIR/OPENCODE_PROJECT_CONFIG_EXAMPLE.json" "$PROJECT_PATH/.opencode/opencode.json"
+  elif [[ "$variant" == "codex" ]]; then
+    cp "$TEMPLATE_DIR/CODEX_CONFIG_EXAMPLE.toml" "$PROJECT_PATH/.codex/config.toml"
+  elif [[ "$variant" == "claude" ]]; then
+    mkdir -p "$PROJECT_PATH/.claude"
+    cp "$TEMPLATE_DIR/PROJECT_CLAUDE_TEMPLATE.md" "$PROJECT_PATH/CLAUDE.md"
+    cp "$TEMPLATE_DIR/CLAUDE_SETTINGS_EXAMPLE.json" "$PROJECT_PATH/.claude/settings.json"
+  fi
+done
+MANIFEST_VARIANT_ARGS=()
+for variant in "${VARIANT_IDS[@]}"; do MANIFEST_VARIANT_ARGS+=(--variant "$variant"); done
+"$TEMPLATE_DIR/bin/codex-project-upgrade" --record-initial-state "${MANIFEST_VARIANT_ARGS[@]}" "$PROJECT_PATH" >/dev/null
 
 echo "Created: $PROJECT_PATH/AGENTS.md"
-if [[ "$VARIANT_ID" == "opencode" ]]; then
-  echo "Created: $PROJECT_PATH/.opencode/opencode.json"
-elif [[ "$VARIANT_ID" == "codex" ]]; then
-  echo "Created: $PROJECT_PATH/.codex/config.toml"
-fi
+for variant in "${VARIANT_IDS[@]}"; do
+  [[ "$variant" == "opencode" ]] && echo "Created: $PROJECT_PATH/.opencode/opencode.json"
+  [[ "$variant" == "codex" ]] && echo "Created: $PROJECT_PATH/.codex/config.toml"
+done
 echo "Created: $PROJECT_PATH/.codex/prompts/fill-project-configuration.md"
-if [[ "$VARIANT_ID" == "claude" ]]; then
+if [[ " ${VARIANT_IDS[*]} " == *" claude "* ]]; then
   echo "Created: $PROJECT_PATH/CLAUDE.md"
   echo "Created: $PROJECT_PATH/.claude/settings.json"
 fi
 echo "Created: $PROJECT_PATH/.codex/template-state.json"
 
-if [[ "$VARIANT_ID" == "claude" && ! -e "$HOME/.claude/registry/CMA_GLOBAL.md" ]]; then
+if [[ " ${VARIANT_IDS[*]} " == *" claude "* && ! -e "$HOME/.claude/registry/CMA_GLOBAL.md" ]]; then
   echo "Warning: the default Claude runtime is missing. Install it with codex-user-install --variant claude." >&2
-elif [[ "$VARIANT_ID" == "opencode" && ! -e "$HOME/.llm-runtimes/opencode/AGENTS.md" ]]; then
+fi
+if [[ " ${VARIANT_IDS[*]} " == *" opencode "* && ! -e "$HOME/.llm-runtimes/opencode/AGENTS.md" ]]; then
   echo "Warning: the default OpenCode runtime is missing. Install it with codex-user-install --variant opencode." >&2
-elif [[ "$VARIANT_ID" != "claude" && "$VARIANT_ID" != "opencode" && ! -e "$HOME/.codex/AGENTS.md" ]]; then
+fi
+if [[ " ${VARIANT_IDS[*]} " == *" codex "* && ! -e "$HOME/.codex/AGENTS.md" ]]; then
   echo "Warning: ~/.codex/AGENTS.md is missing. Create the user-global Codex surface first." >&2
 fi
 

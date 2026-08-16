@@ -2,6 +2,54 @@
 
 [Terminal experiment archive](EXPERIMENTS_ARCHIVE.md)
 
+## EXP-20260816-001 - Multi-Runtime Registry Write Containment
+
+Date: 2026-08-16
+Status: ACCEPTED
+
+Problem:
+The multi-runtime setup flow writes status and preference files after a user
+declines template installation, allowing a symlinked runtime `registry/`
+directory to redirect those writes outside the selected runtime home.
+
+Evidence:
+Security review reproduced the redirected write with exit status zero.
+
+Hypothesis:
+Validating each selected runtime and its `registry/` directory as regular,
+non-symlinked directories before any setup-owned file write will fail closed
+and prevent writes outside the selected runtime home.
+
+Solution Attempt:
+Add a narrow runtime-registry validation helper and a regression test; retain
+the existing installer, reset, and template overwrite behavior.
+
+Test:
+Run the regression against a symlinked `registry/`, then focused setup tests,
+syntax checks, and the full regression suite.
+
+Success Criteria:
+- A redirected registry path exits nonzero without creating files outside the runtime.
+- Normal selected runtimes still receive their status and preference files.
+- Existing symlink and installer safety tests remain green.
+
+Result:
+The new regression failed before the fix by writing both files outside the
+selected runtime through a symlinked registry. The first fix prevented that
+write, but review found that its single system write could publish truncated
+content. The revised writer loops until every byte is written before fsync and
+atomic replacement, then preserves an existing regular file's mode. A later
+review found the first mode fix overrode restrictive umasks for new files; the
+final revision retains the caller umask for new files and preserves existing
+modes. Tests assert complete content, preserved restrictive permissions, and a
+new-file `077` umask result.
+
+Decision:
+ACCEPT
+
+Notes:
+This record covers only setup-owned registry writes after a declined template installation.
+
 ## EXP-20260815-003 - Autonomous Main Plan Execution
 
 Date: 2026-08-15

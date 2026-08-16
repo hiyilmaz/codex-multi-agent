@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-16
+
+- [FEAT] EXP-20260816-001 interactive setup and project init now ask whether all active catalog
+  variants should be applied. Yes applies every variant without follow-up
+  selection prompts; no asks each variant individually. Explicit `--variant`
+  calls remain single-variant compatible, and batched project init preserves
+  additive ownership and records one ordered schema-2 variant set. Setup now
+  validates each runtime registry and writes its generated files through a
+  no-follow atomic path, preventing symlinked registry redirection.
+
 ## 2026-08-15
 
 - [FEAT] EXP-20260815-003 replaced per-task transition pauses with one approved

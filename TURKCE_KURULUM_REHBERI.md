@@ -43,6 +43,8 @@ bin/codex-setup
 
 Sihirbaz şunları sorar:
 
+- tüm etkin modellerin kurulup kurulmayacağı; **Evet** seçilirse her model
+  sorusuz uygulanır, **Hayır** seçilirse modeller tek tek sorulur
 - runtime hedef dizini
 - kullanıcı-global template kurulumu
 - kurulacak runtime versiyonu
@@ -175,6 +177,9 @@ Yeni projede komut ortak proje yüzeyini oluşturur. Mevcut projede init eklemel
 çalışır; `AGENTS.md` dosyasını korur, ortak promptları ve özelleştirilmiş
 dosyaları değiştirmez. Birden fazla runtime varyantı aynı projede birlikte
 kullanılabilir ve `.codex/template-state.json` içinde birlikte kaydedilir.
+`--variant` verilmezse önce tüm etkin modeller sorulur: **Evet** tümünü ekler,
+**Hayır** ise her varyantı tek tek seçtirir. `--variant` mevcut tek-varyant
+komut sözleşmesini korur.
 
 Ortak proje yapısını yalnız bilinçli olarak sıfırlamak için:
 

@@ -68,7 +68,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Skip apply confirmation; customized files are still preserved.",
     )
-    parser.add_argument("--variant", help="Runtime variant recorded in template state.")
+    parser.add_argument(
+        "--variant",
+        action="append",
+        help="Runtime variant recorded in template state; may be repeated.",
+    )
     parser.add_argument(
         "--record-initial-state",
         action="store_true",
@@ -180,9 +184,10 @@ def manifest_text(manifest: dict) -> str:
     return json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 
 
-def initial_manifest(repo_root: Path, project: Path, variant: str) -> dict:
+def initial_manifest(repo_root: Path, project: Path, variants: list[str]) -> dict:
     files: dict[str, dict[str, str]] = {"AGENTS.md": {"mode": "merge"}}
-    for relative_path in managed_templates(variant):
+    variants = ordered_variants(repo_root, variants)
+    for relative_path in managed_templates(variants):
         target = project / relative_path
         if not target.is_file():
             raise ValueError(f"missing initialized template file: {target}")
@@ -193,7 +198,7 @@ def initial_manifest(repo_root: Path, project: Path, variant: str) -> dict:
     return {
         "schema_version": SCHEMA_VERSION,
         "template_version": template_version(repo_root),
-        "variants": [variant],
+        "variants": variants,
         "files": files,
     }
 
@@ -321,7 +326,7 @@ def unified_diff(relative_path: str, before: str, after: str) -> str:
 def build_plan(
     repo_root: Path,
     project: Path,
-    requested_variant: str | None,
+    requested_variants: list[str] | None,
     additive: bool = False,
 ) -> dict:
     manifest_path = project / MANIFEST_PATH
@@ -329,7 +334,7 @@ def build_plan(
     legacy = previous_manifest is None
     existing_variants = previous_manifest.get("variants", []) if previous_manifest else []
     variants = list(existing_variants)
-    if requested_variant:
+    for requested_variant in requested_variants or []:
         validate_variant(repo_root, requested_variant)
         variants.append(requested_variant)
     if not variants:
@@ -563,10 +568,11 @@ def main() -> int:
             raise ValueError(f"project directory does not exist: {project}")
         validate_project_directories(project)
         if args.record_initial_state:
-            variant = args.variant or default_variant(repo_root)
-            validate_variant(repo_root, variant)
-            validate_project_directories(project, variant)
-            manifest = initial_manifest(repo_root, project, variant)
+            variants = args.variant or [default_variant(repo_root)]
+            for variant in variants:
+                validate_variant(repo_root, variant)
+            validate_project_directories(project, variants)
+            manifest = initial_manifest(repo_root, project, variants)
             atomic_write(project / MANIFEST_PATH, manifest_text(manifest))
             print(f"Created: {project / MANIFEST_PATH}")
             return 0

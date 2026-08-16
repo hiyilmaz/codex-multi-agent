@@ -16,6 +16,7 @@ TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 VARIANTS_CONFIG="$TEMPLATE_DIR/variants/config.toml"
 RUNTIME_HOME=""
 VARIANT_ID=""
+VARIANT_IDS=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -38,6 +39,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -n "$RUNTIME_HOME" && -z "$VARIANT_ID" ]]; then
+  echo "FAILED: --runtime-home requires --variant; each model has its own runtime home." >&2
+  exit 1
+fi
 
 ask_yes_no() {
   local prompt="$1"
@@ -125,6 +131,76 @@ expand_home_path() {
   esac
 }
 
+validate_runtime_registry() {
+  local runtime_home="$1"
+  local registry="$runtime_home/registry"
+
+  if [[ -L "$runtime_home" || -L "$registry" ]]; then
+    echo "FAILED: refusing symbolic link for runtime registry: $registry" >&2
+    exit 1
+  fi
+  if [[ -e "$runtime_home" && ! -d "$runtime_home" ]]; then
+    echo "FAILED: expected runtime home directory: $runtime_home" >&2
+    exit 1
+  fi
+  mkdir -p "$runtime_home"
+  if [[ -L "$runtime_home" || -L "$registry" ]]; then
+    echo "FAILED: refusing symbolic link for runtime registry: $registry" >&2
+    exit 1
+  fi
+  if [[ -e "$registry" && ! -d "$registry" ]]; then
+    echo "FAILED: expected runtime registry directory: $registry" >&2
+    exit 1
+  fi
+  mkdir -p "$registry"
+}
+
+safe_write_file() {
+  local directory="$1"
+  local filename="$2"
+  local content="$3"
+
+  python3 -c '
+import os
+import stat
+import sys
+
+directory, filename, content = sys.argv[1:]
+if stat.S_ISLNK(os.lstat(directory).st_mode):
+    raise SystemExit(f"FAILED: refusing symbolic link for runtime registry: {directory}")
+directory_fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+try:
+    mode = 0o666
+    preserve_mode = False
+    try:
+        target = os.stat(filename, dir_fd=directory_fd, follow_symlinks=False)
+        if stat.S_ISLNK(target.st_mode):
+            raise SystemExit(f"FAILED: refusing symbolic link for runtime registry file: {filename}")
+        if not stat.S_ISREG(target.st_mode):
+            raise SystemExit(f"FAILED: expected regular runtime registry file: {filename}")
+        mode = stat.S_IMODE(target.st_mode)
+        preserve_mode = True
+    except FileNotFoundError:
+        pass
+    temporary = f".{filename}.{os.getpid()}.tmp"
+    temporary_fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, mode, dir_fd=directory_fd)
+    try:
+        if preserve_mode:
+            os.fchmod(temporary_fd, mode)
+        payload = content.encode()
+        offset = 0
+        while offset < len(payload):
+            offset += os.write(temporary_fd, payload[offset:])
+        os.fsync(temporary_fd)
+    finally:
+        os.close(temporary_fd)
+    os.replace(temporary, filename, src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
+    os.fsync(directory_fd)
+finally:
+    os.close(directory_fd)
+' "$directory" "$filename" "$content"
+}
+
 write_status_messages() {
   local target="$1"
   local error_msg="$2"
@@ -132,8 +208,7 @@ write_status_messages() {
   local completed_msg="$4"
   local decision_msg="$5"
 
-  mkdir -p "$(dirname "$target")"
-  cat > "$target" <<EOF
+  safe_write_file "$(dirname "$target")" "$(basename "$target")" "$(cat <<EOF
 # Status Messages
 
 **Status:** Active
@@ -146,14 +221,14 @@ write_status_messages() {
 | decision_required | $decision_msg |
 | blocked | İlerleyemiyorum, kararını bekliyorum. |
 EOF
+  )"
 }
 
 write_setup_preferences() {
   local target="$1"
   local yolo_mode="$2"
 
-  mkdir -p "$(dirname "$target")"
-  cat > "$target" <<EOF
+  safe_write_file "$(dirname "$target")" "$(basename "$target")" "$(cat <<EOF
 # Setup Preferences
 
 **Status:** Active
@@ -181,32 +256,45 @@ YOLO mode must not bypass approval for:
 
 If any of these are needed: stop, report, and wait for user approval.
 EOF
+  )"
 }
 
 echo "Codex setup"
 echo "-----------"
 
 if [[ -z "$VARIANT_ID" ]]; then
-  echo "Available runtime variants:"
-  "$TEMPLATE_DIR/bin/codex-user-install" --list-variants
-  VARIANT_ID="$(ask_value "Runtime versiyonu" "$(default_variant)")"
-fi
-
-DEFAULT_RUNTIME_HOME="$(variant_default_home "$VARIANT_ID")"
-RUNTIME_HOME="$(ask_value "Runtime home dizini" "${RUNTIME_HOME:-$DEFAULT_RUNTIME_HOME}")"
-RUNTIME_HOME="$(expand_home_path "$RUNTIME_HOME")"
-echo
-
-if ask_yes_no "Runtime template kurulsun mu?" "y"; then
-  FORCE_FLAG=()
-  VARIANT_FLAG=()
-  VARIANT_FLAG=(--variant "$VARIANT_ID")
-  RUNTIME_HOME_FLAG=(--runtime-home "$RUNTIME_HOME")
-  if ask_yes_no "Mevcut template-managed dosyalar ezilsin mi?" "n"; then
-    FORCE_FLAG=(--force)
+  CATALOG_VARIANTS=()
+  while IFS=$'\t' read -r id _name _home; do CATALOG_VARIANTS+=("$id"); done < <("$TEMPLATE_DIR/bin/codex-user-install" --list-variants)
+  if ask_yes_no "Tüm modeller kurulsun mu?" "y"; then
+    VARIANT_IDS=("${CATALOG_VARIANTS[@]}")
+  else
+    for id in "${CATALOG_VARIANTS[@]}"; do
+      if ask_yes_no "$id kurulsun mu?" "n"; then VARIANT_IDS+=("$id"); fi
+    done
   fi
-  "$TEMPLATE_DIR/bin/codex-user-install" "${RUNTIME_HOME_FLAG[@]}" "${VARIANT_FLAG[@]}" "${FORCE_FLAG[@]}"
+  if [[ ${#VARIANT_IDS[@]} -eq 0 ]]; then
+    echo "No runtime variants selected; nothing changed."
+    exit 0
+  fi
+else
+  VARIANT_IDS=("$VARIANT_ID")
 fi
+
+RUNTIME_HOMES=()
+for variant in "${VARIANT_IDS[@]}"; do
+  DEFAULT_RUNTIME_HOME="$(variant_default_home "$variant")"
+  selected_home="$(ask_value "$variant runtime home dizini" "${RUNTIME_HOME:-$DEFAULT_RUNTIME_HOME}")"
+  selected_home="$(expand_home_path "$selected_home")"
+  RUNTIME_HOMES+=("$selected_home")
+  echo
+  if ask_yes_no "$variant runtime template kurulsun mu?" "y"; then
+    FORCE_FLAG=()
+    if ask_yes_no "Mevcut template-managed dosyalar ezilsin mi?" "n"; then
+      FORCE_FLAG=(--force)
+    fi
+    "$TEMPLATE_DIR/bin/codex-user-install" --runtime-home "$selected_home" --variant "$variant" "${FORCE_FLAG[@]}"
+  fi
+done
 
 echo
 if ask_yes_no "YOLO modu etkinleştirilsin mi?" "n"; then
@@ -226,18 +314,24 @@ echo
 DECISION_MSG="$(ask_value "Karar mesajı" "Karar gerekiyor, seni bekliyorum.")"
 echo
 
-write_status_messages "$RUNTIME_HOME/registry/STATUS_MESSAGES.md" "$ERROR_MSG" "$PERMISSION_MSG" "$COMPLETED_MSG" "$DECISION_MSG"
-write_setup_preferences "$RUNTIME_HOME/registry/SETUP_PREFERENCES.md" "$YOLO_MODE"
-
-echo "Yazıldı: $RUNTIME_HOME/registry/STATUS_MESSAGES.md"
-echo "Yazıldı: $RUNTIME_HOME/registry/SETUP_PREFERENCES.md"
+for runtime_home in "${RUNTIME_HOMES[@]}"; do
+  validate_runtime_registry "$runtime_home"
+done
+for runtime_home in "${RUNTIME_HOMES[@]}"; do
+  write_status_messages "$runtime_home/registry/STATUS_MESSAGES.md" "$ERROR_MSG" "$PERMISSION_MSG" "$COMPLETED_MSG" "$DECISION_MSG"
+  write_setup_preferences "$runtime_home/registry/SETUP_PREFERENCES.md" "$YOLO_MODE"
+  echo "Yazıldı: $runtime_home/registry/STATUS_MESSAGES.md"
+  echo "Yazıldı: $runtime_home/registry/SETUP_PREFERENCES.md"
+done
 
 echo
 if ask_yes_no "Bir proje içine CMA yapısı kurulsun mu?" "n"; then
   PROJECT_PATH="$(ask_value "Proje dizini" "/path/to/project")"
   echo
   echo "Proje kurulumu başlatılıyor. Komut kendi onayını ayrıca soracaktır."
-  "$TEMPLATE_DIR/bin/codex-project-init" --variant "$VARIANT_ID" "$PROJECT_PATH"
+  PROJECT_VARIANT_ARGS=()
+  for variant in "${VARIANT_IDS[@]}"; do PROJECT_VARIANT_ARGS+=(--variant "$variant"); done
+  "$TEMPLATE_DIR/bin/codex-project-init" "${PROJECT_VARIANT_ARGS[@]}" "$PROJECT_PATH"
 fi
 
 echo

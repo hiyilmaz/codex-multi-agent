@@ -187,14 +187,21 @@ Run the interactive setup:
 bin/codex-setup
 ```
 
-Initialize a project or add a runtime variant:
+Without `--variant`, setup asks whether to install all catalog variants. Answer
+yes to install every active variant without further selection questions; answer
+no to choose each variant individually. `--variant <id>` keeps the explicit
+single-variant flow.
+
+Initialize a project or add runtime variants:
 
 ```bash
 bin/codex-project-init /path/to/project
 ```
 
-On a new project, init creates the shared project instructions and the selected
-variant surface. On an existing project, init is additive: it preserves
+Without `--variant`, init asks whether to apply every active catalog variant;
+declining asks each one individually. On a new project, init creates the shared
+project instructions and all selected variant surfaces. On an existing project,
+init is additive: it preserves
 `AGENTS.md`, shared prompts, customized files, and every existing variant while
 adding only the requested surface. Multiple runtime variants can coexist and
 are recorded in `.codex/template-state.json`.

@@ -99,11 +99,13 @@ For guided installation, use the interactive setup:
 bin/codex-setup
 ```
 
-The setup wizard asks for:
+The setup wizard asks whether to install all catalog models first. Answering
+yes installs every active variant without individual variant prompts; answering
+no asks once for each variant. An explicit `--variant` keeps the single-variant
+flow. The wizard then asks for:
 
 - runtime home path, defaulting to the selected variant default
 - whether to install the portable user-global template
-- which runtime variant to install when no `--variant` option is provided
 - whether to overwrite existing template-managed files
 - whether to enable YOLO mode
 - default status messages for error, permission, completed, and decision states
@@ -133,8 +135,10 @@ rejects `--force`; in guided Claude setup, decline the overwrite prompt.
 bin/codex-project-init /new-project
 ```
 
-For a new project, the command asks for confirmation and creates the shared
-project surface. For an existing project, init is additive: it preserves
+Without `--variant`, project init asks whether to apply all active catalog
+variants; declining presents one choice per variant. For a new project, the
+command asks for confirmation and creates the shared project surface plus the
+selected variant surfaces. For an existing project, init is additive: it preserves
 `AGENTS.md`, shared prompts, customized configuration, and other variant files.
 Multiple runtime variants can coexist in one project and are recorded together
 in `.codex/template-state.json`.

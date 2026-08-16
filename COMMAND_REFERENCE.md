@@ -34,6 +34,10 @@ Start the interactive runtime and optional project setup:
 bin/codex-setup
 ```
 
+Without `--variant`, this asks whether to install all active catalog variants.
+Yes installs all without individual prompts; no asks once per variant. A custom
+runtime home requires an explicit single `--variant`.
+
 Select a variant explicitly:
 
 ```bash
@@ -135,7 +139,7 @@ new instructions, skills, and registry entries are loaded.
 
 ## Initialize, Add A Variant, Or Reset
 
-Initialize a project with the default variant:
+Interactively initialize a project with all or individually selected variants:
 
 ```bash
 bin/codex-project-init "/absolute/path/to/project"

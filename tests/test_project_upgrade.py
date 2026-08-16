@@ -49,6 +49,15 @@ class ProjectUpgradeTests(unittest.TestCase):
         )
         return project
 
+    def catalog_variants(self) -> list[str]:
+        return [
+            line.split('"', 2)[1]
+            for line in (REPO_ROOT / "variants/config.toml").read_text(
+                encoding="utf-8"
+            ).splitlines()
+            if line.startswith("id = ")
+        ]
+
     def assert_evidence_mode_prompt_contract(self, text: str) -> None:
         required = (
             "`EVIDENCE_MODE` must be exactly `enable` or `disable`.",
@@ -84,6 +93,54 @@ class ProjectUpgradeTests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse((project / ".codex/template-state.json").exists())
+
+    def test_interactive_init_all_models_creates_every_catalog_surface(self) -> None:
+        project = self.root / "all-models"
+        project.mkdir()
+
+        result = self.run_command(PROJECT_INIT, project, input_text="y\ny\n")
+
+        state = json.loads((project / ".codex/template-state.json").read_text())
+        self.assertEqual(state["variants"], self.catalog_variants())
+        self.assertTrue((project / ".codex/config.toml").is_file())
+        self.assertTrue((project / "CLAUDE.md").is_file())
+        self.assertTrue((project / ".claude/settings.json").is_file())
+        self.assertTrue((project / ".opencode/opencode.json").is_file())
+        self.assertNotIn("codex kurulsun mu?", result.stdout + result.stderr)
+
+    def test_interactive_init_individual_models_creates_selected_subset(self) -> None:
+        project = self.root / "selected-models"
+        project.mkdir()
+
+        result = self.run_command(
+            PROJECT_INIT, project, input_text="n\ny\nn\ny\ny\n"
+        )
+
+        state = json.loads((project / ".codex/template-state.json").read_text())
+        self.assertEqual(state["variants"], ["codex", "opencode"])
+        self.assertTrue((project / ".codex/config.toml").is_file())
+        self.assertTrue((project / ".opencode/opencode.json").is_file())
+        self.assertFalse((project / "CLAUDE.md").exists())
+        self.assertFalse((project / ".claude/settings.json").exists())
+        prompts = result.stdout + result.stderr
+        for variant in self.catalog_variants():
+            self.assertEqual(prompts.count(f"{variant} kurulsun mu?"), 1)
+
+    def test_interactive_all_models_adds_variants_without_replacing_shared_files(
+        self,
+    ) -> None:
+        project = self.initialize("add-all-interactive")
+        agents = project / "AGENTS.md"
+        agents.write_text(agents.read_text(encoding="utf-8") + "\nLocal sentinel.\n")
+        shared_hash = sha256(agents)
+        archives = sorted((project / ".codex/archive").glob("init-*"))
+
+        self.run_command(PROJECT_INIT, project, input_text="y\ny\n")
+
+        state = json.loads((project / ".codex/template-state.json").read_text())
+        self.assertEqual(state["variants"], self.catalog_variants())
+        self.assertEqual(sha256(agents), shared_hash)
+        self.assertEqual(sorted((project / ".codex/archive").glob("init-*")), archives)
 
     def test_claude_init_creates_minimal_bridge_and_state(self) -> None:
         project = self.initialize("claude-project", "claude")

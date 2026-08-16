@@ -27,6 +27,13 @@ class VariantInstallTests(unittest.TestCase):
                     current[key] = value[1:-1]
         return variants
 
+    def assert_default_runtime_active(self, home: Path, variant: dict) -> None:
+        if variant["id"] == "opencode":
+            self.assertTrue((home / "skills/opencode-docs/SKILL.md").is_file())
+        else:
+            self.assertTrue((home / variant["policy_file"]).is_file())
+            self.assertTrue((home / variant["settings_file"]).is_file())
+
     def test_catalog_registers_three_complete_unique_variants(self) -> None:
         variants = self.variants()
         self.assertEqual(
@@ -54,6 +61,127 @@ class VariantInstallTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         listed = [line.split("\t", 1)[0] for line in result.stdout.splitlines()]
         self.assertEqual(listed, [item["id"] for item in self.variants()])
+
+    def test_setup_all_models_installs_every_catalog_variant(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            environment = {**os.environ, "HOME": str(root / "home")}
+            result = subprocess.run(
+                (str(SETUP),),
+                cwd=REPO_ROOT,
+                env=environment,
+                input="y\n\ny\nn\n\ny\nn\n\ny\nn\nn\n\n\n\n\nn\n",
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            prompts = result.stdout + result.stderr
+            self.assertEqual(prompts.count("Tüm modeller kurulsun mu?"), 1)
+            for variant in self.variants():
+                home = root / "home" / variant["default_home"].removeprefix("~/")
+                with self.subTest(variant=variant["id"]):
+                    self.assert_default_runtime_active(home, variant)
+                    status = (home / "registry/STATUS_MESSAGES.md").read_text(
+                        encoding="utf-8"
+                    )
+                    self.assertIn("| blocked | İlerleyemiyorum, kararını bekliyorum. |", status)
+                    self.assertNotIn(f"{variant['id']} kurulsun mu?", prompts)
+
+    def test_setup_individual_models_installs_selected_subset(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            environment = {**os.environ, "HOME": str(root / "home")}
+            result = subprocess.run(
+                (str(SETUP),),
+                cwd=REPO_ROOT,
+                env=environment,
+                input="n\ny\nn\ny\n\ny\nn\n\ny\nn\nn\n\n\n\n\nn\n",
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            prompts = result.stdout + result.stderr
+            selected = {"codex", "opencode"}
+            for variant in self.variants():
+                home = root / "home" / variant["default_home"].removeprefix("~/")
+                self.assertEqual(prompts.count(f"{variant['id']} kurulsun mu?"), 1)
+                with self.subTest(variant=variant["id"]):
+                    if variant["id"] in selected:
+                        self.assert_default_runtime_active(home, variant)
+                    else:
+                        self.assertFalse(home.exists())
+
+    def test_setup_rejects_symlinked_registry_before_status_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            runtime = root / "runtime"
+            outside = root / "outside"
+            runtime.mkdir()
+            outside.mkdir()
+            (runtime / "registry").symlink_to(outside, target_is_directory=True)
+
+            result = subprocess.run(
+                (str(SETUP), "--variant", "codex", "--runtime-home", str(runtime)),
+                cwd=REPO_ROOT,
+                env={**os.environ, "HOME": str(root / "home")},
+                input="\nn\nn\n\n\n\n\nn\n",
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("symbolic link", result.stderr.lower())
+            self.assertFalse((outside / "STATUS_MESSAGES.md").exists())
+            self.assertFalse((outside / "SETUP_PREFERENCES.md").exists())
+
+    def test_setup_preserves_existing_registry_file_permissions(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            runtime = root / "runtime"
+            registry = runtime / "registry"
+            registry.mkdir(parents=True)
+            for name in ("STATUS_MESSAGES.md", "SETUP_PREFERENCES.md"):
+                path = registry / name
+                path.write_text("local\n", encoding="utf-8")
+                path.chmod(0o600)
+
+            result = subprocess.run(
+                (str(SETUP), "--variant", "codex", "--runtime-home", str(runtime)),
+                cwd=REPO_ROOT,
+                env={**os.environ, "HOME": str(root / "home")},
+                input="\nn\nn\n\n\n\n\nn\n",
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for name in ("STATUS_MESSAGES.md", "SETUP_PREFERENCES.md"):
+                self.assertEqual((registry / name).stat().st_mode & 0o777, 0o600)
+
+    def test_setup_respects_restrictive_umask_for_new_registry_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            runtime = root / "runtime"
+            result = subprocess.run(
+                (str(SETUP), "--variant", "codex", "--runtime-home", str(runtime)),
+                cwd=REPO_ROOT,
+                env={**os.environ, "HOME": str(root / "home")},
+                input="\nn\nn\n\n\n\n\nn\n",
+                text=True,
+                capture_output=True,
+                check=False,
+                preexec_fn=lambda: os.umask(0o077),
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for name in ("STATUS_MESSAGES.md", "SETUP_PREFERENCES.md"):
+                self.assertEqual(
+                    (runtime / "registry" / name).stat().st_mode & 0o777, 0o600
+                )
 
     def test_retired_dolphin_variant_is_rejected_without_touching_runtime(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
