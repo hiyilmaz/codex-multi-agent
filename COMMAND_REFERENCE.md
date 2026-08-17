@@ -27,6 +27,12 @@ Available runtime variants:
 | `claude` | `~/.claude` | `~/.claude/bin/llm-claude` |
 | `opencode` | `~/.config/opencode` | Native `opencode` command. |
 
+Each variant packages the same Evidence-First Objectivity behavior for claims,
+recommendations, material choices, and disputed topics. It favors verifiable,
+independent evidence; includes counterevidence, conflict, risk, and uncertainty;
+and does not impose research on routine coding, editing, translation, or
+operational tasks.
+
 ## Guided Setup
 
 Start the interactive runtime and optional project setup:
@@ -138,8 +144,9 @@ Refresh template-managed runtime files intentionally:
 bin/codex-user-install --variant codex --force
 ```
 
-`--force` overwrites existing files managed by the runtime template. Review or
-back up locally customized runtime files before using it. Native Claude
+`--force` overwrites existing non-policy files managed by the runtime template.
+Existing global instruction files remain unchanged and receive a private
+snapshot plus `prompts/merge-existing-instructions.md`. Native Claude
 activation rejects `--force` and uses a preservation-first overlay instead.
 
 For guided Claude setup, answer `no` when asked whether existing
@@ -162,13 +169,14 @@ executes the native `claude` binary. Installation preserves existing
 `~/.claude/CLAUDE.md` and `settings.json`; it does not install the Agent SDK or
 perform login. Explicit alternate `--runtime-home` targets remain isolated.
 
-Native activation writes CMA policy to `~/.claude/registry/CMA_GLOBAL.md` and
-adds exactly one functional `@registry/CMA_GLOBAL.md` import to the existing
-`~/.claude/CLAUDE.md`. When that file already exists, its recovery copy and
-SHA-256 checksum are stored under:
+Native activation writes the CMA candidate to
+`~/.claude/registry/CMA_GLOBAL.md` without importing it automatically. When
+`~/.claude/CLAUDE.md` exists, its private snapshot and merge prompt are stored
+under:
 
 ```text
-~/.claude/backups/cma-activation-<UTC timestamp>-<suffix>/
+~/.claude/backups/instruction-merge/
+~/.claude/prompts/merge-existing-instructions.md
 ```
 
 The command fails closed before overwriting a differing CMA-managed file or
@@ -209,6 +217,14 @@ bin/codex-project-init --reset --variant codex "/absolute/path/to/project"
 
 Reset asks for confirmation and writes conflicting files to a private recovery
 archive. Normal additive init never resets an existing project.
+
+When existing instructions are present, additive init creates a private,
+content-addressed snapshot under `.codex/archive/instruction-merge/` and a
+path-only `.codex/prompts/merge-existing-instructions.md`. Claude receives a
+separate Claude merge prompt when applicable. The prompts return proposed diffs
+for user approval and do not write files.
+If the requested prompt filename already has different content, it is preserved
+and the generated prompt uses a content-hash suffix reported by the command.
 
 After initialization, use this generated prompt in the project Codex session:
 

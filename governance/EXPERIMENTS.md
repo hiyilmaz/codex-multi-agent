@@ -2,6 +2,128 @@
 
 [Terminal experiment archive](EXPERIMENTS_ARCHIVE.md)
 
+## EXP-20260817-003 - Evidence-First Objectivity Policy
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+The core CMA policies require honesty and authoritative research, but they do
+not explicitly require evidence-supported conclusions over user agreement,
+credible counterevidence, source-independence checks, or a clear separation of
+verified facts, source claims, inferences, and opinions.
+
+Evidence:
+The approved policy review found these behaviors absent from the canonical
+Codex template and the Codex, Claude, and OpenCode projections. Applying an
+unbounded research rule to every task would also create unnecessary sourcing
+for routine coding, editing, translation, and operational work.
+
+Hypothesis:
+Adding one equivalent, evaluation-scoped Evidence-First Objectivity contract to
+all three runtime policies will improve neutrality and uncertainty reporting
+without forcing research for routine tasks.
+
+Solution Attempt:
+Add the approved eight-part semantic contract beneath Language And Conduct in
+the canonical template and every native projection, then document its scope.
+Do not add dependencies, automatic browsing, provider behavior, or mutate an
+active user runtime.
+
+Test:
+Capture RED with positive and negative semantic contract tests, including a
+diluted-policy mutant and an overbroad every-task research mutant. Then run
+policy parity and portable-install tests, the full repository suite, static
+checks, and independent code and security reviews.
+
+Success Criteria:
+- Codex template/projection parity remains byte-identical.
+- Codex, Claude, and OpenCode carry all eight approved semantic requirements.
+- Material decisions require genuinely independent evidence where available.
+- Counterevidence, conflicts, uncertainty, and fact/claim/inference/opinion
+  distinctions cannot be removed without failing tests.
+- Routine tasks do not acquire a mandatory research requirement.
+- No active user-global policy is modified by this repository-only change.
+
+Result:
+The canonical Codex template and Codex projection remain byte-identical at
+policy version 2.6, while Claude and OpenCode carry the same eight semantic
+requirements. Contract tests reject missing clauses, diluted objectivity,
+repeated-reporting source inflation, blanket every-task research, unconditional
+research, and explicit research mandates for routine work. Portable installs
+for all three variants expose the contract. Focused policy/runtime checks
+passed, the full repository suite passed 374/374, code review passed after two
+false-positive mutants tightened the oracle, and security review reported
+`NO_SECURITY_IMPACT` with no new browsing or execution authority.
+
+Decision:
+ACCEPT
+
+Notes:
+Existing native-policy preservation and merge-prompt behavior remains unchanged.
+
+## EXP-20260817-002 - Controlled Instruction Merge Hardening
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+The first controlled instruction-merge implementation can replace an existing
+user prompt, treats path and document content as trusted AI instructions, and
+uses check-then-open path operations that can be redirected by a concurrent
+ancestor swap.
+
+Evidence:
+Independent security review reproduced replacement of a custom prompt and
+identified unescaped prompt metadata, missing untrusted-document boundaries,
+and pathname-based source and destination races. It also found that prompt
+validation occurred after the confidential snapshot was persisted.
+
+Hypothesis:
+A descriptor-pinned, no-clobber publication helper with encoded metadata and an
+explicit untrusted-data merge protocol will preserve user files, contain
+snapshots, and prevent loaded instructions or path names from overriding the
+diff-only contract.
+
+Solution Attempt:
+Harden the single instruction merge helper: preflight all outputs, refuse
+existing non-CMA prompts, reuse only byte-identical generated prompts, pin file
+and directory operations with directory descriptors and no-follow flags, and
+encode prompt metadata while classifying both input documents as untrusted
+data.
+
+Test:
+Add regressions for custom prompt preservation, newline/control metadata,
+embedded hostile instructions, ancestor-swap resistance, and no partial
+snapshot on an unsafe prompt destination. Run focused installer/init tests,
+the full suite, static checks, and repeated independent code/security review.
+
+Success Criteria:
+- Existing user-owned prompt content is never overwritten.
+- Generated metadata cannot create Markdown instructions or extra fields.
+- Input documents are handled only as merge data, never executable commands.
+- Concurrently swapped source/destination ancestors cannot redirect reads or writes.
+- A failed preflight leaves no new confidential snapshot.
+- All focused and full regression checks pass and both reviews approve.
+
+Result:
+The helper now pins every source and destination ancestor with directory file
+descriptors and `O_NOFOLLOW`, publishes files atomically without replacement,
+preserves differing prompt content through deterministic hash-suffixed names,
+and validates the prompt destination before persisting confidential snapshots.
+Prompt metadata is Base64URL-encoded, referenced documents are explicitly
+untrusted/non-executable data, and runtime-rewritten candidates stay private.
+Custom-prompt, unsafe-target, hostile-metadata/document, and concurrent
+source/destination ancestor-swap regressions passed; the race suite passed
+10/10 three consecutive times, the full repository suite passed 370/370, and
+independent code and security re-reviews both passed.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment is limited to the approved instruction snapshot and merge-prompt flow.
+
 ## EXP-20260817-001 - Independent Codex Tools Integration
 
 Date: 2026-08-17

@@ -44,6 +44,8 @@ fi
 
 SOURCE_SKILLS="$SOURCE_ROOT/core-skills/projections/opencode"
 VENDOR_SKILL="$SOURCE_ROOT/variants/opencode/home/skills/opencode-docs/SKILL.md"
+GLOBAL_CANDIDATE="$SOURCE_ROOT/variants/opencode/home/AGENTS.md"
+MERGE_HELPER="$SOURCE_ROOT/bin/cma-instruction-merge-prompt"
 SKILL_IDS=(ast-grep betterleaks context7 cplt deepwiki github graphify opengrep osv-scanner serena opencode-docs)
 for id in "${SKILL_IDS[@]}"; do
   source="$SOURCE_SKILLS/$id/SKILL.md"
@@ -52,6 +54,14 @@ for id in "${SKILL_IDS[@]}"; do
     echo "FAILED: incomplete or unsafe OpenCode source: $id" >&2; exit 1
   fi
 done
+if [[ ! -f "$GLOBAL_CANDIDATE" || -L "$GLOBAL_CANDIDATE" ||
+      ! -x "$MERGE_HELPER" || -L "$MERGE_HELPER" ]]; then
+  echo "FAILED: incomplete or unsafe OpenCode instruction merge source" >&2; exit 1
+fi
+
+if [[ -L "$RUNTIME_HOME/AGENTS.md" || ( -e "$RUNTIME_HOME/AGENTS.md" && ! -f "$RUNTIME_HOME/AGENTS.md" ) ]]; then
+  echo "FAILED: unsafe native OpenCode instructions" >&2; exit 1
+fi
 
 if [[ -L "$RUNTIME_HOME/skills" || ( -e "$RUNTIME_HOME/skills" && ! -d "$RUNTIME_HOME/skills" ) ]]; then
   echo "FAILED: unsafe managed skills directory" >&2; exit 1
@@ -78,6 +88,15 @@ ALL_PRESENT="true"
 for id in "${SKILL_IDS[@]}"; do
   [[ -f "$RUNTIME_HOME/skills/$id/SKILL.md" ]] || { ALL_PRESENT="false"; break; }
 done
+if [[ -f "$RUNTIME_HOME/AGENTS.md" ]]; then
+  "$MERGE_HELPER" \
+    --source "$RUNTIME_HOME/AGENTS.md" \
+    --candidate "$GLOBAL_CANDIDATE" \
+    --snapshot-root "$RUNTIME_HOME/backups/instruction-merge" \
+    --prompt "$RUNTIME_HOME/prompts/merge-existing-instructions.md" \
+    --scope user-global \
+    --variant opencode
+fi
 if [[ "$ALL_PRESENT" == "true" ]]; then
   echo "OpenCode CMA already active at: $RUNTIME_HOME"; exit 0
 fi

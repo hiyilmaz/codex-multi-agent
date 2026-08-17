@@ -14,6 +14,37 @@ INSTALLER = REPO_ROOT / "bin/codex-user-install"
 
 
 class OpenCodeRuntimeTests(unittest.TestCase):
+    def test_native_activation_preserves_existing_policy_and_generates_merge_prompt(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            home = root / "home"
+            native = home / ".config/opencode"
+            native.mkdir(parents=True)
+            policy = b"# Existing OpenCode policy\n\nprivate-rule\n"
+            (native / "AGENTS.md").write_bytes(policy)
+
+            result = subprocess.run(
+                (str(INSTALLER), "--variant", "opencode"),
+                cwd=REPO_ROOT,
+                env={**os.environ, "HOME": str(home)},
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual((native / "AGENTS.md").read_bytes(), policy)
+            snapshots = list(
+                (native / "backups/instruction-merge").glob(
+                    "instruction-merge-*/AGENTS.md"
+                )
+            )
+            self.assertEqual(len(snapshots), 1)
+            self.assertEqual(snapshots[0].read_bytes(), policy)
+            prompt = native / "prompts/merge-existing-instructions.md"
+            self.assertTrue(prompt.is_file())
+            self.assertNotIn("private-rule", prompt.read_text(encoding="utf-8"))
+
     def test_config_uses_only_stable_provider_neutral_fields(self) -> None:
         config = json.loads((HOME / "opencode.json").read_text(encoding="utf-8"))
         self.assertEqual(

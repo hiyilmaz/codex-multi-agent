@@ -18,17 +18,16 @@ SOURCE_HOME="$REPO_ROOT/variants/claude/home"
 SOURCE_LAUNCHER="$REPO_ROOT/variants/claude/bin/claude"
 CORE_SKILLS_HOME="$REPO_ROOT/core-skills/projections/claude"
 VENDOR_SKILL="$SOURCE_HOME/skills/claude-docs/SKILL.md"
+MERGE_HELPER="$REPO_ROOT/bin/cma-instruction-merge-prompt"
 CORE_SKILL_IDS=(ast-grep betterleaks context7 cplt deepwiki github graphify opengrep osv-scanner serena claude-docs)
 NATIVE_HOME="${HOME}/.claude"
 RUNTIME_HOME="$NATIVE_HOME"
 FORCE="false"
-IMPORT_LINE="@registry/CMA_GLOBAL.md"
 CREATED_FILES=()
 CREATED_DIRS=()
 INCOMPLETE_BACKUP_FILES=()
 BACKUP_DIR=""
 BACKUP_READY="false"
-CLAUDE_CHANGED="false"
 CLAUDE_EXISTED="false"
 
 while [[ $# -gt 0 ]]; do
@@ -126,6 +125,10 @@ if [[ ! -f "$SOURCE_LAUNCHER" || -L "$SOURCE_LAUNCHER" ]]; then
   echo "FAILED: missing or unsafe Claude launcher" >&2
   exit 1
 fi
+if [[ ! -x "$MERGE_HELPER" || -L "$MERGE_HELPER" ]]; then
+  echo "FAILED: missing or unsafe instruction merge helper" >&2
+  exit 1
+fi
 for core_skill in "${CORE_SKILL_IDS[@]}"; do
   core_source="$CORE_SKILLS_HOME/$core_skill/SKILL.md"
   [[ "$core_skill" == "claude-docs" ]] && core_source="$VENDOR_SKILL"
@@ -181,31 +184,6 @@ assert_safe_target() {
   fi
 }
 
-functional_import_count() {
-  python3 - "$1" "$IMPORT_LINE" <<'PY'
-import re
-import sys
-from pathlib import Path
-
-text = Path(sys.argv[1]).read_text(encoding="utf-8")
-needle = sys.argv[2]
-text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
-inside_fence = False
-count = 0
-for line in text.splitlines():
-    stripped = line.strip()
-    if stripped.startswith("```") or stripped.startswith("~~~"):
-        inside_fence = not inside_fence
-        continue
-    if inside_fence:
-        continue
-    without_inline = re.sub(r"`[^`]*`", "", line).strip()
-    if without_inline == needle:
-        count += 1
-print(count)
-PY
-}
-
 if [[ -e "$RUNTIME_HOME/CLAUDE.md" ]]; then
   assert_safe_target "$RUNTIME_HOME/CLAUDE.md"
   CLAUDE_EXISTED="true"
@@ -214,15 +192,6 @@ if [[ -e "$RUNTIME_HOME/settings.json" ]]; then
   assert_safe_target "$RUNTIME_HOME/settings.json"
 fi
 assert_safe_target "$RUNTIME_HOME/backups/placeholder"
-
-IMPORT_COUNT="0"
-if [[ "$CLAUDE_EXISTED" == "true" ]]; then
-  IMPORT_COUNT="$(functional_import_count "$RUNTIME_HOME/CLAUDE.md")"
-  if [[ "$IMPORT_COUNT" -gt 1 ]]; then
-    echo "FAILED: duplicate functional CMA imports in $RUNTIME_HOME/CLAUDE.md" >&2
-    exit 1
-  fi
-fi
 
 NEEDS_MUTATION="false"
 while IFS= read -r relative; do
@@ -266,8 +235,15 @@ if [[ -e "$LAUNCHER_TARGET" ]]; then
 else
   NEEDS_MUTATION="true"
 fi
-if [[ "$IMPORT_COUNT" -eq 0 ]]; then
-  NEEDS_MUTATION="true"
+
+if [[ "$CLAUDE_EXISTED" == "true" ]]; then
+  "$MERGE_HELPER" \
+    --source "$RUNTIME_HOME/CLAUDE.md" \
+    --candidate "$SOURCE_HOME/CLAUDE.md" \
+    --snapshot-root "$RUNTIME_HOME/backups/instruction-merge" \
+    --prompt "$RUNTIME_HOME/prompts/merge-existing-instructions.md" \
+    --scope user-global \
+    --variant claude
 fi
 
 if [[ "$NEEDS_MUTATION" != "true" ]]; then
@@ -287,13 +263,6 @@ rollback() {
   local status="$?"
   trap - ERR
   set +e
-  if [[ "$CLAUDE_CHANGED" == "true" ]]; then
-    if [[ "$CLAUDE_EXISTED" == "true" && "$BACKUP_READY" == "true" ]]; then
-      cp -p "$BACKUP_DIR/CLAUDE.md" "$RUNTIME_HOME/CLAUDE.md"
-    elif [[ "$CLAUDE_EXISTED" != "true" ]]; then
-      rm -f "$RUNTIME_HOME/CLAUDE.md"
-    fi
-  fi
   local index
   for ((index=${#CREATED_FILES[@]}-1; index>=0; index--)); do
     rm -f "${CREATED_FILES[$index]}"
@@ -318,20 +287,6 @@ ensure_directory "$RUNTIME_HOME"
 ensure_directory "$RUNTIME_HOME/backups"
 BACKUP_DIR="$(mktemp -d "$RUNTIME_HOME/backups/cma-activation-$(date -u +%Y%m%dT%H%M%SZ)-XXXXXX")"
 CREATED_DIRS+=("$BACKUP_DIR")
-if [[ "$CLAUDE_EXISTED" == "true" ]]; then
-  BACKUP_POLICY_TEMP="$(mktemp "$BACKUP_DIR/.CLAUDE.md.XXXXXX")"
-  CREATED_FILES+=("$BACKUP_POLICY_TEMP")
-  INCOMPLETE_BACKUP_FILES+=("$BACKUP_POLICY_TEMP")
-  cp -p "$RUNTIME_HOME/CLAUDE.md" "$BACKUP_POLICY_TEMP"
-  mv "$BACKUP_POLICY_TEMP" "$BACKUP_DIR/CLAUDE.md"
-  INCOMPLETE_BACKUP_FILES+=("$BACKUP_DIR/CLAUDE.md")
-  BACKUP_HASH_TEMP="$(mktemp "$BACKUP_DIR/.CLAUDE.md.sha256.XXXXXX")"
-  CREATED_FILES+=("$BACKUP_HASH_TEMP")
-  INCOMPLETE_BACKUP_FILES+=("$BACKUP_HASH_TEMP")
-  shasum -a 256 "$BACKUP_DIR/CLAUDE.md" > "$BACKUP_HASH_TEMP"
-  mv "$BACKUP_HASH_TEMP" "$BACKUP_DIR/CLAUDE.md.sha256"
-  INCOMPLETE_BACKUP_FILES+=("$BACKUP_DIR/CLAUDE.md.sha256")
-fi
 BACKUP_READY="true"
 
 install_missing_file() {
@@ -383,23 +338,9 @@ if [[ -e "$LAUNCHER_TARGET" && ! -x "$LAUNCHER_TARGET" ]]; then
 fi
 install_missing_file "$SOURCE_LAUNCHER" "$LAUNCHER_TARGET" "true"
 
-if [[ "$IMPORT_COUNT" -eq 0 ]]; then
-  if [[ "$CLAUDE_EXISTED" == "true" ]]; then
-    TEMP_POLICY="$(mktemp "$RUNTIME_HOME/.CLAUDE.md.cma.XXXXXX")"
-    CREATED_FILES+=("$TEMP_POLICY")
-    cp -p "$RUNTIME_HOME/CLAUDE.md" "$TEMP_POLICY"
-    printf "\n%s\n" "$IMPORT_LINE" >> "$TEMP_POLICY"
-    mv "$TEMP_POLICY" "$RUNTIME_HOME/CLAUDE.md"
-  else
-    printf "%s\n" "$IMPORT_LINE" > "$RUNTIME_HOME/CLAUDE.md"
-    CREATED_FILES+=("$RUNTIME_HOME/CLAUDE.md")
-  fi
-  CLAUDE_CHANGED="true"
-fi
-
 {
   printf "runtime_home=%s\n" "$RUNTIME_HOME"
-  printf "import=%s\n" "$IMPORT_LINE"
+  printf "native_policy=preserved\n"
   printf "created_files=%s\n" "${#CREATED_FILES[@]}"
 } > "$BACKUP_DIR/activation-manifest.txt"
 

@@ -26,10 +26,16 @@ EOF
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+MERGE_HELPER="$TEMPLATE_DIR/bin/cma-instruction-merge-prompt"
 VARIANT_ID=""
 VARIANT_IDS=()
 PROJECT_PATH=""
 RESET="false"
+
+if [[ ! -x "$MERGE_HELPER" || -L "$MERGE_HELPER" ]]; then
+  echo "FAILED: missing or unsafe instruction merge helper" >&2
+  exit 1
+fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -134,6 +140,19 @@ for directory in "${PROJECT_DIRECTORIES[@]}"; do
   fi
 done
 
+generate_merge_prompt() {
+  local source="$1" candidate="$2" prompt_name="$3" target="${4:-$1}" variants
+  variants="$(IFS=,; echo "${VARIANT_IDS[*]}")"
+  "$MERGE_HELPER" \
+    --source "$source" \
+    --target "$target" \
+    --candidate "$candidate" \
+    --snapshot-root "$PROJECT_PATH/.codex/archive/instruction-merge" \
+    --prompt "$PROJECT_PATH/.codex/prompts/$prompt_name" \
+    --scope project \
+    --variant "$variants"
+}
+
 if [[ -L "$PROJECT_PATH/AGENTS.md" ]]; then
   echo "FAILED: refusing symbolic link for project AGENTS.md: $PROJECT_PATH/AGENTS.md" >&2
   exit 1
@@ -144,6 +163,16 @@ if [[ -e "$PROJECT_PATH/AGENTS.md" && ! -f "$PROJECT_PATH/AGENTS.md" ]]; then
 fi
 if [[ -f "$PROJECT_PATH/AGENTS.md" && "$RESET" != "true" ]]; then
   echo "Existing project detected; adding variants without resetting shared files."
+  generate_merge_prompt \
+    "$PROJECT_PATH/AGENTS.md" \
+    "$TEMPLATE_DIR/PROJECT_AGENTS_TEMPLATE.md" \
+    "merge-existing-instructions.md"
+  if [[ " ${VARIANT_IDS[*]} " == *" claude " && -f "$PROJECT_PATH/CLAUDE.md" ]]; then
+    generate_merge_prompt \
+      "$PROJECT_PATH/CLAUDE.md" \
+      "$TEMPLATE_DIR/PROJECT_CLAUDE_TEMPLATE.md" \
+      "merge-existing-claude-instructions.md"
+  fi
   UPGRADE_VARIANT_ARGS=()
   for variant in "${VARIANT_IDS[@]}"; do UPGRADE_VARIANT_ARGS+=(--variant "$variant"); done
   exec "$TEMPLATE_DIR/bin/codex-project-upgrade" --apply --add-variant "${UPGRADE_VARIANT_ARGS[@]}" "$PROJECT_PATH"
@@ -237,6 +266,20 @@ for variant in "${VARIANT_IDS[@]}"; do
     cp "$TEMPLATE_DIR/CLAUDE_SETTINGS_EXAMPLE.json" "$PROJECT_PATH/.claude/settings.json"
   fi
 done
+if [[ -f "$ARCHIVE_DIR/AGENTS.md" ]]; then
+  generate_merge_prompt \
+    "$ARCHIVE_DIR/AGENTS.md" \
+    "$TEMPLATE_DIR/PROJECT_AGENTS_TEMPLATE.md" \
+    "merge-existing-instructions.md" \
+    "$PROJECT_PATH/AGENTS.md"
+fi
+if [[ " ${VARIANT_IDS[*]} " == *" claude " && -f "$ARCHIVE_DIR/CLAUDE.md" ]]; then
+  generate_merge_prompt \
+    "$ARCHIVE_DIR/CLAUDE.md" \
+    "$TEMPLATE_DIR/PROJECT_CLAUDE_TEMPLATE.md" \
+    "merge-existing-claude-instructions.md" \
+    "$PROJECT_PATH/CLAUDE.md"
+fi
 MANIFEST_VARIANT_ARGS=()
 for variant in "${VARIANT_IDS[@]}"; do MANIFEST_VARIANT_ARGS+=(--variant "$variant"); done
 "$TEMPLATE_DIR/bin/codex-project-upgrade" --record-initial-state "${MANIFEST_VARIANT_ARGS[@]}" "$PROJECT_PATH" >/dev/null

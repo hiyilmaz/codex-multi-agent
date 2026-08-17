@@ -1,7 +1,7 @@
 # Codex Template V2 — Usage Guide
 
 **Version:** 2.6
-**Updated:** 2026-08-15
+**Updated:** 2026-08-17
 
 ---
 
@@ -33,6 +33,13 @@ The active runtime surface is:
 
 Reusable bodies live under `~/.codex`; project `AGENTS.md` files only declare
 project-specific deltas.
+
+All packaged runtime policies use Evidence-First Objectivity when evaluating
+claims, recommendations, material decisions, or disputed topics. Conclusions
+follow verifiable evidence rather than user agreement; credible counterevidence,
+source conflicts, inference boundaries, risks, and uncertainty must be stated.
+Routine coding, editing, translation, and operational tasks do not trigger a
+blanket research requirement.
 
 Install the portable user-global template:
 
@@ -79,17 +86,18 @@ install a plugin, authenticate, or write credentials. Use `opencode mcp list`
 and `opencode debug config` for validation.
 
 The default Claude path is the native user-global surface. Activation preserves
-existing instructions with a backed-up CMA import overlay, does not rewrite an
+existing instructions byte-for-byte, does not rewrite an
 existing `settings.json`, and rejects `--force`. The launcher sets
 `CLAUDE_CONFIG_DIR` to its installed home and requires an existing native
 `claude` executable. It does not install the Claude Agent SDK or authenticate.
 
-The native overlay installs policy at `~/.claude/registry/CMA_GLOBAL.md` and
-adds exactly one functional `@registry/CMA_GLOBAL.md` import to
-`~/.claude/CLAUDE.md`. If the instruction file already exists, its recovery copy
-and SHA-256 checksum are stored under
-`~/.claude/backups/cma-activation-<UTC timestamp>-<suffix>/`. Differing
-CMA-managed files, unsafe symlinks, incomplete sources, and backup or copy
+The native overlay installs the CMA candidate at
+`~/.claude/registry/CMA_GLOBAL.md` but does not automatically import it. If
+`~/.claude/CLAUDE.md` exists, its private snapshot is stored under
+`~/.claude/backups/instruction-merge/` and the path-only guidance prompt is
+written to `~/.claude/prompts/merge-existing-instructions.md`. Run that prompt
+in the AI model to receive a proposed diff and conflict report; it must not edit
+files or reproduce sensitive values. Differing CMA-managed files, unsafe symlinks, incomplete sources, and copy
 failures stop activation; transactional rollback prevents a partial overlay.
 The legacy isolated Claude runtime remains untouched.
 
@@ -126,8 +134,8 @@ YOLO mode may reduce interruptions for low-risk work, but it never bypasses
 approval for destructive operations, dependency changes, API contract changes,
 DB schema changes, or auth/security code changes.
 
-Use `--force` only when you intentionally want to overwrite template-managed
-files:
+Use `--force` only when you intentionally want to overwrite non-policy
+template-managed files:
 
 ```bash
 bin/codex-user-install --force
@@ -135,6 +143,8 @@ bin/codex-user-install --force
 
 This overwrite flow applies to Codex. Native Claude activation
 rejects `--force`; in guided Claude setup, decline the overwrite prompt.
+Existing global instruction files are always preserved and receive a private
+snapshot plus `prompts/merge-existing-instructions.md`.
 
 ---
 
@@ -162,7 +172,8 @@ bin/codex-project-init --reset --variant codex /path/to/project
 
 Reset conflicts are listed before confirmation and privately archived under
 `<project>/.codex/archive/init-YYYYMMDD_HHMMSS-PID/`. Normal additive init does not
-archive or replace shared files.
+create a reset archive or replace shared files; it may create a content-addressed
+instruction snapshot under `.codex/archive/instruction-merge/`.
 
 A fresh Codex project creates:
 
@@ -178,6 +189,14 @@ With `--variant claude`, init adds `CLAUDE.md` containing `@AGENTS.md` and
 With `--variant opencode`, init adds `.opencode/opencode.json`. It preserves
 Codex configuration plus sibling files and directories under
 `.opencode`.
+
+If `AGENTS.md` already exists, init writes
+`.codex/prompts/merge-existing-instructions.md`. If Claude is selected and
+`CLAUDE.md` exists, it also writes
+`.codex/prompts/merge-existing-claude-instructions.md`. These prompts request a
+diff for user review and never perform an automatic merge.
+An existing prompt with different content is preserved; the new generated
+prompt receives a content-hash suffix and its exact path is printed.
 
 ### Step 2 — Run the Project Configuration prompt
 

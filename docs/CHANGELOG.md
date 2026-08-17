@@ -9,6 +9,19 @@
 
 ## 2026-08-17
 
+- [FEAT] EXP-20260817-003 added an evaluation-scoped Evidence-First
+  Objectivity contract to the Codex, Claude, and OpenCode global policies.
+  Material conclusions now prioritize verifiable independent evidence,
+  counterevidence, epistemic distinctions, conflicts, risks, and uncertainty
+  over user agreement, without imposing research on routine tasks.
+- [FEAT] EXP-20260817-002 user-global and project setup now preserve existing Markdown
+  instructions, create owner-only content-addressed snapshots, and generate
+  path-only AI prompts that propose a reviewed diff instead of merging files.
+  Native Claude no longer appends `@registry/CMA_GLOBAL.md` automatically;
+  native OpenCode and portable installs use the same controlled merge flow.
+  Descriptor-pinned no-follow I/O, encoded metadata, untrusted-document rules,
+  and collision-safe prompt names prevent redirection, injection, and overwrite
+  of user-owned prompt content.
 - [FIX] `bin/cma-tools check` and `dry-run` now execute the bundled Python
   package instead of a potentially stale `codex-tools` executable from
   `PATH`; install still executes UV's newly published entry point. Added a

@@ -68,7 +68,6 @@ class ClaudeNativeActivationTests(unittest.TestCase):
                 with self.subTest(path=path):
                     self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o700)
             for relative in (
-                "CLAUDE.md",
                 "settings.json",
                 "registry/CMA_GLOBAL.md",
                 "agents/planner.md",
@@ -77,9 +76,10 @@ class ClaudeNativeActivationTests(unittest.TestCase):
                 path = native / relative
                 with self.subTest(path=path):
                     self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+            self.assertFalse((native / "CLAUDE.md").exists())
             self.assertEqual(stat.S_IMODE((native / "bin/llm-claude").stat().st_mode), 0o700)
 
-    def test_default_activation_preserves_native_state_and_installs_overlay(self) -> None:
+    def test_default_activation_preserves_native_policy_and_generates_merge_prompt(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             home, policy, settings, policy_mode, settings_mode = self.seed_native_home(root)
@@ -94,8 +94,8 @@ class ClaudeNativeActivationTests(unittest.TestCase):
             self.assertEqual((native / "settings.json").read_bytes(), settings)
             self.assertEqual(stat.S_IMODE((native / "settings.json").stat().st_mode), settings_mode)
             active_policy = (native / "CLAUDE.md").read_bytes()
-            self.assertTrue(active_policy.startswith(policy))
-            self.assertEqual(active_policy.decode().splitlines().count(IMPORT_LINE), 1)
+            self.assertEqual(active_policy, policy)
+            self.assertEqual(active_policy.decode().splitlines().count(IMPORT_LINE), 0)
             self.assertEqual(stat.S_IMODE((native / "CLAUDE.md").stat().st_mode), policy_mode)
             self.assertEqual(
                 (native / "registry/CMA_GLOBAL.md").read_bytes(),
@@ -105,9 +105,16 @@ class ClaudeNativeActivationTests(unittest.TestCase):
             self.assertTrue((native / "skills/tdd-workflow/SKILL.md").is_file())
             self.assertTrue((native / "prompts/recreate-global-subagents.md").is_file())
             self.assertTrue((native / "bin/llm-claude").stat().st_mode & stat.S_IXUSR)
-            backups = list((native / "backups").glob("cma-activation-*"))
-            self.assertEqual(len(backups), 1)
-            self.assertEqual((backups[0] / "CLAUDE.md").read_bytes(), policy)
+            snapshots = list(
+                (native / "backups/instruction-merge").glob(
+                    "instruction-merge-*/CLAUDE.md"
+                )
+            )
+            self.assertEqual(len(snapshots), 1)
+            self.assertEqual(snapshots[0].read_bytes(), policy)
+            merge_prompt = native / "prompts/merge-existing-instructions.md"
+            self.assertTrue(merge_prompt.is_file())
+            self.assertNotIn("Keep this content unchanged", merge_prompt.read_text())
             self.assertEqual((legacy / "sentinel").read_text(encoding="utf-8"), "legacy\n")
 
     def test_activation_is_idempotent(self) -> None:
@@ -129,9 +136,9 @@ class ClaudeNativeActivationTests(unittest.TestCase):
                 if path.is_file()
             }
             self.assertEqual(second_snapshot, first_snapshot)
-            self.assertEqual((native / "CLAUDE.md").read_text().splitlines().count(IMPORT_LINE), 1)
+            self.assertEqual((native / "CLAUDE.md").read_text().splitlines().count(IMPORT_LINE), 0)
 
-    def test_code_reference_is_not_treated_as_functional_import(self) -> None:
+    def test_code_reference_is_preserved_without_automatic_import(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             home, _, _, _, _ = self.seed_native_home(Path(temporary))
             policy = home / ".claude/CLAUDE.md"
@@ -142,8 +149,8 @@ class ClaudeNativeActivationTests(unittest.TestCase):
             )
             result = self.run_installer(home, "--runtime-home", str(home / ".claude"))
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(policy.read_text().splitlines().count(IMPORT_LINE), 3)
-            self.assertTrue(policy.read_text().rstrip().endswith(IMPORT_LINE))
+            self.assertEqual(policy.read_text().splitlines().count(IMPORT_LINE), 2)
+            self.assertFalse(policy.read_text().rstrip().endswith("\n" + IMPORT_LINE))
 
     def test_force_conflicts_and_differing_managed_files_fail_before_writes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -227,35 +234,22 @@ class ClaudeNativeActivationTests(unittest.TestCase):
             self.assertEqual((home / ".claude/settings.json").read_bytes(), settings)
             self.assertFalse((home / ".claude/registry/CMA_GLOBAL.md").exists())
 
-    def test_backup_and_late_copy_failures_do_not_leave_partial_activation(self) -> None:
+    def test_late_copy_failure_does_not_leave_partial_activation(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            for failure in ("backup", "backup_hash", "late"):
+            for failure in ("late",):
                 with self.subTest(failure=failure):
                     fixture = root / failure
                     home, policy, settings, _, _ = self.seed_native_home(fixture)
                     shim_dir = fixture / "shim"
                     shim_dir.mkdir()
-                    shim = shim_dir / ("shasum" if failure == "backup_hash" else "cp")
-                    condition = "*/backups/*" if failure == "backup" else "*/agents/planner.md"
-                    if failure == "backup_hash":
-                        shim.write_text(
-                            "#!/usr/bin/env bash\n"
-                            "printf partial\n"
-                            "exit 74\n",
-                            encoding="utf-8",
-                        )
-                    else:
-                        if failure == "backup":
-                            failure_action = 'printf partial > "${@: -1}"; exit 73'
-                        else:
-                            failure_action = "exit 73"
-                        shim.write_text(
-                            "#!/usr/bin/env bash\n"
-                            f'for argument in "$@"; do case "$argument" in {condition}) {failure_action} ;; esac; done\n'
-                            'exec /bin/cp "$@"\n',
-                            encoding="utf-8",
-                        )
+                    shim = shim_dir / "cp"
+                    shim.write_text(
+                        "#!/usr/bin/env bash\n"
+                        'for argument in "$@"; do case "$argument" in */agents/planner.md) exit 73 ;; esac; done\n'
+                        'exec /bin/cp "$@"\n',
+                        encoding="utf-8",
+                    )
                     shim.chmod(0o755)
 
                     result = self.run_installer(
@@ -271,8 +265,6 @@ class ClaudeNativeActivationTests(unittest.TestCase):
                     self.assertEqual((native / "settings.json").read_bytes(), settings)
                     self.assertFalse((native / "registry/CMA_GLOBAL.md").exists())
                     self.assertFalse((native / "agents/planner.md").exists())
-                    if failure in {"backup", "backup_hash"}:
-                        self.assertFalse((native / "backups").exists())
 
 
 if __name__ == "__main__":

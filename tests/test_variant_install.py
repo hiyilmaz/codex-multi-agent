@@ -30,6 +30,9 @@ class VariantInstallTests(unittest.TestCase):
     def assert_default_runtime_active(self, home: Path, variant: dict) -> None:
         if variant["id"] == "opencode":
             self.assertTrue((home / "skills/opencode-docs/SKILL.md").is_file())
+        elif variant["id"] == "claude":
+            self.assertTrue((home / "registry/CMA_GLOBAL.md").is_file())
+            self.assertTrue((home / variant["settings_file"]).is_file())
         else:
             self.assertTrue((home / variant["policy_file"]).is_file())
             self.assertTrue((home / variant["settings_file"]).is_file())
@@ -227,6 +230,43 @@ class VariantInstallTests(unittest.TestCase):
                     self.assertTrue((runtime / variant["settings_file"]).is_file())
                     other_policy = "CLAUDE.md" if variant["policy_file"] == "AGENTS.md" else "AGENTS.md"
                     self.assertFalse((runtime / other_policy).exists())
+
+    def test_force_preserves_existing_policy_and_generates_private_merge_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            runtime = root / "runtime"
+            runtime.mkdir()
+            policy = runtime / "AGENTS.md"
+            existing = b"# Private policy\n\nkeep-me\n"
+            policy.write_bytes(existing)
+            result = subprocess.run(
+                (
+                    str(INSTALLER),
+                    "--runtime-home",
+                    str(runtime),
+                    "--variant",
+                    "codex",
+                    "--force",
+                ),
+                cwd=REPO_ROOT,
+                env={**os.environ, "HOME": str(root / "home")},
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(policy.read_bytes(), existing)
+            snapshots = list(
+                (runtime / "backups/instruction-merge").glob(
+                    "instruction-merge-*/AGENTS.md"
+                )
+            )
+            self.assertEqual(len(snapshots), 1)
+            self.assertEqual(snapshots[0].read_bytes(), existing)
+            prompt = runtime / "prompts/merge-existing-instructions.md"
+            self.assertTrue(prompt.is_file())
+            self.assertNotIn("keep-me", prompt.read_text(encoding="utf-8"))
 
     def test_variant_prompts_install_to_explicit_runtime_and_match_source(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

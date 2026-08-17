@@ -1,7 +1,7 @@
 # Codex Template V2
 
 **Version:** 2.6
-**Updated:** 2026-08-15
+**Updated:** 2026-08-17
 
 ---
 
@@ -73,6 +73,16 @@ avoids repeated discovery, returns a concise result, and stops. Codex chain
 agents default to `medium` reasoning. Passing tests alone do not prove
 completion; review also checks acceptance criteria, observable behavior, and
 test integrity.
+
+### Evidence-First Objectivity
+
+For claims, recommendations, material choices, and disputed topics, every
+runtime prioritizes verifiable evidence over user agreement. It compares
+genuinely independent sources where available, includes credible counterevidence
+and risk, separates facts and source claims from inference or opinion, and
+reports conflicts and uncertainty explicitly. This policy does not require
+research for routine coding, editing, translation, or operational tasks unless
+current evidence is independently necessary.
 
 ### Main Plan Execution
 
@@ -184,17 +194,20 @@ opencode mcp list
 ```
 
 The default Claude installation uses its native user-global directory. It
-preserves existing `CLAUDE.md` content through a backed-up import overlay,
-leaves existing `settings.json` unchanged, and rejects `--force`. Explicit
+preserves an existing `CLAUDE.md` byte-for-byte, creates a private instruction
+snapshot and AI merge prompt, leaves existing `settings.json` unchanged, and
+rejects `--force`. Explicit
 alternate `--runtime-home` targets remain available for isolated testing.
 `llm-claude` sets `CLAUDE_CONFIG_DIR` to its installed runtime home and delegates
 to an already installed native `claude` command; it does not install the Claude
 Agent SDK or authenticate.
 
-Native activation adds exactly one functional `@registry/CMA_GLOBAL.md` import
-to `~/.claude/CLAUDE.md`. Before changing an existing instruction file, it saves
-the original and its SHA-256 checksum under
-`~/.claude/backups/cma-activation-<UTC timestamp>-<suffix>/`. Existing
+Native activation installs the CMA candidate at
+`~/.claude/registry/CMA_GLOBAL.md` without automatically importing it into
+`~/.claude/CLAUDE.md`. Existing instructions are snapshotted under
+`~/.claude/backups/instruction-merge/`, and the user runs
+`~/.claude/prompts/merge-existing-instructions.md` to request a proposed diff.
+The prompt never edits files and contains paths rather than instruction bodies. Existing
 CMA-managed files must match the packaged source; conflicts, unsafe symlinks,
 incomplete sources, or copy failures stop the activation without leaving a
 partial overlay. Any legacy isolated Claude runtime is not removed or modified.
@@ -238,6 +251,14 @@ After init, run the generated prompt:
 That prompt tells the AI to inspect the project and fill only the
 `AGENTS.md` `Project Configuration` block. If required values are ambiguous, it
 must ask the user before editing instead of writing placeholders.
+
+When existing project instructions are detected, init also creates a private
+snapshot under `.codex/archive/instruction-merge/` and writes
+`.codex/prompts/merge-existing-instructions.md` (plus the Claude-specific
+equivalent when applicable). Run it to receive a proposed diff and conflict
+report; CMA does not merge or overwrite the existing instructions automatically.
+If that prompt path already contains different content, CMA preserves it and
+writes a content-hash-suffixed prompt beside it.
 
 Upgrade an already initialized project without resetting its `AGENTS.md`:
 

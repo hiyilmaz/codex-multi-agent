@@ -27,6 +27,13 @@ variants/
   .codex/prompts/fill-project-configuration.md
 ```
 
+Tüm varyantlar, iddia, öneri, önemli karar ve tartışmalı konularda
+`Evidence-First Objectivity` davranışını kullanır. Sonuç kullanıcıyı memnun
+etmeye göre değil, doğrulanabilir ve mümkünse bağımsız kanıtlara göre verilir;
+karşıt kanıtlar, riskler, kaynak çatışmaları ve belirsizlik açıkça belirtilir.
+Bu kural rutin kodlama, dosya düzenleme, çeviri veya operasyon görevlerinde
+otomatik araştırma zorunluluğu oluşturmaz.
+
 ## 1. Sıfırdan Kurulum
 
 Önce bu repo bilgisayarda olmalı:
@@ -101,19 +108,21 @@ Yapılandırmayı model çağrısı olmadan `opencode mcp list` ve
 `opencode debug config` ile doğrula.
 
 Claude kurulumu varsayılan olarak doğal kullanıcı-global `~/.claude` dizinine
-uygulanır. Mevcut `CLAUDE.md` yedeklenip tek CMA importu eklenerek korunur;
+uygulanır. Mevcut `CLAUDE.md` bayt bayt korunur; özel bir kopyası ve kontrollü
+birleştirme promptu üretilir;
 mevcut `settings.json` değiştirilmez ve native hedefte `--force` reddedilir.
 `llm-claude`, `CLAUDE_CONFIG_DIR` değerini kurulduğu runtime dizinine ayarlayıp
 önceden kurulmuş native `claude` komutunu çalıştırır. Agent SDK kurmaz veya
 giriş yapmaz. İzole testler için açık bir `--runtime-home` verilebilir.
 
-Native aktivasyon, CMA politikasını `~/.claude/registry/CMA_GLOBAL.md` olarak
-kurar ve mevcut `~/.claude/CLAUDE.md` dosyasına tam olarak bir işlevsel
-`@registry/CMA_GLOBAL.md` importu ekler. Mevcut talimat dosyasının aslı ve
-SHA-256 özeti şu dizinde saklanır:
+Native aktivasyon, CMA aday politikasını `~/.claude/registry/CMA_GLOBAL.md`
+olarak kurar; `~/.claude/CLAUDE.md` içine otomatik import eklemez. Mevcut
+talimatın özel kopyası ve yalnız dosya yollarını içeren AI promptu şuralara
+yazılır:
 
 ```text
-~/.claude/backups/cma-activation-<UTC timestamp>-<suffix>/
+~/.claude/backups/instruction-merge/
+~/.claude/prompts/merge-existing-instructions.md
 ```
 
 Farklı içerikte mevcut bir CMA-managed dosya, güvenli olmayan symlink, eksik
@@ -140,7 +149,9 @@ Mevcut dosyaları bilinçli olarak template ile değiştirmek istersen:
 bin/codex-user-install --force
 ```
 
-Bu seçenek Codex içindir. Native Claude aktivasyonunda `--force`
+Bu seçenek yalnız politika dışındaki template-managed Codex dosyaları içindir;
+mevcut global talimat dosyası yine korunur ve birleştirme promptu üretilir.
+Native Claude aktivasyonunda `--force`
 bilerek reddedilir. Etkileşimli Claude kurulumunda “Mevcut template-managed
 dosyalar ezilsin mi?” sorusuna `n` yanıtını ver.
 
@@ -235,6 +246,16 @@ ve `.claude` içeriğine dokunulmaz.
 `--variant opencode` seçildiğinde `.opencode/opencode.json` eklenir. Mevcut
 Codex yapılandırması, `.opencode/plugins`, paket metadata dosyaları ve
 diğer kardeş içerikler korunur.
+
+Mevcut `AGENTS.md` algılanırsa `.codex/archive/instruction-merge/` altında özel,
+içerik-adresli bir kopya ve
+`.codex/prompts/merge-existing-instructions.md` oluşturulur. Claude seçiliyken
+mevcut `CLAUDE.md` için ayrıca
+`.codex/prompts/merge-existing-claude-instructions.md` yazılır. Kullanıcı bu
+promptu AI modelinde çalıştırır; AI yalnız önerilen diff ve çatışma raporu
+üretir, dosyaları otomatik değiştirmez.
+Hedef prompt adında farklı bir dosya zaten varsa korunur; yeni prompt içerik
+özeti son ekiyle yanına yazılır ve kesin yolu komut çıktısında gösterilir.
 
 Yalnız `--reset` sırasında çakışan dosyalar şuraya arşivlenir:
 

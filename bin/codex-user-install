@@ -337,6 +337,27 @@ install_file() {
   echo "Installed: $target_path"
 }
 
+install_policy_file() {
+  local source_path="$1"
+  local target_path="$2"
+
+  assert_safe_target_path "$target_path"
+  if [[ -L "$target_path" ]]; then
+    echo "FAILED: refusing symbolic link for existing instructions: $target_path" >&2
+    exit 1
+  fi
+  if [[ -e "$target_path" && ! -f "$target_path" ]]; then
+    echo "FAILED: existing instructions are not a regular file: $target_path" >&2
+    exit 1
+  fi
+  if [[ -f "$target_path" ]]; then
+    POLICY_WAS_EXISTING="true"
+    echo "Preserved existing instructions: $target_path"
+    return
+  fi
+  install_file "$source_path" "$target_path"
+}
+
 install_tree_files() {
   local source_root="$1"
   local target_root="$2"
@@ -414,11 +435,55 @@ install_variant_launcher() {
   fi
 }
 
+POLICY_WAS_EXISTING="false"
+POLICY_TARGET="$RUNTIME_HOME/$POLICY_FILE"
+DEFAULT_HOME_REWRITE=""
+if [[ "$VARIANT_ID" == "opencode" ]]; then
+  DEFAULT_HOME_REWRITE="$DEFAULT_RUNTIME_HOME"
+fi
+CANDIDATE_REPLACE_ARGS=(
+  --candidate-replace "$SOURCE_RELATIVE/agents=$RUNTIME_HOME/agents"
+  --candidate-replace "$SOURCE_RELATIVE/skills=$RUNTIME_HOME/skills"
+  --candidate-replace "$SOURCE_RELATIVE/registry=$RUNTIME_HOME/registry"
+  --candidate-replace "$SOURCE_RELATIVE/prompts=$RUNTIME_HOME/prompts"
+  --candidate-replace "$SOURCE_RELATIVE=$RUNTIME_HOME"
+)
+if [[ -n "$DEFAULT_HOME_REWRITE" ]]; then
+  CANDIDATE_REPLACE_ARGS+=(
+    --candidate-replace "$DEFAULT_HOME_REWRITE=$RUNTIME_HOME"
+  )
+fi
+if [[ -n "$VARIANT_LAUNCHER_RELATIVE" ]]; then
+  CANDIDATE_REPLACE_ARGS+=(
+    --candidate-replace "$VARIANT_LAUNCHER_RELATIVE=$RUNTIME_HOME/bin/$VARIANT_LAUNCHER_NAME"
+  )
+fi
+assert_safe_target_path "$POLICY_TARGET"
+if [[ -L "$POLICY_TARGET" ]]; then
+  echo "FAILED: refusing symbolic link for existing instructions: $POLICY_TARGET" >&2
+  exit 1
+fi
+if [[ -e "$POLICY_TARGET" && ! -f "$POLICY_TARGET" ]]; then
+  echo "FAILED: existing instructions are not a regular file: $POLICY_TARGET" >&2
+  exit 1
+fi
+if [[ -f "$POLICY_TARGET" ]]; then
+  POLICY_WAS_EXISTING="true"
+  "$REPO_ROOT/bin/cma-instruction-merge-prompt" \
+    --source "$POLICY_TARGET" \
+    --candidate "$SOURCE_DIR/$POLICY_FILE" \
+    "${CANDIDATE_REPLACE_ARGS[@]}" \
+    --snapshot-root "$RUNTIME_HOME/backups/instruction-merge" \
+    --prompt "$RUNTIME_HOME/prompts/merge-existing-instructions.md" \
+    --scope "user-global" \
+    --variant "$VARIANT_ID"
+fi
+
 for managed_name in agents skills rules registry prompts bin; do
   mkdir -p "$RUNTIME_HOME/$managed_name"
 done
 
-install_file "$SOURCE_DIR/$POLICY_FILE" "$RUNTIME_HOME/$POLICY_FILE"
+install_policy_file "$SOURCE_DIR/$POLICY_FILE" "$RUNTIME_HOME/$POLICY_FILE"
 install_file "$SOURCE_DIR/$SETTINGS_FILE" "$RUNTIME_HOME/$SETTINGS_FILE"
 install_file "$SOURCE_DIR/README.md" "$RUNTIME_HOME/README.md"
 install_tree_files "$SOURCE_DIR/agents" "$RUNTIME_HOME/agents"
@@ -427,10 +492,6 @@ install_tree_files "$SOURCE_DIR/registry" "$RUNTIME_HOME/registry"
 install_tree_files "$SOURCE_DIR/prompts" "$RUNTIME_HOME/prompts"
 install_variant_launcher "$VARIANT_LAUNCHER_RELATIVE" "$RUNTIME_HOME" "$VARIANT_LAUNCHER_NAME"
 
-DEFAULT_HOME_REWRITE=""
-if [[ "$VARIANT_ID" == "opencode" ]]; then
-  DEFAULT_HOME_REWRITE="$DEFAULT_RUNTIME_HOME"
-fi
 rewrite_installed_variant_paths "$SOURCE_RELATIVE" "$RUNTIME_HOME" "$DEFAULT_HOME_REWRITE" "$VARIANT_LAUNCHER_RELATIVE" "$VARIANT_LAUNCHER_NAME"
 
 if [[ "$VARIANT_ID" == "codex" ]]; then

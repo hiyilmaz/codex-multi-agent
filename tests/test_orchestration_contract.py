@@ -9,6 +9,29 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CHAIN = "planner -> tdd-guide -> code-reviewer -> security-reviewer"
 ROLES = ("planner", "tdd-guide", "code-reviewer", "security-reviewer")
+EVIDENCE_FIRST_SECTION = """### Evidence-First Objectivity
+
+When evaluating claims, options, recommendations, or disputed topics:
+
+- Optimize for evidential accuracy, not user agreement or satisfaction.
+- Base conclusions on reliable, verifiable evidence. Prefer current primary
+  sources, official records, reproducible data, and relevant real-world
+  findings.
+- When the decision is material, compare multiple independent sources where
+  available. Do not manufacture source diversity or treat repeated reporting
+  of the same underlying claim as independent confirmation.
+- Include credible counterevidence, limitations, risks, and plausible
+  alternative explanations.
+- Distinguish verified facts, source claims, reasoned inferences, and opinions.
+- If sources conflict, describe the conflict and explain which evidence is
+  stronger and why.
+- State uncertainty and evidence gaps explicitly. Do not guess or imply
+  certainty when verification is unavailable.
+- Present the conclusion best supported by the evidence, even when it conflicts
+  with the user’s assumptions, preferences, or expected outcome.
+- Do not require research for routine coding, file editing, translation, or
+  operational tasks unless the task independently requires current evidence.
+"""
 
 
 class OrchestrationContractTests(unittest.TestCase):
@@ -37,11 +60,132 @@ class OrchestrationContractTests(unittest.TestCase):
         for marker in required:
             self.assertIn(" ".join(marker.split()), normalized)
 
+    def assert_evidence_first_objectivity_contract(self, text: str) -> None:
+        match = re.search(
+            r"^### Evidence-First Objectivity\n(?P<section>.*?)(?=^### |\Z)",
+            text,
+            re.MULTILINE | re.DOTALL,
+        )
+        self.assertIsNotNone(match, "missing Evidence-First Objectivity section")
+        normalized = " ".join(match.group("section").lower().split())
+        required = (
+            "when evaluating claims, options, recommendations, or disputed topics",
+            "evidential accuracy, not user agreement or satisfaction",
+            "reliable, verifiable evidence",
+            "current primary sources",
+            "official records",
+            "reproducible data",
+            "relevant real-world findings",
+            "decision is material",
+            "multiple independent sources where available",
+            "repeated reporting of the same underlying claim as independent confirmation",
+            "credible counterevidence",
+            "limitations",
+            "risks",
+            "plausible alternative explanations",
+            "verified facts, source claims, reasoned inferences, and opinions",
+            "sources conflict",
+            "which evidence is stronger and why",
+            "uncertainty and evidence gaps explicitly",
+            "do not guess or imply certainty when verification is unavailable",
+            "conclusion best supported by the evidence",
+            "user’s assumptions, preferences, or expected outcome",
+            "do not require research for routine coding, file editing, translation, or operational tasks",
+        )
+        for marker in required:
+            self.assertIn(marker, normalized)
+        routine_boundary = (
+            "do not require research for routine coding, file editing, translation, "
+            "or operational tasks unless the task independently requires current evidence."
+        )
+        contradiction_scan = normalized.replace(routine_boundary, "")
+        forbidden = (
+            r"(?:every|all) tasks?.{0,40}research|research.{0,40}(?:every|all) tasks?",
+            r"\balways (?:perform )?research\b|\bresearch (?:is )?always\b",
+            r"\bresearch.{0,80}\broutine\b|\broutine\b.{0,80}\bresearch\b",
+        )
+        for pattern in forbidden:
+            self.assertIsNone(re.search(pattern, contradiction_scan))
+
     def test_global_template_and_codex_variant_stay_identical(self) -> None:
         self.assertEqual(
             self.read("GLOBAL_AGENTS_TEMPLATE.md"),
             self.read("variants/codex/home/AGENTS.md"),
         )
+
+    def test_evidence_first_objectivity_contract(self) -> None:
+        paths = (
+            "GLOBAL_AGENTS_TEMPLATE.md",
+            "variants/codex/home/AGENTS.md",
+            "variants/claude/home/CLAUDE.md",
+            "variants/opencode/home/AGENTS.md",
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                self.assert_evidence_first_objectivity_contract(self.read(path))
+
+    def test_diluted_or_overbroad_objectivity_contract_is_rejected(self) -> None:
+        with self.assertRaises(AssertionError):
+            self.assert_evidence_first_objectivity_contract(
+                "### Evidence-First Objectivity\n\nBe objective and use reliable sources.\n"
+            )
+        with self.assertRaises(AssertionError):
+            self.assert_evidence_first_objectivity_contract(
+                EVIDENCE_FIRST_SECTION + "\nResearch every task before acting.\n"
+            )
+        for contradiction in (
+            "Always research before acting.",
+            "Research routine coding, editing, translation, and operational tasks before acting.",
+        ):
+            with self.subTest(contradiction=contradiction):
+                with self.assertRaises(AssertionError):
+                    self.assert_evidence_first_objectivity_contract(
+                        EVIDENCE_FIRST_SECTION + "\n" + contradiction + "\n"
+                    )
+
+    def test_each_objectivity_clause_is_required(self) -> None:
+        clauses = [
+            block
+            for block in EVIDENCE_FIRST_SECTION.split("\n-")
+            if block.strip() and not block.startswith("###")
+        ]
+        self.assertEqual(len(clauses), 9)
+        for clause in clauses:
+            mutant = EVIDENCE_FIRST_SECTION.replace("\n-" + clause, "", 1)
+            with self.subTest(clause=clause.splitlines()[0]):
+                with self.assertRaises(AssertionError):
+                    self.assert_evidence_first_objectivity_contract(mutant)
+
+    def test_portable_installs_include_objectivity_contract(self) -> None:
+        installer = REPO_ROOT / "bin/codex-user-install"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            environment = {**os.environ, "HOME": str(root / "home")}
+            for variant, policy_name in (
+                ("codex", "AGENTS.md"),
+                ("claude", "CLAUDE.md"),
+                ("opencode", "AGENTS.md"),
+            ):
+                runtime = root / variant
+                result = subprocess.run(
+                    (
+                        str(installer),
+                        "--runtime-home",
+                        str(runtime),
+                        "--variant",
+                        variant,
+                    ),
+                    cwd=REPO_ROOT,
+                    env=environment,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                with self.subTest(variant=variant):
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assert_evidence_first_objectivity_contract(
+                        (runtime / policy_name).read_text(encoding="utf-8")
+                    )
 
     def test_codex_approval_wait_is_exact_and_not_completion(self) -> None:
         policy = self.read("GLOBAL_AGENTS_TEMPLATE.md")
