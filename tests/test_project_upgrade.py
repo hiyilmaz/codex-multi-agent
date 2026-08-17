@@ -67,6 +67,60 @@ class ProjectUpgradeTests(unittest.TestCase):
         for marker in required:
             self.assertIn(marker, text)
 
+    def assert_fill_config_default_contract(self, text: str) -> None:
+        normalized = " ".join(text.split())
+        required = (
+            "Use an explicit backend stack from durable project documentation",
+            "use a backend stack detected from dependency manifests or source structure",
+            "`Python / FastAPI / PostgreSQL / Redis`",
+            "Do not ask the user to choose or confirm `STACK_BACKEND` when this fallback applies.",
+            "Always set `CHANGELOG_PATH` to `docs/CHANGELOG.md`",
+            "Always set `EVIDENCE_PATH` to `docs/reports/`",
+            "Do not ask the user to confirm either path",
+            "including `PROJECT_NAME`",
+        )
+        for marker in required:
+            self.assertIn(marker, normalized)
+
+        obsolete = (
+            "If they do not exist and no convention is documented, ask the user before editing.",
+        )
+        for marker in obsolete:
+            self.assertNotIn(marker, normalized)
+
+    def test_fill_config_prompt_has_source_precedence_defaults_and_generated_copy_parity(
+        self,
+    ) -> None:
+        source = REPO_ROOT / "PROJECT_CONFIG_PROMPT.md"
+        managed = REPO_ROOT / ".codex/prompts/fill-project-configuration.md"
+        source_text = source.read_text(encoding="utf-8")
+
+        self.assert_fill_config_default_contract(source_text)
+        self.assertEqual(source.read_bytes(), managed.read_bytes())
+
+        root_state = json.loads(
+            (REPO_ROOT / ".codex/template-state.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            sha256(source),
+            root_state["files"][".codex/prompts/fill-project-configuration.md"][
+                "template_sha256"
+            ],
+        )
+
+        project = self.initialize("fill-config-defaults")
+        generated = project / ".codex/prompts/fill-project-configuration.md"
+        generated_state = json.loads(
+            (project / ".codex/template-state.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(source.read_bytes(), generated.read_bytes())
+        self.assertEqual(
+            sha256(source),
+            generated_state["files"][
+                ".codex/prompts/fill-project-configuration.md"
+            ]["template_sha256"],
+        )
+
     def test_fresh_project_defaults_evidence_mode_and_installs_validation_guidance(
         self,
     ) -> None:

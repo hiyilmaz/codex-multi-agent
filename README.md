@@ -1,6 +1,6 @@
 # Codex Template V2
 
-**Version:** 2.6
+**Version:** 2.7
 **Updated:** 2026-08-17
 
 ---
@@ -249,8 +249,11 @@ After init, run the generated prompt:
 ```
 
 That prompt tells the AI to inspect the project and fill only the
-`AGENTS.md` `Project Configuration` block. If required values are ambiguous, it
-must ask the user before editing instead of writing placeholders.
+`AGENTS.md` `Project Configuration` block. Explicit or detected backend facts
+take precedence; otherwise it uses `Python / FastAPI / PostgreSQL / Redis`
+without asking. It always records `docs/CHANGELOG.md` and `docs/reports/`.
+Only genuinely unresolved non-defaulted fields, such as an ambiguous project
+name, require a question before editing.
 
 When existing project instructions are detected, init also creates a private
 snapshot under `.codex/archive/instruction-merge/` and writes

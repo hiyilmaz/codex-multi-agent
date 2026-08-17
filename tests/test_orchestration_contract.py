@@ -55,6 +55,11 @@ class OrchestrationContractTests(unittest.TestCase):
     def read(self, relative_path: str) -> str:
         return (REPO_ROOT / relative_path).read_text(encoding="utf-8")
 
+    def assert_document_version(self, text: str, expected: str) -> None:
+        match = re.search(r"(?m)^\*\*Version:\*\*\s+([^\s]+)$", text)
+        self.assertIsNotNone(match, "missing document version")
+        self.assertEqual(match.group(1), expected)
+
     def assert_truthful_outcome_contract(self, text: str) -> None:
         normalized = " ".join(text.split())
         required = (
@@ -150,6 +155,25 @@ class OrchestrationContractTests(unittest.TestCase):
             self.read("GLOBAL_AGENTS_TEMPLATE.md"),
             self.read("variants/codex/home/AGENTS.md"),
         )
+
+    def test_global_and_project_cma_versions_are_independent(self) -> None:
+        global_paths = (
+            "README.md",
+            "GLOBAL_AGENTS_TEMPLATE.md",
+            "variants/codex/home/AGENTS.md",
+            "variants/claude/home/CLAUDE.md",
+            "variants/opencode/home/AGENTS.md",
+        )
+        for path in global_paths:
+            with self.subTest(path=path):
+                self.assert_document_version(self.read(path), "2.7")
+        self.assert_document_version(self.read("PROJECT_AGENTS_TEMPLATE.md"), "2.2")
+
+    def test_version_contract_rejects_stale_or_false_project_bumps(self) -> None:
+        with self.assertRaises(AssertionError):
+            self.assert_document_version("**Version:** 2.6\n", "2.7")
+        with self.assertRaises(AssertionError):
+            self.assert_document_version("**Version:** 2.3\n", "2.2")
 
     def test_evidence_first_objectivity_contract(self) -> None:
         paths = (

@@ -10,7 +10,7 @@
     },
     ".codex/prompts/fill-project-configuration.md": {
       "mode": "managed",
-      "template_sha256": "0963d9cc66eb4ba5b27baaa35ec5a5de1e6ebb8f39afe576bcbc7ed3b9e24ee6"
+      "template_sha256": "2f1d3c83cfd84a3c99d04a7c076555610ac6bf1803afb2c2cabcf01b20ff1b6f"
     },
     ".opencode/opencode.json": {
       "mode": "managed",

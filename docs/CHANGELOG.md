@@ -9,6 +9,14 @@
 
 ## 2026-08-17
 
+- [FIX] Project Configuration filling now prefers explicit or detected backend
+  facts, falls back to `Python / FastAPI / PostgreSQL / Redis` without asking,
+  and always records `docs/CHANGELOG.md` and `docs/reports/`. Project-name and
+  other genuinely unresolved non-defaulted questions remain available.
+- [CHORE] Aligned the CMA package and Codex, Claude, and OpenCode global policy
+  versions at `2.7` after the approved global dialogue-policy change. The
+  project template and all schema-2 project manifests remain at `2.2` because
+  no project-template content changed.
 - [FEAT] EXP-20260817-005 now requires all Codex, Claude, and OpenCode
   user-facing dialogue to remain Turkish, including questions, progress,
   errors, approvals, and final reports. `CRITICAL DECISION` keeps its six-line

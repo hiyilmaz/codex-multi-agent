@@ -1,6 +1,6 @@
 # Codex — Global Instructions
 
-**Version:** 2.6
+**Version:** 2.7
 **Updated:** 2026-08-17
 
 ## Purpose And Runtime Surface

@@ -1,7 +1,7 @@
 # Fill Project Configuration Prompt
 
-**Version:** 2.5
-**Updated:** 2026-07-14
+**Version:** 2.6
+**Updated:** 2026-08-17
 
 ---
 
@@ -21,8 +21,20 @@ Rules:
 - Do not write uncertainty placeholders into `AGENTS.md`.
 - Do not write uncertainty placeholders or literal strings such as "TODO",
   "Not configured", "None", "Not found", or bracket placeholders.
-- If a required value cannot be determined confidently, stop and ask the user
-  the smallest necessary question before editing `AGENTS.md`.
+- Resolve `STACK_BACKEND` in this order:
+  1. Use an explicit backend stack from durable project documentation.
+  2. Otherwise, use a backend stack detected from dependency manifests or source structure.
+  3. If neither source determines a backend, set `STACK_BACKEND` to exactly
+     `Python / FastAPI / PostgreSQL / Redis`.
+  Do not ask the user to choose or confirm `STACK_BACKEND` when this fallback applies.
+- Always set `CHANGELOG_PATH` to `docs/CHANGELOG.md`.
+- Always set `EVIDENCE_PATH` to `docs/reports/`.
+  Apply both path defaults whether or not those paths exist. Do not ask the
+  user to confirm either path. This task records paths only; it does not create
+  the changelog file or reports directory.
+- If another required value cannot be determined confidently, stop and ask the
+  user the smallest necessary question before editing `AGENTS.md`. Questions
+  remain allowed for genuinely unresolved fields, including `PROJECT_NAME`.
 - Determine concrete `ACTIVE_RULE_SETS`, `ACTIVE_SKILLS`,
   `ACTIVE_AGENT_ROLES`, and `ORCHESTRATION_MODE` from the project stack and
   the selected runtime home and assets exposed by the current Codex session.
@@ -51,8 +63,6 @@ Rules:
   `PROJECT_AGENTS_TEMPLATE.md` unless the user explicitly confirms removal.
 - Do not switch `ORCHESTRATION_MODE` to `skip` only because an optional skill
   is unavailable.
-- `CHANGELOG_PATH` and `EVIDENCE_PATH` must be concrete paths. If they do not
-  exist and no convention is documented, ask the user before editing.
 - Do not add external runtime root fields; the selected runtime home is the
   reusable runtime surface.
 
@@ -86,7 +96,7 @@ DOMAIN_RULES:
 Expected output:
 - Updated `AGENTS.md`
 - Short report listing which sources were used
-- Questions asked before editing when required values were ambiguous
+- Questions asked before editing only for unresolved, non-defaulted fields
 - Confirmation that no uncertainty placeholders remain in the
   `Project Configuration` block
 

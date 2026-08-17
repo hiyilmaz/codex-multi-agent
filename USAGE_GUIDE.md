@@ -207,8 +207,12 @@ After init, run this generated prompt with the AI:
 ```
 
 The prompt instructs the AI to inspect the repository and fill only the
-`## Project Configuration` block in `AGENTS.md`. If required values are
-ambiguous, it must ask the user before editing instead of writing placeholders.
+`## Project Configuration` block in `AGENTS.md`. Explicit or detected backend
+facts take precedence; otherwise it uses
+`Python / FastAPI / PostgreSQL / Redis` without asking. It always records
+`docs/CHANGELOG.md` and `docs/reports/`, whether or not they exist. Only
+genuinely unresolved non-defaulted fields, such as an ambiguous project name,
+require a question before editing.
 
 ### Step 3 — Review Project Configuration
 
@@ -218,7 +222,7 @@ Review the generated `## Project Configuration` block:
 PROJECT_NAME:        My App
 PROJECT_SUMMARY:     Backend API for users, products, and orders.
 
-STACK_BACKEND:       Python / FastAPI / PostgreSQL
+STACK_BACKEND:       Python / FastAPI / PostgreSQL / Redis
 STACK_FRONTEND:      Next.js / TypeScript / shadcn/ui
 
 CHANGELOG_PATH:      docs/CHANGELOG.md
