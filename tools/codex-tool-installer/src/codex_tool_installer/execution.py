@@ -1,8 +1,22 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Callable, Iterable, Mapping
 
 from .models import Status, ToolDefinition, ToolHealth
+
+
+class LifecycleStatusError(RuntimeError):
+    def __init__(self, status: Status, detail: str):
+        super().__init__(detail)
+        self.status = status
+        self.detail = detail
+
+
+@dataclass(frozen=True)
+class PendingTransaction:
+    commit: Callable[[], None]
+    rollback: Callable[[], None]
 
 
 class LifecycleExecutor:
@@ -10,6 +24,12 @@ class LifecycleExecutor:
         self.install = install
         self.verify = verify
         self.configure = configure or (lambda _: None)
+
+    def _verification(self, tool: ToolDefinition, false_status: Status) -> ToolHealth:
+        result = self.verify(tool)
+        if isinstance(result, ToolHealth):
+            return result
+        return ToolHealth(tool.name, Status.HEALTHY if result else false_status)
 
     def execute(
         self,
@@ -39,27 +59,25 @@ class LifecycleExecutor:
             if tool.kind == "mcp" and mcp_mode == "verify-only":
                 if current.status in {Status.HEALTHY, Status.BROKEN}:
                     try:
-                        results[tool.name] = ToolHealth(
-                            tool.name,
-                            Status.HEALTHY if self.verify(tool) else Status.BROKEN,
-                        )
+                        results[tool.name] = self._verification(tool, Status.BROKEN)
                     except Exception as exc:
-                        results[tool.name] = ToolHealth(tool.name, Status.BROKEN, f"{exc.__class__.__name__}: {exc}")
+                        results[tool.name] = ToolHealth(tool.name, Status.BROKEN, f"{exc.__class__.__name__}: verification failed")
                 else:
                     results[tool.name] = current
                 continue
             if mode == "check":
                 if tool.kind == "mcp" and current.status not in {Status.MISSING, Status.AUTH_REQUIRED, Status.INVALID_CONFIG}:
                     try:
-                        results[tool.name] = ToolHealth(tool.name, Status.HEALTHY if self.verify(tool) else Status.BROKEN)
+                        results[tool.name] = self._verification(tool, Status.BROKEN)
                     except Exception as exc:
-                        results[tool.name] = ToolHealth(tool.name, Status.BROKEN, f"{exc.__class__.__name__}: {exc}")
+                        results[tool.name] = ToolHealth(tool.name, Status.BROKEN, f"{exc.__class__.__name__}: verification failed")
                 else:
                     results[tool.name] = current
                 continue
             if mode == "repair" and current.status not in {Status.BROKEN, Status.INVALID_CONFIG, Status.AUTH_REQUIRED}:
                 results[tool.name] = ToolHealth(tool.name, Status.SKIPPED)
                 continue
+            transaction = None
             try:
                 if current.status in {Status.MISSING, Status.BROKEN} and tool.kind in {"cli", "cli_mcp"}:
                     self.install(tool)
@@ -68,12 +86,26 @@ class LifecycleExecutor:
                     and tool.kind in {"mcp", "cli_mcp"}
                     and current.status != Status.HEALTHY
                 ):
-                    self.configure(tool)
-                if not self.verify(tool):
-                    raise RuntimeError("functional verification failed")
+                    transaction = self.configure(tool)
+                verified = self._verification(tool, Status.FAILED)
+                if verified.status != Status.HEALTHY:
+                    raise LifecycleStatusError(verified.status, verified.detail or "functional verification failed")
+                if isinstance(transaction, PendingTransaction):
+                    transaction.commit()
                 results[tool.name] = ToolHealth(tool.name, Status.HEALTHY)
             except Exception as exc:
-                results[tool.name] = ToolHealth(tool.name, Status.FAILED, f"{exc.__class__.__name__}: {exc}")
+                rollback_failed = False
+                if isinstance(transaction, PendingTransaction):
+                    try:
+                        transaction.rollback()
+                    except Exception:
+                        rollback_failed = True
+                if rollback_failed:
+                    results[tool.name] = ToolHealth(tool.name, Status.FAILED, "Rollback failed")
+                elif isinstance(exc, LifecycleStatusError):
+                    results[tool.name] = ToolHealth(tool.name, exc.status, exc.detail)
+                else:
+                    results[tool.name] = ToolHealth(tool.name, Status.FAILED, f"{exc.__class__.__name__}: operation failed")
         return results
 
 

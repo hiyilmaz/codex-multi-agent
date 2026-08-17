@@ -257,3 +257,33 @@ def _atomic_restore(path: Path, content: bytes) -> None:
         os.replace(rollback, path)
     finally:
         rollback.unlink(missing_ok=True)
+
+
+def restore_config_exact(
+    path: Path,
+    content: bytes | None,
+    *,
+    expected_current: bytes,
+    expected_inode: int,
+) -> None:
+    """Restore a pre-state only while the transaction still owns the file."""
+    _reject_symlinked_ancestors(path)
+    try:
+        current_stat = path.stat(follow_symlinks=False)
+    except OSError as exc:
+        raise ConfigTransactionError("Config changed before rollback") from exc
+    if not stat.S_ISREG(current_stat.st_mode):
+        raise ConfigTransactionError(f"Expected regular config file: {path}")
+    if current_stat.st_ino != expected_inode:
+        raise ConfigTransactionError("Config identity changed before rollback")
+    try:
+        current = path.read_bytes()
+    except OSError as exc:
+        raise ConfigTransactionError("Config could not be verified before rollback") from exc
+    if current != expected_current:
+        raise ConfigTransactionError("Config content changed before rollback")
+    if content is None:
+        path.unlink(missing_ok=True)
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _atomic_restore(path, content)

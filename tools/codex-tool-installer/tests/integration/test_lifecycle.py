@@ -1,10 +1,67 @@
 import unittest
 
+import codex_tool_installer.execution as execution_module
 from codex_tool_installer.execution import LifecycleExecutor
 from codex_tool_installer.models import Status, ToolDefinition, ToolHealth
 
 
 class LifecycleTests(unittest.TestCase):
+    def test_typed_auth_required_continues_and_plain_runtime_error_stays_failed(self):
+        self.assertTrue(hasattr(execution_module, "LifecycleStatusError"))
+        LifecycleStatusError = execution_module.LifecycleStatusError
+        calls = []
+        tools = [
+            ToolDefinition(name=name, kind="mcp", executable=None, platforms=("macos",), verify=(("codex", "mcp", "get", name),))
+            for name in ("auth", "literal", "last")
+        ]
+
+        def configure(tool):
+            calls.append(tool.name)
+            if tool.name == "auth":
+                raise LifecycleStatusError(Status.AUTH_REQUIRED, "TOKEN unavailable")
+            if tool.name == "literal":
+                raise RuntimeError("AUTH_REQUIRED: must not be parsed")
+
+        results = LifecycleExecutor(lambda _: None, lambda _: True, configure).execute(
+            tools, {tool.name: ToolHealth(tool.name, Status.MISSING) for tool in tools}
+        )
+        self.assertEqual(["auth", "literal", "last"], calls)
+        self.assertEqual(Status.AUTH_REQUIRED, results["auth"].status)
+        self.assertEqual(Status.FAILED, results["literal"].status)
+        self.assertEqual(Status.HEALTHY, results["last"].status)
+
+    def test_pending_transaction_commits_after_verify_and_rolls_back_on_failure(self):
+        self.assertTrue(hasattr(execution_module, "PendingTransaction"))
+        PendingTransaction = execution_module.PendingTransaction
+        events = []
+        success = ToolDefinition("success", "mcp", None, ("macos",), (("x",),))
+        failure = ToolDefinition("failure", "mcp", None, ("macos",), (("x",),))
+
+        def configure(tool):
+            events.append((tool.name, "configure"))
+            return PendingTransaction(
+                commit=lambda: events.append((tool.name, "commit")),
+                rollback=lambda: events.append((tool.name, "rollback")),
+            )
+
+        results = LifecycleExecutor(
+            lambda _: None,
+            lambda tool: events.append((tool.name, "verify")) or tool.name == "success",
+            configure,
+        ).execute(
+            (success, failure),
+            {"success": ToolHealth("success", Status.MISSING), "failure": ToolHealth("failure", Status.MISSING)},
+        )
+        self.assertEqual(
+            [
+                ("success", "configure"), ("success", "verify"), ("success", "commit"),
+                ("failure", "configure"), ("failure", "verify"), ("failure", "rollback"),
+            ],
+            events,
+        )
+        self.assertEqual(Status.HEALTHY, results["success"].status)
+        self.assertEqual(Status.FAILED, results["failure"].status)
+
     def test_middle_tool_failure_does_not_stop_later_tool(self):
         calls = []
 

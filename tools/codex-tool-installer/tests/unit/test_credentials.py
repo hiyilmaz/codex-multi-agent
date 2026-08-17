@@ -29,12 +29,13 @@ class CredentialTests(unittest.TestCase):
         self.assertFalse(resolve_credential("TOKEN", {}, None, prompt, True).available)
         self.assertEqual([], prompt.calls)
 
-    def test_masked_prompt_store_and_redaction(self):
+    def test_masked_prompt_defers_store_and_redaction(self):
         secret = "random-super-secret-9381"
         store, prompt = Store(), Prompt(secret)
         result = resolve_credential("TOKEN", {}, store, prompt, False)
         self.assertTrue(result.available)
-        self.assertEqual([("TOKEN", secret)], store.saved)
+        self.assertEqual("prompt", result.source)
+        self.assertEqual([], store.saved)
         output = redact(f"Authorization: Bearer {secret} token={secret}", (secret,))
         self.assertNotIn(secret, output)
 

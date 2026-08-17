@@ -2,6 +2,141 @@
 
 [Terminal experiment archive](EXPERIMENTS_ARCHIVE.md)
 
+## EXP-20260817-008 - Transactional MCP Credentials
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+Standalone MCP installation can persist a prompted credential before config
+and functional verification succeed, and empty credentials become `FAILED`.
+
+Evidence:
+The blockmanpro run left a private credential file after GitHub failed, while
+Context7 was reported as `FAILED` instead of `AUTH_REQUIRED`.
+
+Hypothesis:
+Deferring credential persistence until config and functional verification
+succeed, with per-tool config rollback and typed outcomes, will prevent partial
+state while allowing later independent tools to continue.
+
+Solution Attempt:
+Add a per-tool pending transaction that commits the prompted credential only
+after verification and restores that tool's config pre-state on failure.
+
+Test:
+Capture RED for deferred persistence, exact rollback, typed `AUTH_REQUIRED`,
+continued execution, idempotency, and secret-free output.
+
+Success Criteria:
+- Failed MCP setup leaves config bytes and credential storage unchanged.
+- Successful setup commits config and prompted credential once.
+- `AUTH_REQUIRED` remains distinct from `FAILED`; later tools still run.
+- Secrets never appear in output, status details, config, or backups.
+
+Result:
+Prompted credentials now remain in memory until config and read-only functional
+verification pass. Failed MCP setup restores only that tool's owned config
+state, preserves earlier successful MCP changes, cleans the process credential
+even when rollback is refused, and reports missing credentials as the typed
+`AUTH_REQUIRED` outcome. Rollback verifies expected bytes and inode first, so
+a concurrent user edit is preserved. Secret-bearing success, functional
+failure, store failure, concurrent edit, empty prompt, later-tool continuation,
+and idempotency regressions passed without exposing test secrets. Package tests
+passed 71/71 with 85 percent branch coverage; the CMA adapter passed 7/7 and
+the full repository passed 385/385. Independent code and security re-reviews
+passed.
+
+Decision:
+ACCEPT
+
+## EXP-20260817-007 - Truthful Config Preservation
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+`config_preserved` currently mirrors config validity rather than whether the
+config bytes changed.
+
+Evidence:
+The blockmanpro output claimed existing settings were preserved even though a
+new DeepWiki MCP table was present after standalone installation.
+
+Hypothesis:
+Comparing the exact config pre-state and post-state will make preservation
+reporting independent from TOML validity and reject false success.
+
+Solution Attempt:
+Capture config bytes before lifecycle execution and pass their exact equality
+to the summary renderer.
+
+Test:
+Require `preserved=true` for byte-identical and exact rollback cases, and
+`preserved=false` for valid but changed config.
+
+Success Criteria:
+- Validity and preservation are independently reported.
+- Whitespace or comment-only byte changes count as changed.
+- A successful exact rollback reports preserved.
+
+Result:
+The lifecycle now compares exact config bytes captured before and after the
+selected operation. Validity and preservation are reported independently:
+the first managed DeepWiki write reports changed, an idempotent repeat reports
+preserved, and an exact rollback reports preserved. Non-regular or unreadable
+capture fails closed with structured evidence instead of crashing. Package
+tests passed 71/71 with 85 percent branch coverage; the CMA adapter passed 7/7
+and the full repository passed 385/385. Independent code and security
+re-reviews passed.
+
+Decision:
+ACCEPT
+
+## EXP-20260817-006 - Installed Binary Rediscovery
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+Go tools can install successfully into `GOBIN` or `GOPATH/bin` but be reported
+as failed when that directory is absent from the invoking shell's `PATH`.
+
+Evidence:
+On blockmanpro both Go binaries existed under `/root/go/bin` and became healthy
+when that directory was added only to the check process environment.
+
+Hypothesis:
+Resolving managed user bin directories inside the installer process will make
+same-run verification accurate without editing shell profiles.
+
+Solution Attempt:
+Use a scoped effective environment for install, discovery, and verification,
+including explicit `GOBIN` or the first `GOPATH/bin` plus the user-local bin.
+
+Test:
+Capture RED where a binary exists only outside the original PATH, then require
+healthy discovery, nonzero-version failure handling, and no profile mutation.
+
+Success Criteria:
+- Successfully installed Go tools are healthy in the same lifecycle run.
+- Missing or broken binaries remain missing or broken.
+- Caller environment and shell profile files remain unchanged.
+
+Result:
+The installer now appends the user-local bin directory and active absolute
+`GOBIN` or first `GOPATH/bin` to a process-only effective PATH while preserving
+the caller's command precedence. It refreshes that environment after installing
+Go as a missing dependency, so both preinstalled-Go and fresh-host scenarios
+rediscover and verify `osv-scanner` in the same run. Relative Go paths are
+ignored and no caller environment or shell profile is written. Package tests
+passed 71/71 with 85 percent branch coverage; the CMA adapter passed 7/7 and
+the full repository passed 385/385. Independent code and security re-reviews
+passed.
+
+Decision:
+ACCEPT
+
 ## EXP-20260817-005 - Turkish Dialogue And Simple Decisions
 
 Date: 2026-08-17

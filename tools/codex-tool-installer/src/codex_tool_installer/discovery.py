@@ -12,6 +12,36 @@ from .platforms import detect_platform
 from .process import ProcessRunner
 
 
+def managed_bin_environment(
+    environ: Mapping[str, str], runner: ProcessRunner
+) -> dict[str, str]:
+    """Return a scoped PATH that includes supported user-managed bin roots."""
+    effective = dict(environ)
+    home = Path(effective.get("HOME", str(Path.home())))
+    candidates = [home / ".local" / "bin"]
+    go = shutil.which("go", path=effective.get("PATH"))
+    if go:
+        result = runner.run((go, "env", "GOBIN", "GOPATH"), env=effective)
+        if result.returncode == 0:
+            lines = result.stdout.splitlines()
+            gobin = Path(lines[0]) if lines and lines[0] else None
+            if gobin and gobin.is_absolute():
+                candidates.append(gobin)
+            elif len(lines) > 1:
+                first_gopath = lines[1].split(os.pathsep, 1)[0]
+                gopath = Path(first_gopath) if first_gopath else None
+                if gopath and gopath.is_absolute():
+                    candidates.append(gopath / "bin")
+    current = effective.get("PATH", "").split(os.pathsep)
+    ordered = []
+    for candidate in (*(Path(item) for item in current if item), *candidates):
+        value = str(candidate)
+        if value and value not in ordered:
+            ordered.append(value)
+    effective["PATH"] = os.pathsep.join(ordered)
+    return effective
+
+
 def discover(
     environ: Mapping[str, str] | None = None,
     runner: ProcessRunner | None = None,

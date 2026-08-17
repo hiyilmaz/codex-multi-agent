@@ -74,6 +74,22 @@ codex-tools --mcp-mode manage check
 Use standalone `manage` mode only when the package, rather than CMA, should
 own missing or installer-marker-owned MCP tables.
 
+During one standalone run, the installer uses a process-scoped `PATH` that
+includes the user-local binary directory and the active Go `GOBIN` or first
+`GOPATH/bin`. This lets a newly installed Go tool pass verification in the
+same run without changing shell profile files or the caller's environment.
+
+MCP tools are handled independently. A prompted credential is persisted only
+after the tool's config and read-only functional verification succeed. If
+that tool fails, its exact config pre-state is restored and later selected
+tools still run. Missing credentials are reported as `AUTH_REQUIRED`, not as
+a generic failure. The final exit status remains nonzero while any selected
+tool is incomplete.
+
+The summary reports config validity separately from preservation. `preserved`
+means that the config bytes are identical to the start of the command; a
+valid, intentional MCP table change is reported as `changed`.
+
 ## Troubleshooting
 
 - `Python 3.11 or newer is required`: install a supported Python runtime and

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
+from typing import Iterable
 
 from .models import DiscoveryResult, RunSummary, Status
 
@@ -47,18 +48,33 @@ def render_summary(payload) -> str:
     if payload.get("summary"):
         summary = payload["summary"]
         lines.append(f"\nCodex config: {'VALID' if summary['config_valid'] else 'INVALID'}; existing settings {'preserved' if summary['config_preserved'] else 'changed'}")
-        lines.append(f"Installed: {summary['installed']} · Repaired: {summary['repaired']} · Already healthy: {summary['already_healthy']} · Failed: {summary['failed']}")
+        lines.append(
+            f"Installed: {summary['installed']} · Repaired: {summary['repaired']} · "
+            f"Already healthy: {summary['already_healthy']} · "
+            f"Auth required: {summary.get('auth_required', 0)} · Failed: {summary['failed']}"
+        )
     if payload.get("issues"):
         lines.append("\nIssues:")
         lines.extend(f"  - {issue}" for issue in payload["issues"])
     return "\n".join(lines)
 
 
-def summarize(final: DiscoveryResult, before: DiscoveryResult) -> RunSummary:
-    installed = repaired = healthy = failed = 0
+def summarize(
+    final: DiscoveryResult,
+    before: DiscoveryResult,
+    *,
+    config_preserved: bool,
+    selected: Iterable[str] | None = None,
+) -> RunSummary:
+    installed = repaired = healthy = failed = auth_required = 0
+    selected_names = set(final.tools) if selected is None else set(selected)
     for name, state in final.tools.items():
+        if name not in selected_names:
+            continue
         old = before.tools.get(name)
-        if state.status != Status.HEALTHY:
+        if state.status == Status.AUTH_REQUIRED:
+            auth_required += 1
+        elif state.status != Status.HEALTHY:
             failed += 1
         elif old and old.status == Status.MISSING:
             installed += 1
@@ -66,4 +82,15 @@ def summarize(final: DiscoveryResult, before: DiscoveryResult) -> RunSummary:
             repaired += 1
         else:
             healthy += 1
-    return RunSummary(final.tools, installed, repaired, healthy, failed, final.config_valid, final.config_valid, final.credentials, final.issues)
+    return RunSummary(
+        tools=final.tools,
+        installed=installed,
+        repaired=repaired,
+        already_healthy=healthy,
+        failed=failed,
+        auth_required=auth_required,
+        config_valid=final.config_valid,
+        config_preserved=config_preserved,
+        credentials=final.credentials,
+        issues=final.issues,
+    )

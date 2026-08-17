@@ -9,11 +9,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Mapping, Sequence
 
-from .config import ConfigTransactionError, update_config_transactionally
+from .config import ConfigTransactionError, restore_config_exact, update_config_transactionally
 from .credentials import LibsecretStore, MacOSKeychainStore, MaskedPrompt, ProtectedFileStore, resolve_credential
 from .dependencies import dependency_plan
-from .discovery import discover, preflight
-from .execution import LifecycleExecutor, default_selection, interactive_selection, parse_selection
+from .discovery import discover, managed_bin_environment, preflight
+from .execution import LifecycleExecutor, LifecycleStatusError, PendingTransaction, default_selection, interactive_selection, parse_selection
 from .manifest import TOOL_MANIFEST
 from .models import Status, ToolHealth
 from .mcp import CodexVisibleMcpClient, verify_mcp
@@ -66,14 +66,23 @@ def _internet_available() -> bool:
         return False
 
 
+def _read_config_bytes(path: Path) -> tuple[bool, bytes | None]:
+    try:
+        return (True, path.read_bytes()) if path.exists() else (True, None)
+    except OSError:
+        return False, None
+
+
 def main(argv: Sequence[str] | None = None, *, environ: Mapping[str, str] | None = None, platform_facts: Mapping[str, str] | None = None, runner: ProcessRunner | None = None, connectivity_probe=None, mcp_transport=None) -> int:
     args = build_parser().parse_args(list(argv) if argv is not None else None)
     environ = dict(os.environ if environ is None else environ)
     if args.codex_home:
         environ["CODEX_HOME"] = str(Path(args.codex_home).expanduser())
     runner = runner or ProcessRunner()
+    environ = managed_bin_environment(environ, runner)
     initial = discover(environ, runner, platform_facts)
     config_parent = Path(initial.config_path).parent
+    config_path = Path(initial.config_path)
     try:
         free_bytes = shutil.disk_usage(config_parent if config_parent.exists() else Path(environ.get("HOME", "."))).free
         writable = os.access(config_parent if config_parent.exists() else config_parent.parent, os.W_OK)
@@ -111,6 +120,12 @@ def main(argv: Sequence[str] | None = None, *, environ: Mapping[str, str] | None
         payload["issues"] = list(issues)
         print(render_json(payload) if args.json else render_summary(payload))
         return 0 if okay and all(item.status == Status.HEALTHY for item in initial.tools.values()) else 1
+    config_captured, config_before = _read_config_bytes(config_path)
+    if not config_captured:
+        payload = discovery_payload(initial, selected, actions)
+        payload["issues"] = [*payload["issues"], "Codex config pre-state could not be captured safely"]
+        print(render_json(payload) if args.json else render_summary(payload))
+        return 1
 
     def install(definition):
         plans = install_plan(definition, initial.platform, args.update)
@@ -121,8 +136,11 @@ def main(argv: Sequence[str] | None = None, *, environ: Mapping[str, str] | None
             if initial.capabilities.get(dependency, False):
                 continue
             plans_for_dependency = dependency_plan(dependency, initial.platform.platform_key)
-            if not plans_for_dependency or runner.run(plans_for_dependency[0], timeout=300).returncode:
+            if not plans_for_dependency or runner.run(plans_for_dependency[0], env=environ, timeout=300).returncode:
                 raise RuntimeError("Dependency installation failed: " + dependency)
+            refreshed = managed_bin_environment(environ, runner)
+            environ.clear()
+            environ.update(refreshed)
         if command_plan[0] == "internal-github-release":
             destination = Path(environ.get("HOME", str(Path.home()))) / ".local" / "bin"
             install_cplt_release(initial.platform.machine, destination)
@@ -131,15 +149,20 @@ def main(argv: Sequence[str] | None = None, *, environ: Mapping[str, str] | None
             destination = Path(environ.get("HOME", str(Path.home()))) / ".local" / "bin"
             install_opengrep_release(initial.platform.platform_key, initial.platform.machine, destination)
             return
-        result = runner.run(command_plan, timeout=300)
+        result = runner.run(command_plan, env=environ, timeout=300)
         if result.returncode:
             raise RuntimeError("Package installation failed")
 
     def configure(definition):
         if definition.kind not in {"mcp", "cli_mcp"} or not definition.mcp or definition.mcp.get("optional"):
             return
-        if definition.credential_env:
-            store = None
+        store = None
+        credential = None
+        credential_name = definition.credential_env
+        previous_credential = environ.get(credential_name) if credential_name else None
+        had_previous_credential = bool(credential_name and credential_name in environ)
+        config_pre_state = config_path.read_bytes() if config_path.exists() else None
+        if credential_name:
             if initial.platform.platform_key == "macos" and initial.capabilities.get("security"):
                 store = MacOSKeychainStore(runner)
             elif initial.capabilities.get("secret-tool"):
@@ -147,21 +170,50 @@ def main(argv: Sequence[str] | None = None, *, environ: Mapping[str, str] | None
             else:
                 codex_home = Path(environ.get("CODEX_HOME", str(Path(environ.get("HOME", str(Path.home()))) / ".codex")))
                 store = ProtectedFileStore(codex_home / "credentials")
-            credential = resolve_credential(definition.credential_env, environ, store, None if args.non_interactive else MaskedPrompt(), args.non_interactive)
+            credential = resolve_credential(credential_name, environ, store, None if args.non_interactive else MaskedPrompt(), args.non_interactive)
             if not credential.available:
-                raise RuntimeError(f"AUTH_REQUIRED: {definition.credential_env}")
-            environ[definition.credential_env] = credential.value or ""
-        config_path = Path(initial.config_path)
-        update_config_transactionally(
-            config_path, definition.name, dict(definition.mcp or {}),
-            lambda path: _codex_validate(path, runner, environ), datetime.now().strftime("%Y%m%d-%H%M%S"),
-        )
+                raise LifecycleStatusError(Status.AUTH_REQUIRED, f"{credential_name} unavailable")
+            environ[credential_name] = credential.value or ""
+        try:
+            update_config_transactionally(
+                config_path, definition.name, dict(definition.mcp or {}),
+                lambda path: _codex_validate(path, runner, environ), datetime.now().strftime("%Y%m%d-%H%M%S"),
+            )
+            config_managed_state = config_path.read_bytes()
+            config_managed_inode = config_path.stat(follow_symlinks=False).st_ino
+        except Exception:
+            if credential_name:
+                if had_previous_credential:
+                    environ[credential_name] = previous_credential or ""
+                else:
+                    environ.pop(credential_name, None)
+            raise
+
+        def rollback():
+            try:
+                restore_config_exact(
+                    config_path,
+                    config_pre_state,
+                    expected_current=config_managed_state,
+                    expected_inode=config_managed_inode,
+                )
+            finally:
+                if credential_name:
+                    if had_previous_credential:
+                        environ[credential_name] = previous_credential or ""
+                    else:
+                        environ.pop(credential_name, None)
+
+        def commit():
+            if credential_name and credential and credential.source == "prompt" and store:
+                store.set(credential_name, credential.value or "")
+
+        return PendingTransaction(commit=commit, rollback=rollback)
 
     def verify(definition):
         if definition.kind == "mcp":
-            state = verify_mcp(definition, CodexVisibleMcpClient(runner, mcp_transport or HttpMcpTransport(), environ), not definition.credential_env or bool(environ.get(definition.credential_env)))
-            return state.status == Status.HEALTHY
-        return all(runner.run(command).returncode == 0 for command in definition.verify)
+            return verify_mcp(definition, CodexVisibleMcpClient(runner, mcp_transport or HttpMcpTransport(), environ), not definition.credential_env or bool(environ.get(definition.credential_env)))
+        return all(runner.run(command, env=environ).returncode == 0 for command in definition.verify)
 
     results = LifecycleExecutor(install, verify, configure).execute(
         TOOL_MANIFEST.values(), initial.tools, mode=command, selected=selected, mcp_mode=args.mcp_mode
@@ -173,14 +225,23 @@ def main(argv: Sequence[str] | None = None, *, environ: Mapping[str, str] | None
             final_tools[name] = result
     final = final.__class__(final.platform, final_tools, final.codex_installed, final.config_path, final.config_valid, final.capabilities, final.credentials, final.issues)
     payload = discovery_payload(final, selected)
-    run_summary = summarize(final, initial)
+    config_after_captured, config_after = _read_config_bytes(config_path)
+    if not config_after_captured:
+        payload["issues"] = [*payload["issues"], "Codex config post-state could not be captured safely"]
+    run_summary = summarize(
+        final,
+        initial,
+        config_preserved=config_after_captured and config_before == config_after,
+        selected=selected,
+    )
     payload["summary"] = {
         "installed": run_summary.installed, "repaired": run_summary.repaired,
         "already_healthy": run_summary.already_healthy, "failed": run_summary.failed,
+        "auth_required": run_summary.auth_required,
         "config_valid": run_summary.config_valid, "config_preserved": run_summary.config_preserved,
     }
     print(render_json(payload) if args.json else render_summary(payload))
-    return 0 if all(final.tools[name].status == Status.HEALTHY for name in selected) else 1
+    return 0 if config_after_captured and all(final.tools[name].status == Status.HEALTHY for name in selected) else 1
 
 
 def entrypoint():

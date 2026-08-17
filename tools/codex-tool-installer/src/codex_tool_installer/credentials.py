@@ -43,8 +43,6 @@ def resolve_credential(name: str, environ: Mapping[str, str], store: SecureStore
     value = prompt.secret(f"{name} required (leave empty to skip): ")
     if not value:
         return CredentialResult(False)
-    if store:
-        store.set(name, value)
     return CredentialResult(True, value, "prompt")
 
 

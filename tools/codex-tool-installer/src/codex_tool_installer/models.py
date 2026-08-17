@@ -77,6 +77,7 @@ class RunSummary:
     repaired: int = 0
     already_healthy: int = 0
     failed: int = 0
+    auth_required: int = 0
     config_valid: bool = True
     config_preserved: bool = True
     credentials: Mapping[str, bool] = field(default_factory=dict)

@@ -9,6 +9,17 @@
 
 ## 2026-08-17
 
+- [FIX] Standalone `codex-tools install` now rediscovers user-local and Go
+  binaries through a process-scoped PATH, refreshes that PATH after installing
+  Go as a dependency, preserves caller command precedence, and does not edit
+  shell profiles. MCP tools continue independently: prompted credentials are
+  persisted only after config and read-only functional verification succeed,
+  failed tools roll back only their owned config when byte/inode ownership is
+  unchanged, concurrent user edits are preserved, and `AUTH_REQUIRED` remains
+  distinct from generic failure. Config preservation now reflects exact byte
+  equality instead of validity. The CMA adapter remains MCP `verify-only`.
+  Package tests passed 71/71 with 85% branch coverage, adapter tests passed 7/7,
+  full regressions passed 385/385, and independent code/security reviews passed.
 - [FIX] Project Configuration filling now prefers explicit or detected backend
   facts, falls back to `Python / FastAPI / PostgreSQL / Redis` without asking,
   and always records `docs/CHANGELOG.md` and `docs/reports/`. Project-name and
