@@ -9,6 +9,24 @@
 
 ## 2026-08-17
 
+- [FEAT] EXP-20260817-005 now requires all Codex, Claude, and OpenCode
+  user-facing dialogue to remain Turkish, including questions, progress,
+  errors, approvals, and final reports. `CRITICAL DECISION` keeps its six-line
+  safety boundary while using short Turkish labels, exactly two concrete
+  options, and one concise recommendation.
+- [CHORE] EXP-20260817-004 disabled the Vercel plugin and all nine Build iOS
+  Apps skills in the active user-global Codex configuration. Qualified plugin
+  skill selectors were required; strict config validation passed and a fresh
+  model-visible prompt contained neither Vercel nor Build iOS Apps skills.
+- [FIX] Multi-variant project init now generates the required private snapshot
+  and controlled merge prompt for an existing `CLAUDE.md` regardless of the
+  Claude variant's position in the selected catalog order. Descriptor-pinned
+  state and source hashing distinguishes unchanged managed bridges from
+  user-customized Claude instructions without a TOCTOU suppression gate.
+- [TEST] Added a legacy `AGENTS.md`-only multi-variant init regression that
+  verifies instruction hash and mode preservation, private content-addressed
+  snapshots, path-only merge prompts, schema-2 ownership, and repeat-run
+  idempotency before live CMA project adoption.
 - [FEAT] EXP-20260817-003 added an evaluation-scoped Evidence-First
   Objectivity contract to the Codex, Claude, and OpenCode global policies.
   Material conclusions now prioritize verifiable independent evidence,

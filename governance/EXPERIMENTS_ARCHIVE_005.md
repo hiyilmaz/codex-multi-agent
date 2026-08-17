@@ -2,6 +2,340 @@
 
 [Back to active experiments](EXPERIMENTS.md)
 
+## EXP-20260801-001 - Local CMA Core And Lazy Runtime
+
+Date: 2026-08-01
+Status: ACCEPTED
+
+Problem:
+The local CMA runtime loads a broad global policy surface for every task, while
+friendly agent naming and conditional model escalation are only partially or
+non-operationally represented. This increases token cost and leaves the active
+routing behavior weaker than the approved plan.
+
+Evidence:
+The approved model matrix is present in the managed Codex variant and active
+local global agent files, but Core/Lazy modules do not exist, the global policy
+still contains the full detailed guidance, `display_name` is not part of the
+documented standalone custom-agent schema, and escalation rules exist only in
+planning documents.
+
+Hypothesis:
+A compact Core CMA policy plus trigger-loaded registry modules, supported
+friendly identities, and reliable static high-risk routing will reduce
+default context while preserving the mandatory chain, approval boundaries,
+truthful reporting, and test integrity.
+
+Solution Attempt:
+Add managed Core/Lazy registry modules, reduce the Codex global policy to the
+non-negotiable core and module router, remove unsupported agent metadata, and
+encode conditional model/reasoning routing in orchestration policy. Validate
+managed source before synchronizing only the approved files into
+`/Users/iyilmaz/.codex`.
+
+Test:
+Add failing contract tests for module packaging, compact policy routing,
+supported agent metadata, the approved model matrix, escalation triggers,
+portable installation, and mandatory-chain integrity. Then run focused and
+full suites, validate source-to-active equality, and perform bounded default
+and escalated runtime probes where the client exposes selected model metadata.
+
+Success Criteria:
+- The global Codex policy contains the complete non-negotiable core and a
+  compact trigger-to-module index.
+- Eight managed modules are packaged and installed by the portable Codex
+  installer.
+- `display_name` is absent from standalone agent TOML files while friendly
+  identities remain in instructions and registry documentation.
+- The approved model matrix remains exact and no mandatory role uses Luna.
+- Routing defines explicit default and static high-risk variants without
+  skipping or reordering the mandatory chain.
+- Source tests pass before active runtime synchronization.
+- Managed and active local global owned files are checksum-equivalent after a
+  fresh targeted backup.
+- Pilot evidence separates token/latency observations from quality results.
+
+Result:
+The initial RED suite ran five tests and produced 21 failures for missing lazy
+modules, an oversized 483-line policy, unsupported metadata, absent escalation,
+and incomplete portable packaging. Later RED revisions caught an invalid chain
+rendering, missing memory routing, unreliable spawn override assumptions, and
+ambiguous read-only precedence.
+
+The final focused suite passed 9 tests and the full suite passed 46 tests in
+8.785 seconds. The global policy is now 201 lines, 1,118 words, and 8,443 bytes;
+this reduces lines by 58.4 percent, words by 52.4 percent, and bytes by 48.4
+percent. Eight lazy modules and fourteen agent TOMLs are packaged and active.
+The fourteen TOMLs comprise the approved eight defaults plus six Sol/high
+routing variants. Unsupported `display_name` metadata is absent.
+
+Managed and active owned files are byte-equivalent, except the active
+append-only audit log intentionally preserves additional local history. The
+targeted rollback manifest passed SHA-256 validation. Fresh Terra/medium and
+Sol/high sessions completed, and the final routing probe preserved the exact
+four-role chain, approvals, memory routing, and security escalation.
+
+Decision:
+ACCEPT
+
+Notes:
+Scope is limited to this repository and `/Users/iyilmaz/.codex`. Remote hosts,
+Hermes profiles, other projects, Dolphin, config, auth, secrets, and plugin
+state are excluded.
+No subagents were spawned during implementation. Static role selection and
+fresh noninteractive sessions were used for bounded runtime validation.
+
+## EXP-20260728-001 - Truthful Success Reporting
+
+Date: 2026-07-28
+Status: ACCEPTED
+
+Problem:
+The runtime rejects false-positive tests, but its general outcome reporting does
+not define a shared status-to-success contract. An agent could therefore report
+an unexecuted or unverified task as successful.
+
+Evidence:
+The global runtime policies require honesty, and the TDD and reviewer contracts
+reject hardcoded success, skipped tests, and swallowed errors. They do not yet
+define `passed`, `failed`, `unverified`, and `not_executed` or constrain
+`success=true` to verified execution evidence.
+
+Hypothesis:
+A short global reporting rule, enforced by source and portable-install contract
+tests, will prevent unsupported success claims without changing normal
+conversation or adding a mandatory output format.
+
+Solution Attempt:
+Add the same minimal outcome-reporting contract to the Codex global template,
+the Codex runtime variant, and the Dolphin runtime variant. Keep existing
+skills, agents, registries, dependencies, and orchestration behavior unchanged.
+
+Test:
+First add contract assertions that fail while the policy is absent. Then verify
+the three source policies, Codex mirror equality, portable Codex and Dolphin
+installations, the full regression suite, and the active runtime copy and
+rollback backup.
+
+Success Criteria:
+- Only `passed` may use `success=true`.
+- `passed` requires execution, inspected real output, satisfied criteria, no
+  remaining critical failure, and concrete evidence.
+- `failed`, `unverified`, and `not_executed` always use `success=false`.
+- The rule applies only to explicit task, operation, or test outcome reporting;
+  it does not impose JSON or status fields on ordinary conversation.
+- Both portable runtime variants contain the validated contract.
+- The full test suite passes before the active runtime is changed.
+- The active runtime update has a verified backup and checksum rollback path.
+
+Result:
+The initial RED run executed 10 focused tests and failed five assertions because
+the contract was absent. The first GREEN attempt still failed five assertions
+because one semantic marker crossed a Markdown line break; whitespace
+normalization fixed that test defect without removing any required marker.
+The final focused suite passed 10 tests in 1.375 seconds and the full suite
+passed 37 tests in 7.716 seconds. Codex mirror equality, portable Codex and
+Dolphin installation, and `git diff --check` passed. Independent code review
+returned `PASS`, and security review returned `NO_SECURITY_IMPACT`.
+
+The active `~/.codex/AGENTS.md` was backed up before replacement. The backup
+matched the prior SHA-256
+`34d846dc2db9c3d9f817da01bb4c199914ec243ff972220b0af07458340954ad`;
+the active file then matched the validated source SHA-256
+`882fc5dc6c62c59085a9da24ba279797e467d7301dcde9119cb1a16b2317cfe3`
+with mode `0644`.
+
+Decision:
+ACCEPT
+
+Notes:
+The user approved repository implementation and a verified, reversible update
+of the active local Codex policy. Commit, push, remote deployment, dependency,
+API, schema, skill, agent, and registry changes are outside scope.
+
+## EXP-20260727-002 - Event-Driven Record Archiving
+
+Date: 2026-07-27
+Status: ACCEPTED
+
+Problem:
+Deferred findings, experiments, and changelog files grow without bound, but
+checking or compacting them at every task closure would add recurring latency
+and cost.
+
+Evidence:
+The accepted design review found that record files need bounded active context
+without losing history. It also found that a five-date changelog window is too
+small, while keeping fifty full date sections would likely exceed the runtime's
+file-size guidance.
+
+Hypothesis:
+An event-driven `record-archive` skill with deterministic thresholds, dry-run
+checks, atomic fail-closed writes, and format-specific retention rules will
+bound active context without adding work to unrelated task closures.
+
+Solution Attempt:
+Add one reusable skill and script for Deferred Findings, experiments, and
+changelog records. Trigger checks only when a finding becomes completed, an
+experiment becomes terminal, or a new changelog date is created. Keep five
+recent completed findings, five recent terminal experiments, and twenty full
+changelog dates plus a thirty-date archive index.
+
+Test:
+Run contract tests against temporary repositories for below-threshold no-ops,
+threshold rotation, preservation, duplicate and malformed-input rejection,
+dirty-file protection, idempotence, portable installation, and runtime policy
+activation.
+
+Success Criteria:
+- No event-independent or every-task archive check is introduced.
+- Deferred Findings and experiments rotate at ten eligible records and retain
+  five eligible records in the active file.
+- Changelog rotation starts at thirty detailed dates or five hundred lines,
+  retains twenty detailed dates, and exposes up to thirty archive links.
+- Pending findings and non-terminal experiments always remain active.
+- No record is lost, duplicated, or moved to the wrong section.
+- `check` is non-mutating; `apply` is atomic, fail-closed, and idempotent.
+- Codex, Dolphin, and the active local runtime expose the same validated skill.
+
+Result:
+The initial RED run failed on all thirteen missing behavior and packaging
+surfaces. After implementation and two real-format compatibility revisions,
+the focused suite passed 16 tests and the full project suite passed 35 tests.
+Measured statement coverage for the bundled script is 87%. Codex, Dolphin, and
+the active local skill passed `quick_validate.py`, compiled successfully, and
+were checksum-equivalent. A read-only check against `yedekparcasor.com`
+reported Deferred Findings and Changelog below threshold and Experiments ready
+for rotation without changing that project. Dirty files, malformed formats,
+duplicates, unsupported headings, and broken symlinks failed closed.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment changes only record-retention automation. It does not alter the
+mandatory orchestration chain, agent reasoning defaults, or task approval
+rules.
+
+## EXP-20260727-001 - Conditional Hypothesis Workflow
+
+Date: 2026-07-27
+Status: ACCEPTED
+
+Problem:
+The runtime has evidence, retry, TDD, and review controls, but it does not yet
+provide the conditional experiment workflow tracked by ORCH-005. Making the
+workflow mandatory for every task would add duplicate records and latency.
+
+Evidence:
+`docs/ORCHESTRATION_IMPROVEMENT_TASKS.md` keeps ORCH-005 pending and limits
+experiment escalation to failed attempts, unclear evidence, competing
+hypotheses, regressions, or measured comparisons.
+
+Hypothesis:
+A concise global trigger combined with a reusable `hypothesis-workflow` skill
+will add traceable experiments only when difficulty or uncertainty justifies
+the extra process, without changing routine task flow or the mandatory agent
+chain.
+
+Solution Attempt:
+Package the conditional skill for Codex and Dolphin, register it globally,
+link it from runtime policy, preserve existing evidence and changelog paths,
+and explicitly prohibit proactive experiment-file creation for routine work.
+
+Test:
+Run focused contract tests, the complete unit suite, skill validation, and
+temporary Codex and Dolphin installations. Verify the active local Codex
+runtime after synchronization.
+
+Success Criteria:
+- Routine first-pass work does not activate the experiment workflow.
+- Defined escalation triggers activate prior-record review and a dated ID.
+- Project `AGENTS.md` does not need to declare the skill.
+- Existing `CHANGELOG_PATH` and `EVIDENCE_PATH` remain authoritative.
+- The mandatory agent chain and `medium` reasoning defaults remain unchanged.
+- Codex and Dolphin temporary installs contain the validated skill.
+- Tests reject unconditional activation and missing test-integrity guardrails.
+
+Result:
+The corrected RED run failed on all missing behavior surfaces: skill files,
+global policy, registry links, and portable installation. After implementation,
+the focused suite passed 7 tests and the full suite passed 19 tests. Both
+packaged skills and the active global skill passed `quick_validate.py`. Codex
+and Dolphin temporary installs contained identical skill contracts.
+`~/.codex/AGENTS.md`, the active skill, and active registry policy were
+checksum-equivalent to their source templates after targeted synchronization.
+The existing active audit history remained intact.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment changes one main behavior: conditional activation of a
+traceable hypothesis cycle. It does not alter approval, scope, destructive
+operation, retry, orchestration, or security boundaries. The prior active
+policy and registry files are recoverable from
+`~/.codex/archive/hypothesis-workflow-20260727_004001/`.
+
+## EXP-20260803-001 - Independent Opt-In GLM Evidence Validator
+
+Date: 2026-08-03
+Status: ACCEPTED
+
+Problem:
+Evidence validation is useful for selected projects, but embedding it in CMA
+policy, templates, or the default completion path would change every project.
+
+Evidence:
+The rejected first attempt coupled validation to CMA runtime templates and
+failed review on MCP initialization, portable paths, hook preservation, and
+missing tests. The approved scope requires an independent installation with no
+automatic project activation.
+
+Hypothesis:
+A standalone ACP client installed under `~/.codex/evidence-validator`, combined
+with project-local opt-in configuration and hooks, can validate changed evidence
+without changing CMA instructions, evidence creation rules, global hooks, or
+inactive projects.
+
+Solution Attempt:
+Implement and test an independent validator, project enable/disable/status
+commands, hash-based session evidence detection, strict GLM result parsing, and
+project-local hook merging. Install it globally but activate only a temporary
+pilot project.
+
+Test:
+Run unit and integration tests against temporary projects and a fake ACP agent,
+then run a real GLM smoke test using the existing `glm-acp-agent` setup. Verify
+that CMA files, the active global hook, and real project files remain unchanged.
+
+Success Criteria:
+- No CMA policy, template, installer, or evidence-creation instruction changes.
+- No real project is activated automatically.
+- Enable and disable preserve unrelated project hooks and are idempotent.
+- Only session-created or session-modified evidence is sent for validation.
+- Only schema-valid `PASS` permits completion; every uncertain path is
+  `UNVERIFIED`.
+- The existing global notification hook remains byte-identical.
+- Focused tests, regression tests, real GLM smoke validation, code review, and
+  security review complete without blocking findings.
+
+Result:
+The independent validator was installed under `~/.codex/evidence-validator`
+without changing global CMA instructions, Codex configuration, or the existing
+global notification hook. The final focused suite passed 24/24 with no skipped
+tests. A temporary project completed real pinned GLM ACP manual validation with
+`PASS`, then its changed evidence completed the real Stop hook with `{}`. The
+temporary project was disabled and moved to Trash. Final independent code and
+security reviews both returned PASS with no blocking findings.
+
+Decision:
+ACCEPT
+
+Notes:
+The global installation makes the validator available only. Project activation,
+commit, and push remain outside this task.
+
 ## EXP-20260806-010 - Portable Codex Subagent Restoration Prompt
 
 Date: 2026-08-06
@@ -440,351 +774,3 @@ Browser Renderer pilot. Native `~/.config/opencode`, provider/model/auth state,
 dependencies, commits, pushes, and deployments were not changed. Expected low
 residual risk remains: the native `opencode` executable is resolved from the
 user's `PATH`, and existing project-local plugins execute with user authority.
-
-## EXP-20260806-005 - Archived Bootstrap Experiment Contract
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-After the required experiment compaction, the full suite failed because the
-hypothesis-workflow bootstrap test searches only the active experiment file for
-an accepted record that was correctly moved to the indexed archive.
-
-Evidence:
-The archive check is healthy, `EXP-20260727-001` exists in
-`governance/EXPERIMENTS_ARCHIVE_001.md`, and the only failing assertion expects
-that ID in `governance/EXPERIMENTS.md`.
-
-Hypothesis:
-If the test reads the active experiment record plus the archive index and its
-declared parts, it will preserve the accepted-result contract across supported
-record compaction without weakening any content assertion.
-
-Solution Attempt:
-Update only the bootstrap experiment test to assemble the supported active and
-indexed archive text before applying the existing ID, status, decision, and
-approval-boundary assertions.
-
-Test:
-Run the focused hypothesis-workflow suite, the complete 60-test suite,
-`record_archive.py check --record all`, and `git diff --check`.
-
-Success Criteria:
-- The focused and complete suites pass.
-- The test still requires the exact bootstrap ID, accepted status, decision,
-  and approval-boundary text.
-- Archive parts are discovered through the stable index rather than a glob.
-- Missing or unindexed records still fail the test.
-- Record archive validation remains below threshold and healthy.
-
-Result:
-The test now reads the active record, the stable archive index, and only the
-archive parts declared by that index before applying the unchanged bootstrap
-ID, status, decision, and approval-boundary assertions. The focused suite
-passed 7/7, the complete suite passed 60/60, `git diff --check` passed, and the
-record archive check reported every record below threshold.
-
-Decision:
-ACCEPT
-
-Notes:
-This regression fix is limited to test compatibility with the supported record
-archive layout created by the current task.
-
-## EXP-20260806-006 - Bootstrap Record Scoped Assertions
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-Code review found that the archive-compatible bootstrap experiment test checks
-generic accepted status and decision strings across all concatenated records,
-so another accepted experiment can mask a rejected target bootstrap record.
-
-Evidence:
-The test locates `EXP-20260727-001` in the indexed archive but applies the
-`Status: ACCEPTED`, `Decision: ACCEPT`, and approval-boundary assertions to the
-complete aggregate text rather than the target record block.
-
-Hypothesis:
-Extracting the exact `EXP-20260727-001` block by heading boundaries and applying
-every semantic assertion only to that block will reject a mutated target record
-even when other accepted records remain present.
-
-Solution Attempt:
-Change only the bootstrap contract test to require one exact target block and
-scope all target assertions to it. Preserve index-driven archive discovery.
-
-Test:
-First run a mutation probe demonstrating the current aggregate assertion stays
-green when the target status and decision are changed. Then apply the scoped
-block assertion, repeat the mutation probe expecting rejection, and run the
-focused and complete suites.
-
-Success Criteria:
-- The pre-fix mutation probe demonstrates the false positive.
-- The post-fix assertion rejects mutated target status or decision values.
-- The real focused suite passes 7/7 and the complete suite passes 60/60.
-- Archive discovery remains limited to parts declared by the stable index.
-- The code-reviewer blocking finding is resolved on re-review.
-
-Result:
-The pre-fix mutation probe reproduced the false positive: changing the target
-record to rejected still satisfied the aggregate assertions. The updated test
-extracts exactly one target record by heading boundaries and scopes every
-semantic assertion to that block. The post-fix mutation was correctly rejected,
-the focused suite passed 7/7, the complete suite passed 60/60, and
-`git diff --check` passed.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment reopens only the test-integrity scope identified by code review.
-
-## EXP-20260806-007 - Provider-Aware Claude Runtime Integration
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-The portable CMA runtime catalog and installers support Codex and Dolphin, but
-their file contracts assume Codex-native `AGENTS.md`, `config.toml`, and TOML
-agents. Those assumptions cannot safely install or initialize Claude's native
-`CLAUDE.md`, `settings.json`, and Markdown subagent surfaces.
-
-Evidence:
-The pre-change catalog contains only `codex` and `dolphin`; the installer
-unconditionally reads `AGENTS.md` and `config.toml`; project init and upgrade do
-not manage a Claude bridge. The complete pre-change suite passed 60/60, and the
-dirty-worktree inventory was captured before implementation.
-
-Hypothesis:
-If provider-specific policy, settings, agent format, and launcher metadata are
-declared in the variant catalog, a native Claude variant and project bridge can
-be added without weakening Codex/Dolphin behavior or overwriting local files.
-
-Solution Attempt:
-Add RED contracts first, then implement catalog-driven installation, a native
-Claude launcher using `CLAUDE_CONFIG_DIR`, minimal safe settings, four distinct
-Markdown chain agents, compatible skills, and an `@AGENTS.md` project bridge
-with preservation-aware init and upgrade behavior.
-
-Test:
-Run the focused RED/GREEN suites, the complete unittest suite, shell and Python
-syntax checks, JSON parsing, isolated temporary-home installs and launcher
-stubs, `git diff --check`, and independent code and security reviews.
-
-Success Criteria:
-- RED failures prove the missing Claude and provider-aware behaviors.
-- All catalog variants install only their declared policy and settings files.
-- Claude launcher forwards arguments and exit status without exposing secrets.
-- Existing and customized project Claude files are preserved or archived only
-  after explicit init confirmation.
-- Codex and Dolphin regressions remain green and the mandatory chain stays
-  exactly `planner -> tdd-guide -> code-reviewer -> security-reviewer`.
-- No SDK dependency, real credential, network call, active runtime mutation,
-  commit, push, release, deployment, skipped test, or weakened assertion occurs.
-
-Rollback:
-Before a commit, remove only files introduced by this experiment and reverse
-only its narrow tracked hunks with `apply_patch`; do not use destructive Git
-commands. Temporary install fixtures are disposable and never target active
-runtime homes. Project init recovery uses its timestamped archive.
-
-Result:
-The valid RED cycle demonstrated the absent third variant, provider metadata,
-Claude runtime files, launcher behavior, and project bridge before production
-implementation. The provider-aware installer, native Claude runtime, project
-bridge, preservation-aware upgrade behavior, and four user guides were then
-implemented without dependencies or active runtime writes.
-
-The first code review found launcher-name traversal, launcher-mode mutation,
-and project `.claude` parent-symlink defects. Direct RED regressions reproduced
-all three before fail-closed fixes; code re-review passed. Security review then
-reproduced a managed-directory symlink escape in the installer. A final RED
-attack test proved the outside write, and the fix added managed-tree preflight
-plus per-target ancestor checks. Code and security re-reviews both passed.
-
-The final complete suite passed 88/88. Shell and Python syntax checks, both
-Claude settings JSON parses, catalog listing, and `git diff --check` passed.
-No test was skipped or weakened. No SDK dependency, credential, real Claude
-call, active runtime mutation, commit, push, release, or deployment occurred.
-
-Decision:
-ACCEPT
-
-Notes:
-User approval covers local Phases 0 through 4 only. Agent SDK work, credentials,
-live activation, commit, push, and deployment remain separately gated.
-
-## EXP-20260806-008 - Bounded Claude Agent SDK Adapter Pilot
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-The native Claude runtime is complete, but the project has no bounded
-programmatic adapter for the Claude Agent SDK. Direct SDK use could mistake
-tool approval for isolation, report incomplete streams as success, leak local
-settings into a session, or duplicate cost through retries.
-
-Evidence:
-Phase 5 remains pending in the task tracker. Current official SDK documentation
-defines `query()` as an async iterator, exposes restrictive option fields and
-terminal `ResultMessage` metadata, and explicitly states that `allowed_tools`
-auto-approves tools rather than restricting the available toolset.
-
-Hypothesis:
-An isolated Python adapter pinned to `claude-agent-sdk==0.2.130`, with empty
-tool and setting sources, bounded requests, explicit session validation, no
-automatic retry, and fail-closed terminal mapping can provide an offline-
-testable programmatic contract without credentials or a real API call.
-
-Solution Attempt:
-Add RED tests first, then implement a small adapter under
-`adapters/claude-agent-sdk/` with an exact dependency lock, injected query
-boundary, restrictive options, timeout/cancellation cleanup, truthful result
-mapping, and cost/token/session observability.
-
-Test:
-Run frozen dependency resolution, adapter unit tests with SDK-shaped local
-messages and injected async iterators, the complete root regression suite,
-syntax and diff checks, and independent code and security reviews.
-
-Success Criteria:
-- Exact SDK pin and lockfile install reproducibly with Python 3.10+.
-- Tests prove query invocation, request bounds, session modes, permissions,
-  cleanup, no retry, timeout, cancellation, and truthful terminal mapping.
-- Only one verified non-error terminal result can report `success=True`.
-- Missing cost or token values remain unknown rather than becoming zero.
-- No credential, real API call, active runtime mutation, commit, push,
-  deployment, skipped test, weakened assertion, or hidden retry occurs.
-
-Rollback:
-Remove only the new adapter directory and reverse only the tracker, experiment,
-and changelog hunks owned by this phase. Do not use destructive Git commands or
-modify the completed native Claude runtime.
-
-Result:
-Meaningful RED runs rejected permissive options, hardcoded success, lost
-terminal metadata, missing query invocation, swallowed cancellation during
-stream cleanup, error-bearing terminal success, and an accidentally live SDK
-default. The completed adapter pins `claude-agent-sdk==0.2.130`, disables
-built-in tools and settings sources, validates request and session bounds,
-performs no retry, closes streams, preserves external cancellation, and maps
-incomplete or error-bearing terminal evidence fail-closed.
-
-The final adapter suite passed 21/21 with 92% combined line/branch coverage.
-Frozen lock validation and synchronization, Python compilation, `git diff
---check`, and the complete 88/88 root regression suite passed. Code review
-found and verified fixes for cancellation and explicit terminal error metadata.
-Security review found and verified a default-deny fix preventing accidental
-credential-backed SDK execution. No credential was inspected, no real Claude
-call was made, and no active runtime, commit, push, or deployment change
-occurred.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved Gate B by asking implementation to continue after the native
-phase. Gate C must add a separate per-call authorization capability, isolated
-workspace and Claude configuration, and a minimal allowlisted child-process
-environment. Gates C through F remain pending.
-
-## EXP-20260806-009 - Full Claude CMA Source Parity
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-The packaged Claude runtime exposes the mandatory four-role chain and four
-skills, but it does not yet carry the complete Codex Core CMA policy, canonical
-role catalog, escalation roles, lazy modules, registry records, or archive
-helper. Existing tests prove only the reduced Claude contract and can pass
-while these semantic parity gaps remain.
-
-Evidence:
-The pre-change Claude source contains 14 home files, four agent definitions,
-four abbreviated skills, and three registry files. The Codex source contains
-38 home files, including 12 agents, four complete skills, eight lazy modules,
-six registry records, and the record archive script. Four Codex-only
-`skills/*/agents/openai.yaml` files are not portable Claude artifacts.
-
-Hypothesis:
-If provider-neutral CMA assets are copied byte-for-byte and provider-specific
-surfaces are translated to documented Claude Markdown/YAML, model, permission,
-and configuration conventions, Claude can reach full semantic CMA parity
-without copying Codex-only runtime metadata or activating a local Claude home.
-
-Solution Attempt:
-First add semantic parity tests that reject the reduced package. Then package
-the 34-file Claude-native manifest: the complete Core policy, 12 agents, four
-skills and archive helper, eight lazy modules, six registry records, safe
-settings, and updated runtime documentation. Preserve the mandatory chain
-exactly and map complex Codex escalation roles to explicit Claude Opus roles.
-
-Test:
-Run a focused RED test before production edits. After implementation, verify
-the exact manifest, agent frontmatter and model matrix, policy/router semantics,
-byte-identical provider-neutral assets, adapted registry consistency, archive
-helper behavior and executable mode, isolated installation, prohibited artifact
-absence, complete regression suite, diff checks, and independent code and
-security reviews.
-
-Success Criteria:
-- The RED run fails for observable missing policy, role, module, registry, and
-  archive-helper behaviors rather than counts alone.
-- The Claude home contains exactly the approved 34-file native manifest.
-- Eight canonical roles and four `-opus` escalation roles use valid Claude
-  frontmatter, medium effort, least-authority tools, and documented models.
-- Core policy sections, all eight lazy routes, skills, modules, and registry
-  indexes are semantically consistent with Codex CMA.
-- No `openai.yaml`, `*-sol` role, Codex model ID, Codex-only TOML agent field,
-  credential, hook, or permission bypass is packaged.
-- Focused and complete suites pass without skipped or weakened tests, followed
-  by clean code and security reviews.
-
-Rollback:
-Reverse only files and tracker records owned by this experiment with
-`apply_patch`. Do not modify active `~/.claude`, use destructive Git commands,
-or disturb unrelated repository work.
-
-Result:
-The initial semantic RED run produced seven failures and ten missing-file
-errors, proving the reduced 14-file Claude package did not satisfy the 34-file
-contract despite the old focused suites passing. The completed package now
-contains the full Core policy, 12 native agents, four complete skills, the
-record archive helper, eight lazy modules, six registry records, and safe
-settings. Source and isolated-install manifests match byte-for-byte, while
-Codex-only model, TOML, `*-sol`, and OpenAI skill metadata remain excluded.
-
-Code review rejected mechanically backdated Claude audit history. A dedicated
-RED regression exposed all seven false date headings; the audit log now records
-only evidenced 2026-08-06 Claude changes and code re-review passed.
-
-Security review then reproduced `docs` and `governance` parent-symlink escapes
-in the shared archive helper. After explicit user approval, the canonical
-Codex, Dolphin, and Claude scripts were hardened with `O_NOFOLLOW` directory
-descriptors for managed reads, atomic replacement, and rollback deletion. A
-second RED regression exposed a post-replace `fsync` rollback gap; registering
-paths before writes restored transaction rollback. Code and security re-reviews
-both passed.
-
-Final focused security/parity verification passed 48/48 and the complete root
-suite passed 106/106. JSON parsing, executable modes, exact 34-file manifest,
-three-provider script byte parity, prohibited-pattern search, Python source
-compilation, and `git diff --check` passed. No credential, real API call,
-active runtime mutation, dependency addition, commit, push, or deployment
-occurred.
-
-Decision:
-ACCEPT
-
-Notes:
-User approval covers repository source parity and offline verification only.
-Local/global Claude activation, credentials, real API use, commit, push, and
-deployment remain outside this experiment. The user separately approved the
-shared archive-helper security remediation required to close review.

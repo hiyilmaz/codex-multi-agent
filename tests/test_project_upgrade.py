@@ -142,6 +142,167 @@ class ProjectUpgradeTests(unittest.TestCase):
         self.assertEqual(sha256(agents), shared_hash)
         self.assertEqual(sorted((project / ".codex/archive").glob("init-*")), archives)
 
+    def test_legacy_agents_only_multi_variant_init_is_private_and_idempotent(
+        self,
+    ) -> None:
+        project = self.root / "legacy-agents-only"
+        project.mkdir()
+        agents = project / "AGENTS.md"
+        local_instructions = (
+            "# Local Instructions\n\n"
+            "Preserve this project-specific sentinel exactly.\n"
+        )
+        agents.write_text(local_instructions, encoding="utf-8")
+        agents.chmod(0o640)
+        agents_hash = sha256(agents)
+        variant_args = [
+            argument
+            for variant in self.catalog_variants()
+            for argument in ("--variant", variant)
+        ]
+
+        first = self.run_command(
+            PROJECT_INIT, *variant_args, project, input_text="y\n"
+        )
+
+        self.assertIn("Upgrade applied.", first.stdout)
+        self.assertEqual(sha256(agents), agents_hash)
+        self.assertEqual(agents.stat().st_mode & 0o777, 0o640)
+        snapshot_root = project / ".codex/archive/instruction-merge"
+        snapshots = list(snapshot_root.glob("instruction-merge-*/AGENTS.md"))
+        self.assertEqual(len(snapshots), 1)
+        self.assertEqual(snapshot_root.stat().st_mode & 0o777, 0o700)
+        self.assertEqual(snapshots[0].parent.stat().st_mode & 0o777, 0o700)
+        self.assertEqual(snapshots[0].stat().st_mode & 0o777, 0o600)
+        self.assertEqual(sha256(snapshots[0]), agents_hash)
+
+        merge_prompt = project / ".codex/prompts/merge-existing-instructions.md"
+        prompt_text = merge_prompt.read_text(encoding="utf-8")
+        self.assertIn("current_target_b64:", prompt_text)
+        self.assertIn("preserved_snapshot_b64:", prompt_text)
+        self.assertIn("cma_candidate_b64:", prompt_text)
+        self.assertNotIn(local_instructions.strip(), prompt_text)
+
+        state_path = project / ".codex/template-state.json"
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        self.assertEqual(state["schema_version"], 2)
+        self.assertEqual(state["variants"], self.catalog_variants())
+        self.assertEqual(state["files"]["AGENTS.md"]["mode"], "merge")
+        for managed_path in (
+            ".codex/config.toml",
+            "CLAUDE.md",
+            ".claude/settings.json",
+            ".opencode/opencode.json",
+        ):
+            self.assertEqual(state["files"][managed_path]["mode"], "managed")
+        self.assertEqual(list((project / ".codex/archive").glob("init-*")), [])
+
+        before_second_run = {
+            path.relative_to(project).as_posix(): sha256(path)
+            for path in project.rglob("*")
+            if path.is_file()
+        }
+        second = self.run_command(
+            PROJECT_INIT, *variant_args, project, input_text="y\n"
+        )
+        after_second_run = {
+            path.relative_to(project).as_posix(): sha256(path)
+            for path in project.rglob("*")
+            if path.is_file()
+        }
+
+        self.assertIn("Already up to date.", second.stdout)
+        self.assertEqual(after_second_run, before_second_run)
+        self.assertEqual(list((project / ".codex/archive").glob("init-*")), [])
+
+    def test_multi_variant_init_snapshots_existing_claude_in_catalog_order(
+        self,
+    ) -> None:
+        project = self.root / "legacy-claude-middle-variant"
+        project.mkdir()
+        agents = project / "AGENTS.md"
+        claude = project / "CLAUDE.md"
+        agents.write_text("# Local project instructions\n", encoding="utf-8")
+        claude.write_text(
+            "# Local Claude instructions\n\nPreserve this Claude sentinel.\n",
+            encoding="utf-8",
+        )
+        claude.chmod(0o640)
+        claude_hash = sha256(claude)
+        variant_args = [
+            argument
+            for variant in self.catalog_variants()
+            for argument in ("--variant", variant)
+        ]
+
+        result = self.run_command(
+            PROJECT_INIT, *variant_args, project, input_text="y\n"
+        )
+
+        self.assertIn("Upgrade applied.", result.stdout)
+        self.assertEqual(sha256(claude), claude_hash)
+        self.assertEqual(claude.stat().st_mode & 0o777, 0o640)
+        snapshots = list(
+            (project / ".codex/archive/instruction-merge").glob(
+                "instruction-merge-*/CLAUDE.md"
+            )
+        )
+        self.assertEqual(len(snapshots), 1)
+        self.assertEqual(snapshots[0].stat().st_mode & 0o777, 0o600)
+        self.assertEqual(sha256(snapshots[0]), claude_hash)
+        prompt = project / ".codex/prompts/merge-existing-claude-instructions.md"
+        prompt_text = prompt.read_text(encoding="utf-8")
+        self.assertIn("current_target_b64:", prompt_text)
+        self.assertIn("preserved_snapshot_b64:", prompt_text)
+        self.assertNotIn("Preserve this Claude sentinel.", prompt_text)
+        state = json.loads(
+            (project / ".codex/template-state.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(state["variants"], self.catalog_variants())
+        self.assertEqual(state["files"]["CLAUDE.md"]["mode"], "project")
+
+    def test_multi_variant_init_snapshots_customized_managed_claude_immediately(
+        self,
+    ) -> None:
+        project = self.initialize("customized-managed-claude", "claude")
+        claude = project / "CLAUDE.md"
+        claude.write_text(
+            claude.read_text(encoding="utf-8")
+            + "\n# User-owned Claude customization\n",
+            encoding="utf-8",
+        )
+        claude_hash = sha256(claude)
+        state_before = json.loads(
+            (project / ".codex/template-state.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(state_before["files"]["CLAUDE.md"]["mode"], "managed")
+        variant_args = [
+            argument
+            for variant in self.catalog_variants()
+            for argument in ("--variant", variant)
+        ]
+
+        result = self.run_command(
+            PROJECT_INIT, *variant_args, project, input_text="y\n"
+        )
+
+        self.assertIn("Upgrade applied.", result.stdout)
+        self.assertEqual(sha256(claude), claude_hash)
+        snapshot = (
+            project
+            / ".codex/archive/instruction-merge"
+            / f"instruction-merge-{claude_hash}"
+            / "CLAUDE.md"
+        )
+        self.assertEqual(sha256(snapshot), claude_hash)
+        self.assertTrue(
+            (project / ".codex/prompts/merge-existing-claude-instructions.md").is_file()
+        )
+        state_after = json.loads(
+            (project / ".codex/template-state.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(state_after["files"]["CLAUDE.md"]["mode"], "project")
+
     def test_claude_init_creates_minimal_bridge_and_state(self) -> None:
         project = self.initialize("claude-project", "claude")
         bridge = (project / "CLAUDE.md").read_text(encoding="utf-8")

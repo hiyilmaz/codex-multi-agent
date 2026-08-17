@@ -1,4 +1,6 @@
 import base64
+import hashlib
+import json
 import os
 import stat
 import subprocess
@@ -78,6 +80,81 @@ class InstructionMergePromptTests(unittest.TestCase):
             self.assertIn("proposed unified diff", prompt_text.lower())
             self.assertNotIn("local-secret-token", prompt_text)
             self.assertNotIn("local-secret-token", first.stdout + first.stderr)
+
+    def test_managed_state_suppression_uses_descriptor_safe_source_hash(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            source = root / "CLAUDE.md"
+            candidate = root / "CMA.md"
+            state = root / "template-state.json"
+            snapshot_root = root / "backups"
+            prompt = root / "prompts/merge-existing-claude-instructions.md"
+            source.write_text("@AGENTS.md\n", encoding="utf-8")
+            candidate.write_text("@AGENTS.md\n", encoding="utf-8")
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
+            state.write_text(
+                json.dumps(
+                    {
+                        "files": {
+                            "CLAUDE.md": {
+                                "mode": "managed",
+                                "template_sha256": digest,
+                            }
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            command = (
+                str(TOOL),
+                "--source",
+                str(source),
+                "--candidate",
+                str(candidate),
+                "--snapshot-root",
+                str(snapshot_root),
+                "--prompt",
+                str(prompt),
+                "--scope",
+                "project",
+                "--variant",
+                "claude",
+                "--managed-state",
+                str(state),
+                "--managed-path",
+                "CLAUDE.md",
+            )
+
+            unchanged = subprocess.run(
+                command,
+                cwd=REPO_ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+            self.assertEqual(unchanged.returncode, 0, unchanged.stderr)
+            self.assertIn("merge prompt not required", unchanged.stdout)
+            self.assertFalse(snapshot_root.exists())
+            self.assertFalse(prompt.exists())
+
+            source.write_text(
+                "@AGENTS.md\n\n# User customization\n",
+                encoding="utf-8",
+            )
+            customized = subprocess.run(
+                command,
+                cwd=REPO_ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+            self.assertEqual(customized.returncode, 0, customized.stderr)
+            self.assertTrue(prompt.is_file())
+            snapshots = list(snapshot_root.glob("instruction-merge-*/CLAUDE.md"))
+            self.assertEqual(len(snapshots), 1)
+            self.assertEqual(snapshots[0].read_bytes(), source.read_bytes())
 
     def test_symlinked_source_fails_without_snapshot_or_prompt(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

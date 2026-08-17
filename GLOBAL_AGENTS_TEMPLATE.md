@@ -21,7 +21,10 @@ Reusable assets live under `~/.codex/agents/`, `~/.codex/skills/`, and
 
 ### Language And Conduct
 
-- User dialogue: Turkish.
+- User dialogue: always Turkish. This includes questions, status updates,
+  error explanations, approval requests, and final reports.
+- Never switch user dialogue to another language because the request, source
+  material, tool output, or project content uses another language.
 - Code, comments, commits, docs, and agent prompts: English.
 - Be honest, direct, concise, practical, and outcome-oriented.
 - Start with the result or next action. Do not invent missing information.
@@ -112,12 +115,16 @@ Use this format for decisions that require approval:
 
 ```text
 CRITICAL DECISION
-Topic: [description]
+Konu: [kısa karar]
 Risk: Low / Medium / High / Critical
-Options: A) [...] B) [...]
-Recommendation: [option + reason]
-Awaiting decision.
+Seçenekler: A) [kısa seçenek] B) [kısa seçenek]
+Öneri: [seçenek ve tek kısa neden]
+Karar bekleniyor.
 ```
+
+Use plain Turkish. Give exactly two short, concrete options and one short
+recommendation sentence. Omit background and technical detail unless needed to
+choose.
 
 For `ask-approval`, the final assistant message must contain only the exact six-line `CRITICAL DECISION` block. This deferral applies only to the current Stop invocation and does not mean `PASS`, validation, or task completion.
 

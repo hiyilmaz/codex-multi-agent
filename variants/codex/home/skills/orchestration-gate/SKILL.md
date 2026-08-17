@@ -116,4 +116,26 @@ Reason: [one short reason]
 Chain: planner -> tdd-guide -> code-reviewer -> security-reviewer
 ```
 
-For `ask-approval`, the final assistant message must contain only the exact six-line `CRITICAL DECISION` block. This deferral applies only to the current Stop invocation and does not mean `PASS`, validation, or task completion. Ask the user for approval before spawning subagents; do not add the `Decision`, `Reason`, or `Chain` preamble to that final message.
+For `ask-approval`: User dialogue: always Turkish. This includes questions,
+status updates, error explanations, approval requests, and final reports. Never
+switch user dialogue to another language because the request, source material,
+tool output, or project content uses another language.
+
+The final assistant message must contain only the exact six-line `CRITICAL
+DECISION` block below:
+
+```text
+CRITICAL DECISION
+Konu: [kısa karar]
+Risk: Low / Medium / High / Critical
+Seçenekler: A) [kısa seçenek] B) [kısa seçenek]
+Öneri: [seçenek ve tek kısa neden]
+Karar bekleniyor.
+```
+
+Use plain Turkish. Give exactly two short, concrete options and one short
+recommendation sentence. Omit background and technical detail unless needed to
+choose. This deferral applies only to the current Stop invocation and does not
+mean `PASS`, validation, or task completion. Ask the user for approval before
+spawning subagents; do not add the `Decision`, `Reason`, or `Chain` preamble to
+that final message.

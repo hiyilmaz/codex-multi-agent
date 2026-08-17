@@ -142,6 +142,7 @@ done
 
 generate_merge_prompt() {
   local source="$1" candidate="$2" prompt_name="$3" target="${4:-$1}" variants
+  local extra_args=("${@:5}")
   variants="$(IFS=,; echo "${VARIANT_IDS[*]}")"
   "$MERGE_HELPER" \
     --source "$source" \
@@ -150,7 +151,8 @@ generate_merge_prompt() {
     --snapshot-root "$PROJECT_PATH/.codex/archive/instruction-merge" \
     --prompt "$PROJECT_PATH/.codex/prompts/$prompt_name" \
     --scope project \
-    --variant "$variants"
+    --variant "$variants" \
+    "${extra_args[@]}"
 }
 
 if [[ -L "$PROJECT_PATH/AGENTS.md" ]]; then
@@ -167,11 +169,18 @@ if [[ -f "$PROJECT_PATH/AGENTS.md" && "$RESET" != "true" ]]; then
     "$PROJECT_PATH/AGENTS.md" \
     "$TEMPLATE_DIR/PROJECT_AGENTS_TEMPLATE.md" \
     "merge-existing-instructions.md"
-  if [[ " ${VARIANT_IDS[*]} " == *" claude " && -f "$PROJECT_PATH/CLAUDE.md" ]]; then
+  if [[ " ${VARIANT_IDS[*]} " == *" claude "* && ( -e "$PROJECT_PATH/CLAUDE.md" || -L "$PROJECT_PATH/CLAUDE.md" ) ]]; then
+    STATE_PATH="$PROJECT_PATH/.codex/template-state.json"
+    CLAUDE_STATE_ARGS=()
+    if [[ -e "$STATE_PATH" || -L "$STATE_PATH" ]]; then
+      CLAUDE_STATE_ARGS=(--managed-state "$STATE_PATH" --managed-path "CLAUDE.md")
+    fi
     generate_merge_prompt \
       "$PROJECT_PATH/CLAUDE.md" \
       "$TEMPLATE_DIR/PROJECT_CLAUDE_TEMPLATE.md" \
-      "merge-existing-claude-instructions.md"
+      "merge-existing-claude-instructions.md" \
+      "$PROJECT_PATH/CLAUDE.md" \
+      "${CLAUDE_STATE_ARGS[@]}"
   fi
   UPGRADE_VARIANT_ARGS=()
   for variant in "${VARIANT_IDS[@]}"; do UPGRADE_VARIANT_ARGS+=(--variant "$variant"); done
@@ -273,7 +282,7 @@ if [[ -f "$ARCHIVE_DIR/AGENTS.md" ]]; then
     "merge-existing-instructions.md" \
     "$PROJECT_PATH/AGENTS.md"
 fi
-if [[ " ${VARIANT_IDS[*]} " == *" claude " && -f "$ARCHIVE_DIR/CLAUDE.md" ]]; then
+if [[ " ${VARIANT_IDS[*]} " == *" claude "* && -f "$ARCHIVE_DIR/CLAUDE.md" ]]; then
   generate_merge_prompt \
     "$ARCHIVE_DIR/CLAUDE.md" \
     "$TEMPLATE_DIR/PROJECT_CLAUDE_TEMPLATE.md" \

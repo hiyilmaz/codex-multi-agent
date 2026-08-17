@@ -32,6 +32,23 @@ When evaluating claims, options, recommendations, or disputed topics:
 - Do not require research for routine coding, file editing, translation, or
   operational tasks unless the task independently requires current evidence.
 """
+TURKISH_DIALOGUE_MARKERS = (
+    "User dialogue: always Turkish.",
+    "questions, status updates, error explanations, approval requests, and final reports",
+    "Never switch user dialogue to another language",
+    "request, source material, tool output, or project content uses another language",
+)
+SIMPLE_DECISION_BLOCK = """CRITICAL DECISION
+Konu: [kısa karar]
+Risk: Low / Medium / High / Critical
+Seçenekler: A) [kısa seçenek] B) [kısa seçenek]
+Öneri: [seçenek ve tek kısa neden]
+Karar bekleniyor."""
+SIMPLE_DECISION_RULES = (
+    "Use plain Turkish.",
+    "Give exactly two short, concrete options and one short recommendation sentence.",
+    "Omit background and technical detail unless needed to choose.",
+)
 
 
 class OrchestrationContractTests(unittest.TestCase):
@@ -107,6 +124,27 @@ class OrchestrationContractTests(unittest.TestCase):
         for pattern in forbidden:
             self.assertIsNone(re.search(pattern, contradiction_scan))
 
+    def assert_turkish_dialogue_and_simple_decision_contract(self, text: str) -> None:
+        normalized = " ".join(text.split())
+        for marker in TURKISH_DIALOGUE_MARKERS:
+            self.assertIn(" ".join(marker.lower().split()), normalized.lower())
+        self.assertIn(SIMPLE_DECISION_BLOCK, text)
+        self.assertIn("Use plain Turkish", normalized)
+        self.assertIn("exactly two short, concrete options", normalized)
+        self.assertIn("one short recommendation sentence", normalized)
+        self.assertIn("Omit background and technical detail unless needed to choose", normalized)
+        self.assertNotIn("Topic: [description]", text)
+        self.assertNotIn("Options: A) [...] B) [...]", text)
+        self.assertNotIn("Awaiting decision.", text)
+        forbidden = (
+            r"switch (?:the )?user dialogue to english",
+            r"user dialogue.{0,40}unless the request is in english",
+            r"provide detailed background.{0,40}(?:every|all) decisions?",
+            r"add (?:a )?third option",
+        )
+        for pattern in forbidden:
+            self.assertIsNone(re.search(pattern, normalized.lower()))
+
     def test_global_template_and_codex_variant_stay_identical(self) -> None:
         self.assertEqual(
             self.read("GLOBAL_AGENTS_TEMPLATE.md"),
@@ -123,6 +161,53 @@ class OrchestrationContractTests(unittest.TestCase):
         for path in paths:
             with self.subTest(path=path):
                 self.assert_evidence_first_objectivity_contract(self.read(path))
+
+    def test_runtime_policies_require_turkish_dialogue_and_simple_decisions(self) -> None:
+        paths = (
+            "GLOBAL_AGENTS_TEMPLATE.md",
+            "variants/codex/home/AGENTS.md",
+            "variants/claude/home/CLAUDE.md",
+            "variants/opencode/home/AGENTS.md",
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                self.assert_turkish_dialogue_and_simple_decision_contract(self.read(path))
+
+    def test_orchestration_skills_require_simple_turkish_decisions(self) -> None:
+        for variant in ("codex", "claude", "opencode"):
+            path = f"variants/{variant}/home/skills/orchestration-gate/SKILL.md"
+            with self.subTest(path=path):
+                self.assert_turkish_dialogue_and_simple_decision_contract(self.read(path))
+
+    def test_partial_or_english_dialogue_contract_is_rejected(self) -> None:
+        partials = (
+            "- User dialogue: Turkish.\n",
+            "- User dialogue: Turkish unless the request is in English.\n",
+            SIMPLE_DECISION_BLOCK,
+        )
+        for partial in partials:
+            with self.subTest(partial=partial):
+                with self.assertRaises(AssertionError):
+                    self.assert_turkish_dialogue_and_simple_decision_contract(partial)
+
+    def test_old_or_verbose_decision_contract_is_rejected(self) -> None:
+        valid = (
+            "\n".join(TURKISH_DIALOGUE_MARKERS)
+            + "\n"
+            + SIMPLE_DECISION_BLOCK
+            + "\n"
+            + "\n".join(SIMPLE_DECISION_RULES)
+        )
+        invalid_contracts = (
+            valid.replace("Konu: [kısa karar]", "Topic: [description]"),
+            valid + "\nProvide detailed background for every decision.",
+            valid + "\nSwitch the user dialogue to English when requested.",
+            valid + "\nAdd a third option when useful.",
+        )
+        for invalid in invalid_contracts:
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(AssertionError):
+                    self.assert_turkish_dialogue_and_simple_decision_contract(invalid)
 
     def test_diluted_or_overbroad_objectivity_contract_is_rejected(self) -> None:
         with self.assertRaises(AssertionError):
@@ -186,12 +271,17 @@ class OrchestrationContractTests(unittest.TestCase):
                     self.assert_evidence_first_objectivity_contract(
                         (runtime / policy_name).read_text(encoding="utf-8")
                     )
+                    self.assert_turkish_dialogue_and_simple_decision_contract(
+                        (runtime / policy_name).read_text(encoding="utf-8")
+                    )
 
     def test_codex_approval_wait_is_exact_and_not_completion(self) -> None:
         policy = self.read("GLOBAL_AGENTS_TEMPLATE.md")
         skill = self.read("variants/codex/home/skills/orchestration-gate/SKILL.md")
+        policy = " ".join(policy.split())
+        skill = " ".join(skill.split())
         required = (
-            "For `ask-approval`, the final assistant message must contain only the exact six-line `CRITICAL DECISION` block",
+            "final assistant message must contain only the exact six-line `CRITICAL DECISION` block",
             "applies only to the current Stop invocation",
             "does not mean `PASS`, validation, or task completion",
         )

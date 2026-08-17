@@ -2,6 +2,375 @@
 
 [Back to active experiments](EXPERIMENTS.md)
 
+## EXP-20260810-010 - Minimal Codex Core Skill Profile
+
+Date: 2026-08-10
+Status: ACCEPTED
+
+Problem:
+CMA Core Skill Standard v1 and the protected core registry are provider-neutral,
+but they do not yet define a testable, native Codex representation, discovery,
+or lazy activation contract for future core-skill projections.
+
+Evidence:
+Current official OpenAI documentation defines Codex skills through `SKILL.md`,
+optional `agents/openai.yaml`, repository/user/admin/system discovery scopes,
+explicit and implicit invocation, and `AGENTS.md` instruction layering. The
+repository has no Codex core-skill profile or focused profile validator. The
+user approved exactly one bounded exception to add this EXP-010 record to the
+already over-800-line experiment log; the exception applies only to EXP-010,
+does not authorize edits or archiving of existing records, does not change
+Phase 3 scope, and requires later log maintenance to be separately approved.
+
+Hypothesis:
+A single inactive JSON profile plus a small stdlib-only read-only validator can
+preserve every canonical semantic field, protected ownership, explicit-only
+lazy activation, native Codex structure, and routing-only global guidance
+without creating skills, projecting files, or touching active runtime state.
+
+Solution Attempt:
+Add `core-skills/profiles/codex.json`,
+`bin/cma-codex-core-skill-profile`, and focused
+`tests/test_codex_core_skill_profile.py`. The profile is representation-only;
+the validator may read and report but must never install, project, sync,
+activate, disable, configure, prune, repair, or mutate anything.
+
+Test:
+Capture meaningful RED for the absent profile and validator. Then validate the
+complete canonical mapping, registry authority for core/protected status,
+official native structure and discovery, explicit-only lazy activation,
+unknown mapping rejection, non-semantic UI metadata isolation, fail-closed
+unavailable-tool behavior, routing-only global guidance, strict JSON types,
+and read-only operation. Run focused coverage, Phase 2-3 regression, the full
+suite, diff integrity checks, code review, and security review.
+
+Success Criteria:
+- All required canonical fields map exactly once to supported Codex targets.
+- `registry.json` remains authoritative for core/protected semantics and no
+  Codex-native metadata is misrepresented as the protection source.
+- Future core skills remain discoverable and explicit-callable, load lazily,
+  default to `allow_implicit_invocation: false`, and are never disabled by this
+  inactive profile.
+- Unknown mappings, behavioral `default_prompt`, silent fallback, tool setup,
+  type confusion, mutation commands, and runtime/config writes fail closed.
+- No tool-specific skill, variant projection, active runtime/config, MCP,
+  scanner, permission, TDD, Claude, OpenCode, sync, archive, or Phase 4 surface
+  is created or changed.
+- Focused tests and branch coverage, applicable and full regressions, code
+  review, and security review pass before acceptance.
+
+Result:
+The valid repository discovery command first produced meaningful RED with 13
+tests discovered, two explicit missing-profile/missing-validator failures, and
+11 controlled skips. An earlier package-style unittest command was discarded
+because this repository's `tests/` directory is not a Python package and it
+failed at import rather than at the intended behavior boundary.
+
+The initial implementation passed 13/13 focused tests. Code review then found
+three fail-open gaps: self-shrunk registries, structured JSON type confusion,
+and missing `AGENTS.md` layering semantics. New regression tests reproduced all
+three before the profile added the bounded official layering contract and the
+validator reused the exact Phase 2 registry validator with type-safe mapping
+checks. Code re-review passed.
+
+Security review then found symlink-based sibling-validator substitution,
+unwanted bytecode persistence risk, and unstructured dependency-load failures.
+New tests reproduced the substitution and traceback paths before the loader was
+anchored to the resolved real script, restricted to a regular non-symlink
+sibling, changed to cache-free in-memory source execution, and made dependency
+failures redacted and structured. Final code and security re-reviews passed.
+
+Final verification passed 19/19 focused tests with 84% branch coverage for
+`bin/cma-codex-core-skill-profile`, 34/34 Phase 2-3 focused regressions, and
+191/191 full repository tests. JSON parsing, compilation, direct CLI validation,
+diff checks, exact active-runtime hashes, and the Codex variant tree hash all
+passed. No active `~/.codex` file, Codex variant file, tool-specific skill, MCP,
+scanner, permission, TDD, sync, archive, Claude, OpenCode, or Phase 4 surface
+was changed.
+
+Decision:
+ACCEPT
+
+Notes:
+The line-limit exception is exclusive to EXP-20260810-010. No existing
+experiment record may be modified, archived, refactored, or cleaned up in this
+task. Experiment-log maintenance remains a separate future task requiring
+explicit approval.
+
+## EXP-20260810-009 - Minimal Core Skill Governance
+
+Date: 2026-08-10
+Status: ACCEPTED
+
+Problem:
+CMA Core Skill Standard v1 defines protected, lazy, provider-neutral skills,
+but no canonical registry or executable read-only checks currently make core
+ownership, removal protection, missing entries, governance drift, semantic
+parity, custom-skill separation, or no-prune behavior testable.
+
+Evidence:
+`core-skills/STANDARD.md` is the canonical semantic standard, while Codex,
+Claude, and OpenCode runtime trees contain only existing platform-owned assets.
+There is no `core-skills/registry.json`, governance validator, or focused core
+registry test. The user explicitly approved a one-record exception to append
+this experiment to the already over-800-line active record without refactoring
+or archiving it.
+
+Hypothesis:
+A single canonical JSON registry plus a small stdlib-only read-only validator
+will make protected core ownership and governance drift independently testable
+without creating skill implementations, variant projections, pruning, repair,
+sync, runtime configuration, or a management subsystem.
+
+Solution Attempt:
+Add `core-skills/registry.json`, `bin/cma-core-skill-governance`, and focused
+`tests/test_core_skill_governance.py`. The validator may only validate the
+registry, compare baseline/candidate registries, and compare synthetic normalized
+Codex, Claude, and OpenCode inventories. It must never write, remove, prune,
+repair, synchronize, install, configure, or activate anything.
+
+Test:
+Capture meaningful RED from focused tests written before the registry and
+validator. Then verify the valid registry, missing protected entries, accidental
+removal rejection, duplicate IDs, invalid core/protected metadata, custom-skill
+separation, semantic versions, governance drift, semantic-not-byte parity, and
+no-prune/no-mutation behavior. Run focused coverage, the applicable full suite,
+diff checks, code review, and security review.
+
+Success Criteria:
+- The registry contains exactly the ten approved core capabilities with required
+  metadata and Context7 alone marked as an optional capability.
+- Removal of a protected entry fails with explicit approval required; missing,
+  duplicate, invalid, and drifted entries fail with deterministic provenance.
+- Byte-different normalized inventories for Codex, Claude, and OpenCode pass
+  when semantics match and fail on semantic drift.
+- User/custom skills remain outside protected-core ownership and all input files
+  remain byte-identical after passing and failing checks.
+- No pruning, mutation, approval-bypass, repair, sync, skill implementation,
+  projection, TDD-policy, install, runtime, archive, daemon, or Phase 3 surface
+  is introduced.
+- Focused tests, branch coverage, full regressions, code review, and security
+  review pass before acceptance.
+
+Result:
+The initial focused run produced meaningful RED: 12 tests ran with exit 1 and
+failed on explicit missing-registry and missing-validator assertions, not import,
+syntax, permission, or transport errors. The first implementation passed 12/12
+focused tests and direct validator branch coverage reached 81%. Two additional
+pre-review boundary tests then produced behavioral RED for record-only protected
+removal and a custom/core ID collision before their scoped fixes.
+
+Code review found that a self-shrunk empty roster and invalid capability/tool
+optionality could pass, and that display-name parity was omitted. New mutation
+tests reproduced both failures before the validator locked the exact ten-ID
+roster, Context7-only optional capability rule, required invocation dependencies,
+and display-name semantic parity. Code re-review passed. Security review then
+confirmed Python boolean/integer equality allowed numeric `0`/`1` to spoof JSON
+policy and core/protected booleans. Four new type-confusion cases failed before
+recursive type-strict comparison was added; security re-review passed.
+
+Final verification passed 15/15 focused tests. Direct positive and negative CLI
+execution measured 83% branch coverage for `bin/cma-core-skill-governance`.
+The full repository suite passed 172/172 in 42.930 seconds with exit 0. JSON
+parsing, executable mode, file-size bounds, and `git diff --check` passed. The
+validator remained read-only and no skill implementation, projection, pruning,
+approval bypass, repair, sync, install, runtime, archive, daemon, permission,
+or Phase 3 surface was added.
+
+Decision:
+ACCEPT
+
+Notes:
+Only the user-approved single experiment-record exception applies. Existing
+unrelated dirty work must remain unchanged. Commit, push, active-runtime sync,
+and Phase 3 are not authorized. Full skill-body semantic parity remains not
+executed because Phase 2 intentionally created no skills or projections.
+
+## EXP-20260810-008 - Planner-to-TDD Structured Evidence Envelope v0
+
+Date: 2026-08-10
+Status: REJECTED
+
+Problem:
+The planner and tdd-guide contracts require bounded handoffs and discourage
+repeated broad discovery, but they have no structured, identity-bound way for
+the TDD guide to consume a planner source fact. The same current repository
+fact can therefore be independently rediscovered between the two stages.
+
+Evidence:
+This experiment will first replay the real EXP-20260804-002 temporal-TDD
+bugfix against the immutable pre-fix Git tree
+`2f0f84e768504eddc6895cf27899ab46c64808de` at commit
+`ff6592e171b3fb6827141f44aa5b45bad960797f`. Candidate mutation is forbidden
+unless the unchanged planner and TDD contracts produce a complete behavioral
+RED trace containing at least one non-verification duplicate canonical fact.
+
+Hypothesis:
+When planner supplies current, source-identity-bound discovery evidence in a
+minimal Envelope v0, tdd-guide will consume that evidence and avoid repeating
+the same discovery operation unless it identifies an explicit unresolved gap,
+while producing an equal-or-stronger test contract.
+
+Solution Attempt:
+If and only if behavioral RED passes, define Envelope v0 in the portable Codex
+orchestration registry, require the default planner to emit it, require the
+default tdd-guide to validate and consume it, and add fail-closed contract tests.
+Limit production/test scope to
+`variants/codex/home/registry/ORCHESTRATION.md`,
+`variants/codex/home/agents/planner.toml`,
+`variants/codex/home/agents/tdd-guide.toml`, and
+`tests/test_cma_lazy_runtime.py`. Do not synchronize active runtime files or
+add storage, helpers, runtimes, tools, scanners, MCPs, or graph behavior.
+
+Test:
+Run fresh sequential planner and tdd-guide baseline sessions on a read-only
+complete repository fixture using the approved natural prompt. Normalize exact
+and evidence-equivalent discovery by canonical fact key, path, query/range, and
+source identity. If meaningful RED passes, add static negative contract tests,
+capture their failure, make the minimum candidate change, rerun static tests,
+replay the identical live task, compare AC-TEMP-1 through AC-TEMP-7, run focused
+and full regressions, then complete code and security review.
+
+Success Criteria:
+- Baseline planner-to-TDD duplicate discovery count is at least one and the TDD
+  contract completes normally without source invalidation.
+- Static candidate tests fail before implementation and reject plausible
+  weakened, stale, conflicting, unresolved-gap, schema, and chain contracts.
+- Candidate duplicate discovery count is zero; current sufficient evidence IDs
+  are consumed and every new discovery is tied to a named unresolved gap.
+- Envelope top-level fields are limited to the eight approved v0 fields and its
+  measured transport cost does not exceed the duplicate evidence it replaces.
+- AC-TEMP-1 through AC-TEMP-7 and positive, negative, boundary, regression,
+  meaningful-RED, anti-hardcoding, and no-weakened-oracle protections remain.
+- Focused and full tests, code review, and security review pass; active runtime,
+  config, mandatory chain, and unrelated work remain unchanged.
+
+Result:
+Behavioral RED passed on the locked 325-node fixture with manifest
+`7dd6c6e5817d6a5eccc740e63c79bb28d87a302784bc6987c71c4306fa3671b2`.
+Planner completed with six tool calls and TDD completed with four; TDD
+re-read the records contract, TDD module, installer, and existing test seams
+already identified by planner, giving a conservative duplicate count of four.
+The first focused invocation was a transport-only import error; the corrected
+unchanged four-test command then produced meaningful static RED because the
+orchestration registry lacked Envelope v0. After the minimum four-file
+candidate, five focused contract/chain tests passed.
+
+Live candidate planner emitted a parseable eight-field envelope, but expanded
+the historical two-file task to six unrelated policy/test/changelog paths.
+Candidate TDD reported consuming `E1` through `E4` and claimed no additional
+discovery, while its complete JSONL trace contained one compound command that
+re-hashed and re-ran `rg` against all four supplied evidence paths. Excluding
+the hashes as identity checks still leaves four evidence-equivalent discovery
+repetitions, so the required candidate duplicate count of zero was not met.
+The candidate TDD contract also omitted the AC-TEMP-2 exact-once/ordering
+obligation and the AC-TEMP-4 fenced/quoted-heading boundary.
+
+Code review returned three HIGH blocking findings: failed primary behavioral
+gate, empty/untyped source and evidence identity, and weakened-contract tests
+that accepted duplicate/quoted headings and appended contradictory prose.
+Security review confirmed fail-open evidence laundering, bypassable presence
+tests, false provenance in `consumed_evidence_ids`, and an unverified path/
+symlink containment exposure. No correction was attempted because the approved
+stop conditions require rejection without a second solution attempt.
+
+All four candidate production/test files were restored byte-for-byte with
+their original `0644` modes. Post-rollback focused tests passed 26/26 and the
+full suite passed 157/157. Active runtime files were not synchronized.
+
+Decision:
+REJECT
+
+Notes:
+The hypothesis is unsupported by this v0 policy-only envelope: the observed
+duplicate was not removed, the audit claim contradicted the trace, and the
+minimal schema/tests did not safely bind trusted evidence. The changelog is
+unchanged because the candidate was rejected. Exact preimages, runtime hashes,
+fixture, traces, and temporary validation artifacts were task-owned under a
+private `0700` root and were removed after rollback verification. No later
+optimization phase is authorized by this experiment.
+
+## EXP-20260810-007 - Direct Local Lookup Fast Path
+
+Date: 2026-08-10
+Status: REJECTED
+
+Problem:
+The main Graphify/router task has four rejected independent attempts. Natural
+exact lookups still activate the broad repository-tools router and Graphify,
+while a prescriptive command prompt can mask that routing behavior.
+
+Evidence:
+EXP-20260810-005 reproduced a module read and Graphify false positive with a
+natural lookup prompt. EXP-20260810-006 was rejected before publication because
+its command-prescriptive baseline already passed and could not distinguish the
+candidate. This is the fifth and final permitted attempt.
+
+Hypothesis:
+An explicit pre-router fast path directing exact repository text, filename, and
+path lookups to local `rg`, combined with an advanced-only router row and a
+positive-only Graphify description, will make natural simple lookups lightweight
+without breaking advanced routing or explicit Graphify behavior.
+
+Solution Attempt:
+Add one literal fast-path rule before the lazy-router table; narrow its
+repository-tools row in the template, portable Codex policy, and active global
+policy; change only Graphify frontmatter description. Preserve module and skill
+bodies. No sixth attempt is permitted.
+
+Test:
+Require static RED and a completed natural live behavioral RED before publishing
+production changes. Then run focused static GREEN and six fresh sequential
+trace-validated probes: exact text, filename, known file, generic content,
+literal help, and a real two-file architecture graph. Finish with regressions,
+parity, independent reviews, permission hardening, and exact cleanup.
+
+Success Criteria:
+- Baseline natural exact lookup returns the correct match and shows a module or
+  Graphify false-positive; otherwise publish nothing and reject.
+- GREEN exact and filename probes use only contained successful `rg` commands,
+  return exact results, and show no module or Graphify activity.
+- Known/generic probes use only bounded contained `rg`/`sed` readers and show no
+  module or Graphify activity.
+- Help returns the captured Usage block byte-for-byte with zero task commands.
+- Architecture loads the exact module and skill, executes real Graphify on two
+  Python sources, and creates a fresh source-verified `EXTRACTED` calls edge
+  without semantic, subagent, network, or fabricated evidence.
+- Literal fast path precedes the router; advanced triggers remain; all three
+  policies are byte-identical; module/body/config/other variants retain preimages.
+- Focused/full tests, reviews, permissions, and task-owned cleanup pass. Any
+  completed violation rejects and rolls back without retry.
+
+Result:
+Both required RED gates passed. The natural baseline returned the correct exact
+match but first read the complete Graphify skill and repository-tools module and
+announced Graphify routing. After publishing the candidate, the focused 26-test
+suite passed; fresh exact-text and filename probes used only contained `rg`, and
+the known-file probe used one bounded `sed`, all with correct outputs and no
+module or Graphify activity. The generic-content probe returned the correct
+value but executed two composed shell commands containing `rg`, `sed`, `ls`, and
+`wc`, violating the immutable bounded-reader and no-shell-composition criteria.
+No retry was permitted after completed task activity. Remaining help and
+architecture probes were not run. All candidate policy, metadata, and test
+changes were restored to their verified preimages.
+
+Decision:
+REJECT
+
+Notes:
+One retry is allowed only for an incomplete zero-activity transport failure.
+Authorized scope excludes installs, module-body/config-schema changes, network,
+MCP/scanners, repository-root graph construction, commit, push, deployment, and
+archive mutation. Acceptance criteria will not be weakened.
+This was failed independent attempt 5 of 5. Per the user-defined ceiling, no
+sixth attempt or further candidate change will be started.
+Independent code review passed the rejection, trace evidence, and exact rollback.
+Security review confirmed no changed trust-boundary residue or task-created graph
+artifact and identified four subagent session logs for `0600` hardening before
+removing only the verified task-owned temporary root.
+The terminal archive check returned `ACTION_REQUIRED` (`active=5`, `archive=41`,
+`moved=7`); no archive mutation was applied because it is outside this task.
+
 ## EXP-20260810-006 - Repository Router Trigger Boundary
 
 Date: 2026-08-10
@@ -374,347 +743,3 @@ Notes:
 The user approved a live recoverable backup and accepted explicit exclusion of
 ephemeral socket/FIFO objects. A complete runtime restore remains separately
 gated and requires quiescence.
-
-## EXP-20260810-001 - Selective CMA-ARK Rollback
-
-Date: 2026-08-10
-Status: ROLLED_BACK
-
-Problem:
-The CMA-ARK work expanded a simple lazy-tool integration into a large inactive
-adapter, hook, lifecycle, and host-evidence stack. The implementation adds
-substantial maintenance and review cost while no CMA-ARK hook, skill, or managed
-runtime path is active.
-
-Evidence:
-The ARK and CMA-ARK implementation surfaces are entirely untracked at the
-current Git HEAD, while tracked changelog and experiment ledgers contain mixed
-ARK and unrelated CMA changes. The approved assessment found roughly 7,500
-lines in the CMA-ARK integration layer versus roughly 1,400 lines in ARK, with
-115 adapter tests but no active integration surface.
-
-Hypothesis:
-A selective, recoverable rollback can return ARK to one planning-only proposal
-without losing audit history or changing unrelated dirty CMA work. Moving the
-implementation to a private checksum-bound external backup and applying exact
-preimage transforms to mixed tracked files should be safer than a repository
-reset or broad patch reversal.
-
-Solution Attempt:
-Create an external private rollback manifest and RED-first acceptance checker,
-move only approved ARK/CMA-ARK implementation artifacts into its payload, remove
-only the four ARK ignore rules, transition the thirteen historical ARK
-experiment statuses to `ROLLED_BACK`, add one truthful changelog entry, and
-retain exactly one non-executable planning proposal.
-
-Test:
-Require meaningful RED before mutation, exact source-to-backup hash and metadata
-parity, planning-only repository surface, deterministic tracked-file postimages,
-anti-hardcoded-success mutation probes, full remaining root regressions,
-read-only record checks, diff integrity, and independent code and security
-reviews.
-
-Success Criteria:
-- Every approved implementation artifact is absent from the repository and
-  recoverable from a private verified external backup.
-- Exactly one CMA-ARK planning proposal remains and grants no implementation,
-  runtime, activation, tool-execution, commit, or push authority.
-- All thirteen historical ARK experiment records occur once and have current
-  status `ROLLED_BACK` without rewriting their historical evidence or decisions.
-- All unrelated tracked and non-ignored untracked CMA state remains
-  byte-identical; generated ignored files are outside this rollback claim.
-- RED, GREEN, mutation probes, remaining regressions, record validation, and
-  independent reviews pass.
-
-Result:
-The approved ARK and CMA-ARK implementation surfaces were moved to a private
-checksum-bound recovery backup, leaving one non-executable planning proposal.
-Meaningful RED, final acceptance, all nine mutation probes, 152 remaining root
-regressions under Python 3.10, record checks, diff integrity, and independent
-code and security reviews passed. An initial Python 3.9 run failed on existing
-Python 3.10 union-type syntax and was not counted as success.
-
-Decision:
-ROLLBACK
-
-Notes:
-The user explicitly approved the selective rollback and mandatory orchestration
-chain. Commit, push, backup deletion, global runtime changes, and any future ARK
-implementation or activation remain outside scope.
-
-## EXP-20260809-012 - Disposable CMA-ARK Host Evidence Wrapper
-
-Date: 2026-08-09
-Status: ROLLED_BACK
-
-Problem:
-EXP-20260809-011 accepted a deterministic same-run evidence contract, but no
-test-only wrapper or disposable host harness implements it. The accepted design
-therefore cannot yet prove that real hook/candidate evidence and a paired Codex
-JSONL lane are bound, non-compensating, private, and truthfully cleaned up.
-
-Evidence:
-The inactive hook candidate can already produce a real plan-only artifact, and
-its focused tests prove zero routed-tool execution. The repository has no host
-evidence wrapper or harness, canonical `UserPromptSubmit` activation remains
-absent, and the accepted schema has not yet been exercised by a same-child
-disposable boundary.
-
-Hypothesis:
-A fixed isolated wrapper plus a three-pair disposable host harness can implement
-the accepted contract without widening runtime authority. Executing the real
-candidate/coordinator path inside each fake-host child and independently
-validating exact artifacts, JSONL, identity, hashes, cleanup, and final status
-will reject missing, altered, dirty, or hardcoded evidence.
-
-Solution Attempt:
-Add separate bounded wrapper, contract-validation, and harness modules plus a
-disposable fake Codex host fixture and RED-first tests. Keep the canonical hook,
-candidate, coordinator, adapter, ARK, trust configuration, dependencies, and
-routed-tool authority unchanged. If truthful missing-artifact failure cannot be
-represented by the accepted schema, stop before implementation and request a
-narrow contract correction instead of fabricating evidence.
-
-Test:
-Capture meaningful RED from absent wrapper/harness behavior. Then run focused
-positive, negative, boundary, cleanup, same-child binding, hardcoded-success,
-three-run stability, and branch-coverage checks followed by relevant hook,
-adapter, ARK, root-governance, code-review, and security-review regressions.
-
-Success Criteria:
-- Every disposable pair invokes the real wrapper and real inactive candidate
-  exactly once while executing no routed tool.
-- Candidate and Codex lanes are independently required and bound to the same
-  run, session/thread identity, fixed query, prompt, reviewed files, and hashes.
-- Three fresh pairs pass without retry or replacement and share one normalized
-  candidate hash.
-- Private artifacts are exact, bounded, mode-safe, hashed before deletion, and
-  absent after successful cleanup; cleanup failure cannot report success.
-- Missing hook execution, dirty JSONL, identity/hash drift, timeout, stderr,
-  nonzero exit, malformed input, or hardcoded success fails closed.
-- Focused branch coverage is at least 80%, relevant regressions pass, and
-  independent code and security reviews have no blocking findings.
-- No canonical activation, trust action, real Codex session, global change,
-  dependency, routed-tool execution, commit, or push occurs.
-
-Result:
-Planner and TDD review independently confirmed a blocking contract gap before
-implementation began. When the hook does not run, the accepted
-contract correctly leaves both pass-only candidate artifacts absent. A valid
-assessment cannot then provide their required raw hashes or normalized candidate
-hash, while `final_result` still requires `assessment_sha256`. Hashing a sentinel
-or fabricating passing-shaped failure artifacts would violate the contract.
-The minimum truthful correction retains the field but permits
-`assessment_sha256=null` only in a failed or unverified final result when no
-valid assessment could be constructed; a passing final still requires a
-lowercase 64-character assessment hash. The user approved that correction; its
-meaningful RED failed 1/9 on the old schema and the corrected design passed 9/9.
-
-The wrapper/harness RED then failed because the three implementation modules
-were absent. The first implementation slice passes 5/5 contract tests and 2/2
-real wrapper-to-candidate tests. The disposable harness passes 5/6 tests, but
-three clean real candidate runs produce different normalized hashes even though
-their query hashes are identical. Source inspection confirms that
-`plan_sha256` covers the coordinator-generated UUID request ID, so it is
-intentionally different on every invocation. The accepted empty volatile-field
-allowlist is therefore incompatible with the real candidate. Excluding
-`plan_sha256` only from cross-run normalization, while retaining and validating
-every raw per-run plan hash, is the narrowest feasible correction; changing the
-real coordinator request identity would exceed this test-only scope. The user
-approved that correction. The resulting focused suite reached 19/19 with 84%,
-81%, and 84% branch coverage for wrapper, contract, and harness sources.
-
-The approved containment correction gives the candidate one wrapper-owned
-process group and makes the candidate, coordinator, adapter, and plan-only ARK
-boundary inherit it. Timeout and semantic-failure paths now terminate the full
-group and reap direct children. A checked-in reviewed manifest binds the exact
-hook-definition bytes plus wrapper, candidate, coordinator, contract, and
-schema hashes before contract import; ownership, permission, path, type, and
-bytes-only drift checks fail closed.
-
-Final verification passed 27/27 focused host-evidence tests with 84% combined
-branch coverage (wrapper 89%, contract 81%, harness 84%), 115/115 adapter tests,
-and the previously completed 55/55 relevant root contracts. Independent code
-and security re-reviews returned PASS with no blocking findings. Canonical hook
-activation, trust, real Codex sessions, global changes, dependencies, routed
-tool execution, commit, and push did not occur.
-
-Decision:
-ACCEPTED
-
-Notes:
-This experiment owns only the test-only wrapper/harness implementation and its
-focused tests and records. Real activation and three fresh Codex sessions remain
-separate approval gates.
-
-## EXP-20260809-011 - Deterministic CMA-ARK Host Evidence Contract
-
-Date: 2026-08-09
-Status: ROLLED_BACK
-
-Problem:
-EXP-20260809-010 correctly rolled back canonical hook activation after the
-first fresh Codex session omitted bound plan fields from its final response and
-JSONL trace. Later diagnosis established that the acceptance gate conflated
-hook `additionalContext`, which is model context, with deterministic final or
-JSONL evidence.
-
-Evidence:
-The inactive hook candidate directly returns the exact target, query and plan
-digests, `success=true`, and `execution_performed=false` in the documented
-`UserPromptSubmit` envelope. Official OpenAI documentation defines that output
-as extra developer context, defines `codex exec --json` as an emitted event
-stream, and recommends `--output-schema` for stable final-response fields; it
-does not define the model response as canonical hook evidence.
-
-Hypothesis:
-A same-run two-lane acceptance contract will provide deterministic evidence
-without widening runtime authority: a test-only external wrapper will be the
-actual hook command, validate the candidate/coordinator plan artifact, and bind
-it to its paired ephemeral read-only Codex JSONL behavior. Neither lane may
-rescue a failure in the other, and model output will remain non-authoritative.
-
-Solution Attempt:
-Define same-host identity binding, a machine-readable schema bundle for the
-external evidence artifacts and final result, three-run stability, private
-temporary lifecycle, independent gating, failure rules, and future TDD contract
-in the CMA-ARK design. Keep production hook/coordinator code, canonical
-activation, trust, App Server, dependencies, and routed-tool behavior unchanged.
-
-Test:
-Capture meaningful RED failures from new documentation-contract tests before
-updating the design. Then run the focused design test, relevant adapter and root
-regressions, `git diff --check`, independent code review, and security review.
-
-Success Criteria:
-- Canonical candidate evidence and Codex behavioral events are separate,
-  independently required lanes bound to the same host run and reviewed hook.
-- Four private temporary artifacts have exact schemas, hashes, normalization,
-  cleanup, and fail-closed assessment rules.
-- Three candidate runs and three Codex runs are required; no later run can
-  replace a failed required run.
-- Final model text and `--output-schema` output are presentation only and never
-  authenticate plan identity, digest binding, or zero execution.
-- App Server remains deferred and production hook/coordinator code, activation,
-  trust, dependencies, and routed-tool authority remain unchanged.
-- New tests fail against the pre-change design, then focused and relevant
-  regressions pass with no blocking code or security review findings.
-
-Result:
-The documentation contract produced the required meaningful RED: the existing
-two tests passed while all four initial evidence-contract tests failed on
-absent design requirements. The first bounded design then passed 6/6 focused
-tests after a whitespace-only harness correction for Markdown wrapping. Code
-review exposed missing same-host identity binding, narrative-only artifact
-schemas, and phrase-only test weakness. The remediated contract added a parsed
-machine-readable schema test; code re-review passed. Security review then found
-that contradictory success/lane/cleanup states remained schema-valid and that
-embedding a fresh run ID in the candidate query made the three-run stability
-rule unsatisfiable. The remediated contract uses conditional result variants, a
-single post-comparison session/thread identity, and a fixed candidate query with
-the run ID outside it. The current focused suite passes 8/8, alongside 6/6
-plan-only hook candidate tests and 3/3 passive CMA-ARK contract tests. Direct
-Draft 2020-12 validation accepts the coherent assessment and rejects both a
-failed-lane passing assessment and failed-cleanup passing final result.
-`git diff --check` also passes. Independent code and security re-reviews passed
-with both security blockers closed. No wrapper, fresh Codex session, hook
-activation, trust change, routed tool, dependency, commit, or push occurred.
-Final governance regressions passed 11/11 orchestration, 7/7 hypothesis, and
-19/19 record-archive tests. The terminal-record check reported every managed
-record below its archive threshold, so no archive apply was required.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment is documentation and test-contract scope only. Wrapper
-implementation and real three-session validation require a distinct approval.
-
-## EXP-20260809-010 - Canonical CMA-ARK Hook Activation
-
-Date: 2026-08-09
-Status: ROLLED_BACK
-
-Problem:
-EXP-20260809-009 proved a deterministic plan-only `UserPromptSubmit` transport
-and a descriptor-anchored disposable lifecycle, but the canonical CMA repository
-still has no active prompt hook. The existing pilot intentionally rejects the
-canonical root, so the approved activation cannot be installed or rolled back
-through the reviewed lifecycle.
-
-Evidence:
-The canonical `.codex/hooks.json` contains only empty `SessionStart` and `Stop`
-events, `.codex/cma-ark-user-prompt.py` is absent, and the pilot accepts only
-`install|rollback --target` against a marked disposable repository. Codex CLI
-0.147.0 reports stable hook support. Official OpenAI documentation requires
-review and trust of the exact non-managed hook definition through `/hooks` and
-records trust against its current hash.
-
-Hypothesis:
-Fixed no-target `repo-install` and `repo-rollback` operations, built on the
-existing descriptor-relative lifecycle and separated from the bounded CLI,
-will permit exact canonical activation and recovery without reactivating the
-failed repo skill or granting execution authority. A user-reviewed exact hook
-definition should then produce deterministic fresh-session plans with
-`execution_performed=false` and no routed tool execution.
-
-Solution Attempt:
-Split the lifecycle primitives into one adjacent private module, keep the pilot
-as a thin isolated CLI/router, and add fixed canonical operations that derive
-only their own repository root. Prove the lifecycle first in copied layouts,
-then rehearse canonical install and rollback, reinstall exact bytes, use the
-supported `/hooks` trust flow without bypass, and run three fresh plan-only
-sessions.
-
-Test:
-Capture RED evidence for the absent repo operations. Verify copied-layout
-install, idempotency, exact preservation, rollback, reinstall, path and content
-drift refusal, atomic failure reporting, hostile environment isolation, and
-anti-hardcoded-success behavior. Run focused branch coverage, adapter, ARK,
-and root regressions before canonical rehearsal. Verify the exact live hook in
-three fresh Codex sessions after trust.
-
-Success Criteria:
-- Repo operations derive one fixed canonical root and reject all caller targets.
-- Disposable operations retain their marker and canonical-refusal behavior.
-- Install and rollback mutate only the exact owned hook entry and script,
-  preserve unrelated config, and truthfully report committed cleanup failures.
-- The installed script is byte-identical to the reviewed candidate and mode
-  `0600`; no skill activation, global skill, dependency, MCP/cplt, or Graphify
-  execution is added.
-- Exact trust uses the supported `/hooks` review only; no trust bypass, manual
-  trust-state edit, or unrelated hook approval occurs.
-- Three fresh sessions return usable matching CMA-ARK plans with
-  `execution_performed=false`, no routed tool execution, retry, or fallback.
-- Focused branch coverage is at least 80%, relevant regressions pass, and code
-  plus security review have no blocking findings.
-
-Result:
-The missing canonical operations produced the expected initial RED: all three
-copied-layout tests failed because the existing parser rejected `repo-install`
-with exit 2. The bounded implementation then passed 23/23 focused tests with
-80.70% combined CLI/lifecycle branch coverage, 83/83 adapter tests, 33/33 ARK
-tests, and 166/166 root regressions. Code and security review both passed after
-three false-state cleanup paths were found and closed. The real canonical
-lifecycle installed, restored the original config SHA-256 exactly on rollback,
-and reinstalled the byte-identical mode-`0600` hook with no lock/temp residue.
-Exact trust was then granted only to the displayed project hook through
-`/hooks`; no broad trust or bypass was used. The first fresh ephemeral
-read-only Codex session exited 0 and returned a five-step generic `rg` plan with
-no tool calls, but its JSONL trace omitted the required target/query/plan
-digests, `success=true`, and literal `execution_performed=false` fields. It was
-therefore not a usable bound CMA-ARK plan. The remaining two sessions were not
-executed. The governed rollback removed the hook entry and script, restored the
-original config SHA-256
-`49ebbad6f600dbb37355f63e80bde9457a77023891a6bbca4157dee381abd071`,
-and left no lock/temp or skill surface.
-
-Decision:
-ROLLBACK
-
-Notes:
-The hook lifecycle implementation remains as a tested inactive recovery tool,
-but canonical activation is rejected by the fresh-host acceptance gate. The
-Codex-owned exact-definition trust record is inert after config removal and was
-not manually edited. Commit, push, deployment, global skill changes, routed
-tool execution, and the remaining two fresh sessions did not occur.

@@ -24,7 +24,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--prompt", required=True)
     parser.add_argument("--scope", required=True)
     parser.add_argument("--variant", required=True)
-    return parser.parse_args()
+    parser.add_argument("--managed-state")
+    parser.add_argument("--managed-path")
+    args = parser.parse_args()
+    if bool(args.managed_state) != bool(args.managed_path):
+        parser.error("--managed-state and --managed-path must be provided together")
+    return args
 
 
 def normalize_path(path: Path) -> Path:
@@ -216,6 +221,25 @@ def main() -> int:
         )
         candidate, candidate_bytes = read_regular(Path(args.candidate), "CMA candidate")
         digest = hashlib.sha256(source_bytes).hexdigest()
+        if args.managed_state:
+            _, state_bytes = read_regular(
+                Path(args.managed_state), "managed template state"
+            )
+            state = json.loads(state_bytes.decode("utf-8"))
+            if not isinstance(state, dict):
+                raise ValueError("managed template state must be an object")
+            files = state.get("files", {})
+            if not isinstance(files, dict):
+                raise ValueError("managed template state files must be an object")
+            record = files.get(args.managed_path, {})
+            if not isinstance(record, dict):
+                raise ValueError("managed template state file record must be an object")
+            if (
+                record.get("mode") == "managed"
+                and record.get("template_sha256") == digest
+            ):
+                print("Managed instructions unchanged; merge prompt not required.")
+                return 0
         root = normalize_path(Path(args.snapshot_root))
         snapshot_dir = root / f"instruction-merge-{digest}"
         snapshot = snapshot_dir / source.name

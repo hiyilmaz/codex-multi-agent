@@ -2,6 +2,350 @@
 
 [Back to active experiments](EXPERIMENTS.md)
 
+## EXP-20260810-001 - Selective CMA-ARK Rollback
+
+Date: 2026-08-10
+Status: ROLLED_BACK
+
+Problem:
+The CMA-ARK work expanded a simple lazy-tool integration into a large inactive
+adapter, hook, lifecycle, and host-evidence stack. The implementation adds
+substantial maintenance and review cost while no CMA-ARK hook, skill, or managed
+runtime path is active.
+
+Evidence:
+The ARK and CMA-ARK implementation surfaces are entirely untracked at the
+current Git HEAD, while tracked changelog and experiment ledgers contain mixed
+ARK and unrelated CMA changes. The approved assessment found roughly 7,500
+lines in the CMA-ARK integration layer versus roughly 1,400 lines in ARK, with
+115 adapter tests but no active integration surface.
+
+Hypothesis:
+A selective, recoverable rollback can return ARK to one planning-only proposal
+without losing audit history or changing unrelated dirty CMA work. Moving the
+implementation to a private checksum-bound external backup and applying exact
+preimage transforms to mixed tracked files should be safer than a repository
+reset or broad patch reversal.
+
+Solution Attempt:
+Create an external private rollback manifest and RED-first acceptance checker,
+move only approved ARK/CMA-ARK implementation artifacts into its payload, remove
+only the four ARK ignore rules, transition the thirteen historical ARK
+experiment statuses to `ROLLED_BACK`, add one truthful changelog entry, and
+retain exactly one non-executable planning proposal.
+
+Test:
+Require meaningful RED before mutation, exact source-to-backup hash and metadata
+parity, planning-only repository surface, deterministic tracked-file postimages,
+anti-hardcoded-success mutation probes, full remaining root regressions,
+read-only record checks, diff integrity, and independent code and security
+reviews.
+
+Success Criteria:
+- Every approved implementation artifact is absent from the repository and
+  recoverable from a private verified external backup.
+- Exactly one CMA-ARK planning proposal remains and grants no implementation,
+  runtime, activation, tool-execution, commit, or push authority.
+- All thirteen historical ARK experiment records occur once and have current
+  status `ROLLED_BACK` without rewriting their historical evidence or decisions.
+- All unrelated tracked and non-ignored untracked CMA state remains
+  byte-identical; generated ignored files are outside this rollback claim.
+- RED, GREEN, mutation probes, remaining regressions, record validation, and
+  independent reviews pass.
+
+Result:
+The approved ARK and CMA-ARK implementation surfaces were moved to a private
+checksum-bound recovery backup, leaving one non-executable planning proposal.
+Meaningful RED, final acceptance, all nine mutation probes, 152 remaining root
+regressions under Python 3.10, record checks, diff integrity, and independent
+code and security reviews passed. An initial Python 3.9 run failed on existing
+Python 3.10 union-type syntax and was not counted as success.
+
+Decision:
+ROLLBACK
+
+Notes:
+The user explicitly approved the selective rollback and mandatory orchestration
+chain. Commit, push, backup deletion, global runtime changes, and any future ARK
+implementation or activation remain outside scope.
+
+## EXP-20260809-012 - Disposable CMA-ARK Host Evidence Wrapper
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+EXP-20260809-011 accepted a deterministic same-run evidence contract, but no
+test-only wrapper or disposable host harness implements it. The accepted design
+therefore cannot yet prove that real hook/candidate evidence and a paired Codex
+JSONL lane are bound, non-compensating, private, and truthfully cleaned up.
+
+Evidence:
+The inactive hook candidate can already produce a real plan-only artifact, and
+its focused tests prove zero routed-tool execution. The repository has no host
+evidence wrapper or harness, canonical `UserPromptSubmit` activation remains
+absent, and the accepted schema has not yet been exercised by a same-child
+disposable boundary.
+
+Hypothesis:
+A fixed isolated wrapper plus a three-pair disposable host harness can implement
+the accepted contract without widening runtime authority. Executing the real
+candidate/coordinator path inside each fake-host child and independently
+validating exact artifacts, JSONL, identity, hashes, cleanup, and final status
+will reject missing, altered, dirty, or hardcoded evidence.
+
+Solution Attempt:
+Add separate bounded wrapper, contract-validation, and harness modules plus a
+disposable fake Codex host fixture and RED-first tests. Keep the canonical hook,
+candidate, coordinator, adapter, ARK, trust configuration, dependencies, and
+routed-tool authority unchanged. If truthful missing-artifact failure cannot be
+represented by the accepted schema, stop before implementation and request a
+narrow contract correction instead of fabricating evidence.
+
+Test:
+Capture meaningful RED from absent wrapper/harness behavior. Then run focused
+positive, negative, boundary, cleanup, same-child binding, hardcoded-success,
+three-run stability, and branch-coverage checks followed by relevant hook,
+adapter, ARK, root-governance, code-review, and security-review regressions.
+
+Success Criteria:
+- Every disposable pair invokes the real wrapper and real inactive candidate
+  exactly once while executing no routed tool.
+- Candidate and Codex lanes are independently required and bound to the same
+  run, session/thread identity, fixed query, prompt, reviewed files, and hashes.
+- Three fresh pairs pass without retry or replacement and share one normalized
+  candidate hash.
+- Private artifacts are exact, bounded, mode-safe, hashed before deletion, and
+  absent after successful cleanup; cleanup failure cannot report success.
+- Missing hook execution, dirty JSONL, identity/hash drift, timeout, stderr,
+  nonzero exit, malformed input, or hardcoded success fails closed.
+- Focused branch coverage is at least 80%, relevant regressions pass, and
+  independent code and security reviews have no blocking findings.
+- No canonical activation, trust action, real Codex session, global change,
+  dependency, routed-tool execution, commit, or push occurs.
+
+Result:
+Planner and TDD review independently confirmed a blocking contract gap before
+implementation began. When the hook does not run, the accepted
+contract correctly leaves both pass-only candidate artifacts absent. A valid
+assessment cannot then provide their required raw hashes or normalized candidate
+hash, while `final_result` still requires `assessment_sha256`. Hashing a sentinel
+or fabricating passing-shaped failure artifacts would violate the contract.
+The minimum truthful correction retains the field but permits
+`assessment_sha256=null` only in a failed or unverified final result when no
+valid assessment could be constructed; a passing final still requires a
+lowercase 64-character assessment hash. The user approved that correction; its
+meaningful RED failed 1/9 on the old schema and the corrected design passed 9/9.
+
+The wrapper/harness RED then failed because the three implementation modules
+were absent. The first implementation slice passes 5/5 contract tests and 2/2
+real wrapper-to-candidate tests. The disposable harness passes 5/6 tests, but
+three clean real candidate runs produce different normalized hashes even though
+their query hashes are identical. Source inspection confirms that
+`plan_sha256` covers the coordinator-generated UUID request ID, so it is
+intentionally different on every invocation. The accepted empty volatile-field
+allowlist is therefore incompatible with the real candidate. Excluding
+`plan_sha256` only from cross-run normalization, while retaining and validating
+every raw per-run plan hash, is the narrowest feasible correction; changing the
+real coordinator request identity would exceed this test-only scope. The user
+approved that correction. The resulting focused suite reached 19/19 with 84%,
+81%, and 84% branch coverage for wrapper, contract, and harness sources.
+
+The approved containment correction gives the candidate one wrapper-owned
+process group and makes the candidate, coordinator, adapter, and plan-only ARK
+boundary inherit it. Timeout and semantic-failure paths now terminate the full
+group and reap direct children. A checked-in reviewed manifest binds the exact
+hook-definition bytes plus wrapper, candidate, coordinator, contract, and
+schema hashes before contract import; ownership, permission, path, type, and
+bytes-only drift checks fail closed.
+
+Final verification passed 27/27 focused host-evidence tests with 84% combined
+branch coverage (wrapper 89%, contract 81%, harness 84%), 115/115 adapter tests,
+and the previously completed 55/55 relevant root contracts. Independent code
+and security re-reviews returned PASS with no blocking findings. Canonical hook
+activation, trust, real Codex sessions, global changes, dependencies, routed
+tool execution, commit, and push did not occur.
+
+Decision:
+ACCEPTED
+
+Notes:
+This experiment owns only the test-only wrapper/harness implementation and its
+focused tests and records. Real activation and three fresh Codex sessions remain
+separate approval gates.
+
+## EXP-20260809-011 - Deterministic CMA-ARK Host Evidence Contract
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+EXP-20260809-010 correctly rolled back canonical hook activation after the
+first fresh Codex session omitted bound plan fields from its final response and
+JSONL trace. Later diagnosis established that the acceptance gate conflated
+hook `additionalContext`, which is model context, with deterministic final or
+JSONL evidence.
+
+Evidence:
+The inactive hook candidate directly returns the exact target, query and plan
+digests, `success=true`, and `execution_performed=false` in the documented
+`UserPromptSubmit` envelope. Official OpenAI documentation defines that output
+as extra developer context, defines `codex exec --json` as an emitted event
+stream, and recommends `--output-schema` for stable final-response fields; it
+does not define the model response as canonical hook evidence.
+
+Hypothesis:
+A same-run two-lane acceptance contract will provide deterministic evidence
+without widening runtime authority: a test-only external wrapper will be the
+actual hook command, validate the candidate/coordinator plan artifact, and bind
+it to its paired ephemeral read-only Codex JSONL behavior. Neither lane may
+rescue a failure in the other, and model output will remain non-authoritative.
+
+Solution Attempt:
+Define same-host identity binding, a machine-readable schema bundle for the
+external evidence artifacts and final result, three-run stability, private
+temporary lifecycle, independent gating, failure rules, and future TDD contract
+in the CMA-ARK design. Keep production hook/coordinator code, canonical
+activation, trust, App Server, dependencies, and routed-tool behavior unchanged.
+
+Test:
+Capture meaningful RED failures from new documentation-contract tests before
+updating the design. Then run the focused design test, relevant adapter and root
+regressions, `git diff --check`, independent code review, and security review.
+
+Success Criteria:
+- Canonical candidate evidence and Codex behavioral events are separate,
+  independently required lanes bound to the same host run and reviewed hook.
+- Four private temporary artifacts have exact schemas, hashes, normalization,
+  cleanup, and fail-closed assessment rules.
+- Three candidate runs and three Codex runs are required; no later run can
+  replace a failed required run.
+- Final model text and `--output-schema` output are presentation only and never
+  authenticate plan identity, digest binding, or zero execution.
+- App Server remains deferred and production hook/coordinator code, activation,
+  trust, dependencies, and routed-tool authority remain unchanged.
+- New tests fail against the pre-change design, then focused and relevant
+  regressions pass with no blocking code or security review findings.
+
+Result:
+The documentation contract produced the required meaningful RED: the existing
+two tests passed while all four initial evidence-contract tests failed on
+absent design requirements. The first bounded design then passed 6/6 focused
+tests after a whitespace-only harness correction for Markdown wrapping. Code
+review exposed missing same-host identity binding, narrative-only artifact
+schemas, and phrase-only test weakness. The remediated contract added a parsed
+machine-readable schema test; code re-review passed. Security review then found
+that contradictory success/lane/cleanup states remained schema-valid and that
+embedding a fresh run ID in the candidate query made the three-run stability
+rule unsatisfiable. The remediated contract uses conditional result variants, a
+single post-comparison session/thread identity, and a fixed candidate query with
+the run ID outside it. The current focused suite passes 8/8, alongside 6/6
+plan-only hook candidate tests and 3/3 passive CMA-ARK contract tests. Direct
+Draft 2020-12 validation accepts the coherent assessment and rejects both a
+failed-lane passing assessment and failed-cleanup passing final result.
+`git diff --check` also passes. Independent code and security re-reviews passed
+with both security blockers closed. No wrapper, fresh Codex session, hook
+activation, trust change, routed tool, dependency, commit, or push occurred.
+Final governance regressions passed 11/11 orchestration, 7/7 hypothesis, and
+19/19 record-archive tests. The terminal-record check reported every managed
+record below its archive threshold, so no archive apply was required.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment is documentation and test-contract scope only. Wrapper
+implementation and real three-session validation require a distinct approval.
+
+## EXP-20260809-010 - Canonical CMA-ARK Hook Activation
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+EXP-20260809-009 proved a deterministic plan-only `UserPromptSubmit` transport
+and a descriptor-anchored disposable lifecycle, but the canonical CMA repository
+still has no active prompt hook. The existing pilot intentionally rejects the
+canonical root, so the approved activation cannot be installed or rolled back
+through the reviewed lifecycle.
+
+Evidence:
+The canonical `.codex/hooks.json` contains only empty `SessionStart` and `Stop`
+events, `.codex/cma-ark-user-prompt.py` is absent, and the pilot accepts only
+`install|rollback --target` against a marked disposable repository. Codex CLI
+0.147.0 reports stable hook support. Official OpenAI documentation requires
+review and trust of the exact non-managed hook definition through `/hooks` and
+records trust against its current hash.
+
+Hypothesis:
+Fixed no-target `repo-install` and `repo-rollback` operations, built on the
+existing descriptor-relative lifecycle and separated from the bounded CLI,
+will permit exact canonical activation and recovery without reactivating the
+failed repo skill or granting execution authority. A user-reviewed exact hook
+definition should then produce deterministic fresh-session plans with
+`execution_performed=false` and no routed tool execution.
+
+Solution Attempt:
+Split the lifecycle primitives into one adjacent private module, keep the pilot
+as a thin isolated CLI/router, and add fixed canonical operations that derive
+only their own repository root. Prove the lifecycle first in copied layouts,
+then rehearse canonical install and rollback, reinstall exact bytes, use the
+supported `/hooks` trust flow without bypass, and run three fresh plan-only
+sessions.
+
+Test:
+Capture RED evidence for the absent repo operations. Verify copied-layout
+install, idempotency, exact preservation, rollback, reinstall, path and content
+drift refusal, atomic failure reporting, hostile environment isolation, and
+anti-hardcoded-success behavior. Run focused branch coverage, adapter, ARK,
+and root regressions before canonical rehearsal. Verify the exact live hook in
+three fresh Codex sessions after trust.
+
+Success Criteria:
+- Repo operations derive one fixed canonical root and reject all caller targets.
+- Disposable operations retain their marker and canonical-refusal behavior.
+- Install and rollback mutate only the exact owned hook entry and script,
+  preserve unrelated config, and truthfully report committed cleanup failures.
+- The installed script is byte-identical to the reviewed candidate and mode
+  `0600`; no skill activation, global skill, dependency, MCP/cplt, or Graphify
+  execution is added.
+- Exact trust uses the supported `/hooks` review only; no trust bypass, manual
+  trust-state edit, or unrelated hook approval occurs.
+- Three fresh sessions return usable matching CMA-ARK plans with
+  `execution_performed=false`, no routed tool execution, retry, or fallback.
+- Focused branch coverage is at least 80%, relevant regressions pass, and code
+  plus security review have no blocking findings.
+
+Result:
+The missing canonical operations produced the expected initial RED: all three
+copied-layout tests failed because the existing parser rejected `repo-install`
+with exit 2. The bounded implementation then passed 23/23 focused tests with
+80.70% combined CLI/lifecycle branch coverage, 83/83 adapter tests, 33/33 ARK
+tests, and 166/166 root regressions. Code and security review both passed after
+three false-state cleanup paths were found and closed. The real canonical
+lifecycle installed, restored the original config SHA-256 exactly on rollback,
+and reinstalled the byte-identical mode-`0600` hook with no lock/temp residue.
+Exact trust was then granted only to the displayed project hook through
+`/hooks`; no broad trust or bypass was used. The first fresh ephemeral
+read-only Codex session exited 0 and returned a five-step generic `rg` plan with
+no tool calls, but its JSONL trace omitted the required target/query/plan
+digests, `success=true`, and literal `execution_performed=false` fields. It was
+therefore not a usable bound CMA-ARK plan. The remaining two sessions were not
+executed. The governed rollback removed the hook entry and script, restored the
+original config SHA-256
+`49ebbad6f600dbb37355f63e80bde9457a77023891a6bbca4157dee381abd071`,
+and left no lock/temp or skill surface.
+
+Decision:
+ROLLBACK
+
+Notes:
+The hook lifecycle implementation remains as a tested inactive recovery tool,
+but canonical activation is rejected by the fresh-host acceptance gate. The
+Codex-owned exact-definition trust record is inert after config removal and was
+not manually edited. Commit, push, deployment, global skill changes, routed
+tool execution, and the remaining two fresh sessions did not occur.
+
 ## EXP-20260809-009 - Deterministic CMA-ARK Hook Transport
 
 Date: 2026-08-09
@@ -442,336 +786,3 @@ interpreter identity binding, sensitive-response handling, replay/rate control,
 tested Graphify serialization, and acceptance of the documented final
 check-to-exec race. Graphify runtime behavior remains unverified because its
 executable is unavailable on the adapter's fixed PATH in this environment.
-
-## EXP-20260809-003 - CMA-ARK Adapter Process Boundary
-
-Date: 2026-08-09
-Status: ROLLED_BACK
-
-Problem:
-The first Phase 3 design review found that the adapter contract mixes a direct
-ARK Python-import boundary with ARK process-exit passthrough semantics, omits an
-exact run/error response schema, and claims tool-identity drift detection while
-the canonical plan leaves tool identity unverified.
-
-Evidence:
-The mandatory code review returned three HIGH findings and one MEDIUM finding.
-It identified the conflicting direct-import and `ark_exit_code` statements,
-missing result/error types and examples, a null selected-tool digest despite
-TOCTOU claims, and non-canonical digest placeholders.
-
-Hypothesis:
-Using the fixed repository-owned ARK CLI as the adapter's only ARK boundary,
-defining exact plan/run/error response examples, and requiring a resolved tool
-content/stat identity before a runnable plan will make exit origin, result
-normalization, and drift limits deterministic without duplicating ARK routing.
-
-Solution Attempt:
-Revise only the Phase 3 design contract. Bind the adapter to the absolute
-`ARK/bin/ark` launcher and config, define normalized result items and nullable
-error correlation fields, preserve the actual ARK subprocess exit separately
-from tool result exits, require a SHA-256/stat identity for runnable tools, use
-valid canonical digest examples, and state the residual post-check/pre-exec race.
-
-Test:
-Run a RED validator against the current contradictory design, then parse and
-validate all revised JSON examples, field types, digest encodings, exit origins,
-result cardinality, tool-identity requirements, and cross-document status. Run
-the monorepo contract and independent code/security review.
-
-Success Criteria:
-- The design chooses exactly one ARK integration boundary.
-- Plan, successful run, and malformed-request responses have deterministic
-  exact schemas and origin-aware exit fields.
-- A runnable plan cannot use an unverified or null selected-tool identity.
-- Canonical examples use valid encodings and only `explore` has a concurrency key.
-- TOCTOU guarantees are limited to observable pre-execution revalidation.
-- Existing ARK functional files and monorepo contracts remain unchanged.
-
-Result:
-The CLI-only boundary, exact request/plan/run/error schemas, canonical plan
-digest, tool and target identity binding, failed-run execution semantics, and
-honest truncation limits passed machine-readable validators. The monorepo
-contract passed 9/9 and diff/whitespace checks passed. The user-approved bounded
-continuation defined the complete POSIX/macOS ARK process range, signal-derived
-negative exits, wrapped tool-signal relation, and origin-aware overlap with
-adapter-reserved codes. Final code review and security review returned PASS.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment changes documentation only. Adapter implementation, activation,
-global configuration, dependencies, MCP, cplt, commit, and push remain outside scope.
-Revision after the first re-review: define `plan_sha256` over one exact canonical
-`plan` object shared by plan/run rather than either wire request; bind target
-device/inode identity; treat every spawned ARK run as execution even on failure;
-remove truncation booleans unavailable through the CLI contract; and define the
-exact normalized ARK plan and step schemas.
-Final revision after the second re-review: include adapter version, ARK schema,
-config/source digests, and selected-tool realpath inside the hashed plan binding
-rather than only in unhashed response provenance.
-User-approved bounded continuation: define the full observable ARK process-exit
-domain, distinguish normal and signal termination, preserve the original tool
-exit from valid ARK JSON, and make overlapping adapter-reserved codes
-unambiguous through nullable `ark_exit_code`.
-Security review retained non-blocking activation gates: approval JSON is not
-authentication; interpreter path and recursive source-manifest algorithms need
-pinning before activation; direct bounded output may expose repository secrets;
-the post-check/pre-exec race remains; and Graphify serialization depends on a
-tested CMA coordinator.
-
-## EXP-20260808-002 - Task Transition Gate Synchronization
-
-Date: 2026-08-08
-Status: ACCEPTED
-
-Problem:
-The active Codex global policy already stops at distinct task boundaries, but
-the portable Codex, Dolphin, Claude, and OpenCode policy sources do not all
-carry the same rule. A newly installed or refreshed runtime can therefore
-resume automatic task progression or interpret approval inconsistently.
-
-Evidence:
-`~/.codex/AGENTS.md` contains the complete Task Transition Gate, while
-`GLOBAL_AGENTS_TEMPLATE.md` and the four portable variant policies do not share
-that complete block. Active Dolphin, OpenCode, and native Claude CMA policy
-surfaces also lack it.
-
-Hypothesis:
-Adding one canonical semantic gate to every portable global policy and safely
-synchronizing only the three stale active runtime policy files will make task
-boundaries consistent without pausing the already approved steps inside one
-bounded task or overwriting unrelated runtime state.
-
-Solution Attempt:
-Add the canonical gate after Scope Lock in all five source policies, document
-the behavior, and update only stale active policies through targeted,
-permission-preserving backups. Preserve the already-correct active Codex file
-and the user-owned native Claude loader byte-for-byte.
-
-Test:
-Capture RED semantic policy, portable-install, and documentation tests; then
-verify focused and complete regressions, exact source/install contracts,
-targeted active-runtime parity, backup hashes, preserved modes, unchanged
-Codex and Claude loader hashes, diff integrity, and independent code/security
-review.
-
-Success Criteria:
-- Every portable policy enforces the six task-transition obligations.
-- The rule distinguishes a next distinct task from steps inside the same
-  explicitly approved bounded task.
-- Portable installs for Codex, Dolphin, Claude, and OpenCode expose the gate.
-- Active Codex and the Claude loader remain byte-identical to their pre-update
-  state; every changed active policy has an exact recoverable backup.
-- User documentation and changelog match verified behavior.
-- All tests and independent reviews pass without weakened assertions.
-
-Result:
-The initial semantic, portable-install, and documentation run produced 13
-expected RED subtest failures. The canonical gate was then added to all five
-source policies and the four user guides. A code-review finding exposed that
-the first negative fixture failed only because positive markers were absent;
-the replacement fixture kept the complete valid policy and added a conflicting
-every-step approval rule, reproduced the false pass, and now fails through an
-explicit conflict check.
-
-The focused suite passed 4/4 and the complete suite passed 145/145 without
-skips; `git diff --check` passed. Portable installs for all four variants expose
-the gate. Active Dolphin, OpenCode, and Claude CMA policies differ from their
-verified pre-state backups only by the canonical block, retain modes `0644`,
-`0644`, and `0600`, and have exact backups under the private `0700` recovery
-directory. Active Codex and the user-owned Claude loader retained their
-pre-update hashes and modes. Final independent code and security reviews
-returned PASS.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved Plan A and the mandatory orchestration chain. Commit and push
-remain outside scope.
-
-## EXP-20260808-003 - Additive Multi-Variant Project Initialization
-
-Date: 2026-08-08
-Status: ACCEPTED
-
-Problem:
-`codex-project-init --variant opencode` was applied to an already initialized
-project and reset shared project state. The command treats every variant
-selection as an exclusive new/reset initialization, so the same data-loss risk
-applies when adding Codex, Dolphin, Claude, or OpenCode to a project that
-already uses another runtime.
-
-Evidence:
-The init conflict list always archives `AGENTS.md`, `.codex/config.toml`, the
-shared prompt, and `.codex/template-state.json`, then copies a blank project
-template. Manifest schema 1 stores one `variant`; OpenCode replaces the Codex
-config entry instead of coexisting with it. The original project files remain
-recoverable in the private init archive and their hashes were captured before
-rollback.
-
-Hypothesis:
-If init distinguishes first/reset initialization from additive variant
-activation, preserves shared files byte-for-byte, and records an ordered set of
-active variants in a backward-compatible manifest migration, every supported
-runtime can coexist without resetting project configuration or customized
-variant files.
-
-Solution Attempt:
-Restore the exact pre-init project state, make existing-project init additive
-by default, require an explicit reset flag for destructive reinitialization,
-and evolve template state to represent multiple active variants plus the union
-of their managed files. Preserve customized and unrelated files.
-
-Test:
-Capture RED tests that initialize each variant after another variant and assert
-unchanged shared hashes, coexisting variant surfaces, manifest migration from
-schema 1, explicit reset behavior, customized-file preservation, symlink
-failure, and idempotency. Then run focused project-init/upgrade tests, the full
-regression suite, live additive OpenCode init on this repository, diff
-integrity, and security-oriented recovery checks.
-
-Success Criteria:
-- Adding any supported variant never replaces an existing `AGENTS.md` or
-  removes another variant's project files.
-- Codex, Dolphin, Claude, and OpenCode can all be represented as active in one
-  project manifest.
-- Schema 1 state migrates without losing file ownership or customization
-  evidence.
-- Destructive reset remains possible only through an explicit reset option and
-  keeps a private recovery archive.
-- The erroneous local init effects are fully reversed before the corrected
-  additive OpenCode activation is applied.
-- Relevant and complete tests pass without weakened assertions or skipped
-  cases.
-
-Result:
-The erroneous local init was reversed first: `AGENTS.md`, Codex config, the
-shared prompt, and schema-1 template state matched their captured pre-init
-hashes, the generated OpenCode project file was removed, and the private reset
-archive was moved into the external recovery backup. The valid global OpenCode
-runtime installation was retained.
-
-Meaningful RED tests reproduced blank `AGENTS.md` replacement, loss of other
-variant state, customized OpenCode config overwrite, the single-variant
-manifest limitation, absent explicit-reset behavior, incomplete standalone
-schema-1 migration, and same-second reset archive reuse. The implementation now
-uses additive existing-project init, ordered multi-variant schema 2 state,
-backward-compatible schema-1 migration, explicit `--reset`, and unique private
-init/upgrade archives.
-
-Focused project-init/upgrade tests passed 33/33 and the complete regression
-suite passed 152/152 without skips. Bash syntax, Python compilation, and diff
-integrity passed. Live additive OpenCode init on this repository preserved the
-exact `AGENTS.md`, `.codex/config.toml`, and shared-prompt hashes, produced
-`variants: [codex, opencode]`, kept the OpenCode config, used a `0700` recovery
-archive, and was idempotent on a second run. Security-oriented symlink,
-customized-config, secret-redaction, explicit-reset, and recovery tests passed.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved a direct implementation without an orchestration chain.
-Global OpenCode runtime installation is valid and remains in scope; only the
-project-reset behavior is being rolled back and redesigned.
-
-## EXP-20260808-004 - Fail-Closed Result Semantics
-
-Date: 2026-08-08
-Status: ROLLED_BACK
-
-Problem:
-The first ARK implementation passed its source tests but independent code review found configuration type gaps, zero-execution success paths, and optional documentation flags that did not affect routing.
-
-Evidence:
-`config.py` accepted boolean schema version `true`, leaked `TypeError` for malformed collection types including a nested Serena mode value, allowed runtime root `.`, and accepted malformed GitHub identities. `run --intent docs` returned exit code 0 despite `success=false`. An empty security profile returned `passed` with no steps. DeepWiki and Context7 enable flags produced identical plans. Security review later found ambient cplt credentials, sensitive scanner output emission, unbounded subprocesses, and a Graphify output symlink escape.
-
-Hypothesis:
-Enforcing one fail-closed invariant across parsing and routing—invalid input becomes `ConfigError`, and no executed or executable work can never be `passed`—will remove all four review findings without widening ARK's MVP.
-
-Solution Attempt:
-Add RED regression tests for malformed configuration types and identities, runtime-root containment, no-execution CLI exits, empty security profiles, explicit enabled documentation providers, credential-free cplt isolation, suppressed security findings, bounded subprocesses, and Graphify output containment; then make the smallest config/router/CLI changes required.
-
-Test:
-Run focused config, routing, and CLI tests before and after implementation, followed by the full suite, branch coverage, live CLI probes, and independent code review.
-
-Success Criteria:
-All new regression tests fail before the fix and pass afterward; invalid configuration exits 2 without traceback; every `run` path with zero steps exits nonzero; empty security cannot report success; docs flags and provider selection change the plan; full branch coverage remains at least 80%.
-
-Result:
-The regression cycles reproduced the configuration, result-semantics, credential exposure, sensitive-output, symlink, memory-bound, locale, process-group, and closed-pipe timeout findings before each scoped fix. The final suite passed 33/33 with 91% branch coverage. Reopened code review and security review both returned PASS with no blocking findings.
-
-Decision:
-ACCEPT
-
-Notes:
-The attempt remained limited to reviewer-identified config, router, runner, tests, and records. External tools and live MCP transports remain out of scope. Security review retained two non-blocking advisories: broader ambient environment exposure for non-cplt local tools and theoretical same-user symlink TOCTOU races.
-
-Migration note: This record was originally ARK-local `EXP-20260808-001`; it was remapped because that ID already belongs to CMA's Provider-Neutral OpenCode Runtime Variant.
-
-## EXP-20260809-001 - ARK Monorepo Test Discovery
-
-Date: 2026-08-09
-Status: ROLLED_BACK
-
-Problem:
-The documented root-relative ARK test command fails after monorepo adoption because CMA's root `tests` package shadows `ARK/tests` during unittest discovery.
-
-Evidence:
-Fresh coverage execution from the CMA root collected 28 ARK tests but produced one `_FailedTest`: `ARK/tests/test_cli.py` could not import `tests.test_config`. The same ARK suite previously passed 33/33 from the ARK working directory.
-
-Hypothesis:
-Declaring `ARK` as unittest's explicit top-level directory with `-t ARK` will preserve root-relative commands while resolving `tests.*` imports to `ARK/tests` instead of CMA's root test package.
-
-Solution Attempt:
-Require `-t ARK` in root-relative ARK discovery commands and leave ARK production code and tests byte-identical.
-
-Test:
-First add a failing monorepo contract assertion for `-t ARK`, then rerun the contract, the 33-test ARK suite, and fresh branch coverage from the CMA root.
-
-Success Criteria:
-All 33 ARK tests collect and pass from the CMA root, branch coverage remains at least 80%, no import or fixture error occurs, and the functional ARK hash manifest remains unchanged.
-
-Result:
-The contract first failed because neither authoritative command included `-t ARK`. With the explicit top-level directory, all 33 ARK tests passed from the CMA root with no import errors and fresh branch coverage reached 85%. The functional ARK hash manifest remained unchanged.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment changes only test invocation documentation and its monorepo contract; it does not authorize ARK runtime wiring or functional code changes.
-
-## EXP-20260809-002 - ARK Monorepo CLI Config Resolution
-
-Date: 2026-08-09
-Status: ROLLED_BACK
-
-Problem:
-The documented root-relative `ARK/bin/ark` commands resolve the default `ark.json` against the CMA working directory instead of the ARK module directory.
-
-Evidence:
-Independent code review executed `ARK/bin/ark doctor --json` from the CMA root. It exited 2 with `cannot read configuration` for the nonexistent root `ark.json`, while the contract test checked only textual command prefixes.
-
-Hypothesis:
-Passing the existing module config explicitly as `--config ARK/ark.json` in every root-relative command will make the documented interface executable without changing the already-reviewed launcher or runtime behavior.
-
-Solution Attempt:
-Make the monorepo contract execute the documented doctor command, require the explicit config argument on every example, and update the README and integration plan commands only.
-
-Test:
-Capture a RED failure by executing the current documented command from the CMA root, then require exit 0 and valid successful JSON after the documentation change. Rerun ARK, contract, and complete CMA suites.
-
-Success Criteria:
-Every documented ARK command names `ARK/ark.json`; the documented doctor command exits 0 from the CMA root with `status=passed` and `success=true`; functional ARK hashes remain unchanged.
-
-Result:
-The executable contract first reproduced exit 2 and the missing root `ark.json`. After adding the explicit config argument, the documented doctor command exited 0 from the CMA root with `status=passed` and `success=true`; the contract passed 9/9, the ARK suite passed 33/33, and functional ARK hashes remained unchanged.
-
-Decision:
-ACCEPT
-
-Notes:
-Automatic CMA routing, launcher behavior changes, global activation, and external tool installation remain outside this experiment.
