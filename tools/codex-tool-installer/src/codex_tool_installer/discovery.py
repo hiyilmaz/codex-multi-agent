@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Mapping
 
 from .config import ConfigError, parse_toml
+from .credentials import credential_value_is_usable
 from .manifest import TOOL_MANIFEST
 from .models import DiscoveryResult, Status, ToolHealth
 from .platforms import detect_platform
@@ -69,7 +70,9 @@ def discover(
     credentials = {}
     for name, definition in manifest.items():
         if definition.credential_env:
-            credentials[definition.credential_env] = bool(environ.get(definition.credential_env))
+            credentials[definition.credential_env] = credential_value_is_usable(
+                environ.get(definition.credential_env)
+            )
         if definition.kind in {"cli", "cli_mcp"}:
             executable = shutil.which(definition.executable, path=environ.get("PATH")) if definition.executable else None
             if not executable:

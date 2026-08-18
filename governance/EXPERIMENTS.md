@@ -58,7 +58,21 @@ failure. A meaningful RED reproduced the overwrite. The revised implementation
 now carries the updater's actual original bytes in its transaction result; the
 new regression and all 72 package tests pass with 85 percent branch coverage,
 and the 385-test repository suite remains green. Final re-reviews and live
-deployment of this revision are pending.
+deployment of this revision are pending. The first live manage-mode run then
+repaired Context7 but exposed a second input-boundary defect: a stored GitHub
+credential containing a control character reached subprocess environment
+construction and produced a generic config failure. An isolated transaction
+confirmed a `ValueError` cause without printing the value. New unit and E2E
+RED tests require invalid environment, secure-store, and prompt values to be
+rejected before subprocess use and reported as typed `AUTH_REQUIRED` in
+non-interactive mode. Review then extended the same boundary to configured MCP
+discovery and verification and rejected Unicode whitespace/control/format
+bypasses by requiring printable ASCII token values. Meaningful CLI and unit
+RED tests covered stored NUL, environment NUL, NEL, NBSP, line separator, and
+bidi override inputs. The revised credential boundary passes all 75 package
+tests with 85 percent branch coverage and the 385-test repository suite;
+independent code and security re-reviews pass. Final live deployment remains
+pending.
 
 Decision:
 NEED_MORE_DATA

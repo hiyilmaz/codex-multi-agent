@@ -24,6 +24,13 @@ class ConfiguredRunner:
         return CommandResult(1, "", "missing")
 
 
+class StrictConfiguredRunner(ConfiguredRunner):
+    def run(self, command, **kwargs):
+        if any("\x00" in value for value in (kwargs.get("env") or {}).values()):
+            raise ValueError("embedded null byte")
+        return super().run(command, **kwargs)
+
+
 class BrokenTransport:
     def request(self, name, method, params, environ):
         return {"tools": []} if method == "tools/list" else {"isError": True}
@@ -281,6 +288,61 @@ class CliJourneyTests(unittest.TestCase):
             self.assertEqual(1, payload["summary"]["auth_required"])
             self.assertEqual(0, payload["summary"]["failed"])
             self.assertEqual(original, config.read_bytes())
+
+    def test_invalid_stored_credential_is_auth_required_without_subprocess_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            codex_home = root / ".codex"
+            codex_home.mkdir()
+            config = codex_home / "config.toml"
+            original = b'model = "safe"\n'
+            config.write_bytes(original)
+            credentials = codex_home / "credentials"
+            credentials.write_bytes(b"GITHUB_PAT_TOKEN=broken\x00credential\n")
+            credentials.chmod(0o600)
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = main(
+                    ["--non-interactive", "--json", "install", "github"],
+                    environ={"HOME": str(root), "PATH": ""},
+                    platform_facts={"system": "Linux", "distribution": "Ubuntu", "version": "24.04", "machine": "x86_64"},
+                    runner=StrictConfiguredRunner(), connectivity_probe=lambda: True,
+                )
+            payload = json.loads(output.getvalue())
+            github = next(tool for tool in payload["tools"] if tool["name"] == "github")
+            self.assertEqual(1, code)
+            self.assertEqual("AUTH_REQUIRED", github["status"])
+            self.assertEqual(1, payload["summary"]["auth_required"])
+            self.assertEqual(0, payload["summary"]["failed"])
+            self.assertEqual(original, config.read_bytes())
+            self.assertNotIn("broken", output.getvalue())
+
+    def test_invalid_environment_credential_is_auth_required_for_configured_mcp(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / ".codex" / "config.toml"
+            config.parent.mkdir()
+            config.write_text(
+                '# Managed by codex-tool-installer\n[mcp_servers.github]\n'
+                'bearer_token_env_var = "GITHUB_PAT_TOKEN"\n'
+                'url = "https://api.githubcopilot.com/mcp/"\n',
+                encoding="utf-8",
+            )
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = main(
+                    ["--json", "--non-interactive", "--mcp-mode", "verify-only", "install", "github"],
+                    environ={"HOME": str(root), "PATH": "", "GITHUB_PAT_TOKEN": "broken\x00credential"},
+                    platform_facts={"system": "Linux", "distribution": "Ubuntu", "version": "24.04", "machine": "x86_64"},
+                    runner=StrictConfiguredRunner(), connectivity_probe=lambda: True,
+                )
+            payload = json.loads(output.getvalue())
+            github = next(tool for tool in payload["tools"] if tool["name"] == "github")
+            self.assertEqual(1, code)
+            self.assertEqual("AUTH_REQUIRED", github["status"])
+            self.assertEqual(1, payload["summary"]["auth_required"])
+            self.assertEqual(0, payload["summary"]["failed"])
+            self.assertNotIn("broken", output.getvalue())
 
     def test_go_install_is_rediscovered_from_scoped_path_in_same_run(self):
         class InstallingGoRunner:

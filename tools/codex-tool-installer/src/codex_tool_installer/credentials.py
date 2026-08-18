@@ -31,17 +31,29 @@ class CredentialResult:
     source: str | None = None
 
 
+def credential_value_is_usable(value: str | None) -> bool:
+    return bool(value) and all(33 <= ord(char) <= 126 for char in value)
+
+
+def _require_usable_credential(value: str) -> None:
+    if not credential_value_is_usable(value):
+        raise ValueError("Credential contains unsupported characters")
+
+
 def resolve_credential(name: str, environ: Mapping[str, str], store: SecureStore | None, prompt: CredentialPrompt | None, non_interactive: bool) -> CredentialResult:
-    if environ.get(name):
-        return CredentialResult(True, environ[name], "environment")
+    environment_value = environ.get(name)
+    if environment_value:
+        if credential_value_is_usable(environment_value):
+            return CredentialResult(True, environment_value, "environment")
+        return CredentialResult(False, source="invalid-environment")
     if store:
         value = store.get(name)
-        if value:
+        if credential_value_is_usable(value):
             return CredentialResult(True, value, "secure-store")
     if non_interactive or prompt is None:
         return CredentialResult(False)
     value = prompt.secret(f"{name} required (leave empty to skip): ")
-    if not value:
+    if not credential_value_is_usable(value):
         return CredentialResult(False)
     return CredentialResult(True, value, "prompt")
 
@@ -66,6 +78,7 @@ class ProtectedFileStore:
         return None
 
     def set(self, name: str, value: str) -> None:
+        _require_usable_credential(value)
         existing = {}
         if self.path.exists():
             for line in self.path.read_text(encoding="utf-8").splitlines():
@@ -100,6 +113,7 @@ class MacOSKeychainStore:
         return result.stdout.rstrip("\n") if result.returncode == 0 else None
 
     def set(self, name: str, value: str) -> None:
+        _require_usable_credential(value)
         # Secret travels through stdin-capable adapter state, never a shell.
         if not hasattr(self.runner, "run_with_input"):
             raise RuntimeError("Runner does not support secret stdin")
@@ -116,6 +130,7 @@ class LibsecretStore:
         return result.stdout.rstrip("\n") if result.returncode == 0 else None
 
     def set(self, name: str, value: str) -> None:
+        _require_usable_credential(value)
         if not hasattr(self.runner, "run_with_input"):
             raise RuntimeError("Runner does not support secret stdin")
         result = self.runner.run_with_input(("secret-tool", "store", "--label", "Codex Tool Installer", "application", "codex-tool-installer", "key", name), value)

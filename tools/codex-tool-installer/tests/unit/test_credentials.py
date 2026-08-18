@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from codex_tool_installer.credentials import LibsecretStore, MacOSKeychainStore, ProtectedFileStore, redact, resolve_credential
+from codex_tool_installer.credentials import LibsecretStore, MacOSKeychainStore, ProtectedFileStore, credential_value_is_usable, redact, resolve_credential
 from codex_tool_installer.process import CommandResult
 
 
@@ -39,6 +39,17 @@ class CredentialTests(unittest.TestCase):
         output = redact(f"Authorization: Bearer {secret} token={secret}", (secret,))
         self.assertNotIn(secret, output)
 
+    def test_invalid_control_characters_are_never_returned_as_credentials(self):
+        invalid = "broken\x00credential"
+        prompt = Prompt("replacement")
+        self.assertFalse(resolve_credential("TOKEN", {"TOKEN": invalid}, Store("stored"), prompt, False).available)
+        self.assertEqual([], prompt.calls)
+        result = resolve_credential("TOKEN", {}, Store(invalid), prompt, False)
+        self.assertEqual((True, "replacement", "prompt"), (result.available, result.value, result.source))
+        self.assertFalse(resolve_credential("TOKEN", {}, Store(invalid), Prompt("also\ninvalid"), False).available)
+        for unsafe in ("token\u0085value", "token\u00a0value", "token\u2028value", "token\u202evalue"):
+            self.assertFalse(credential_value_is_usable(unsafe))
+
     def test_protected_file_store_enforces_0600(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "credentials"
@@ -49,6 +60,8 @@ class CredentialTests(unittest.TestCase):
             path.chmod(0o644)
             with self.assertRaises(PermissionError):
                 store.get("TOKEN")
+            with self.assertRaises(ValueError):
+                ProtectedFileStore(Path(directory) / "other").set("TOKEN", "bad\x00value")
 
     def test_os_secure_stores_use_stdin_for_writes(self):
         class Runner:

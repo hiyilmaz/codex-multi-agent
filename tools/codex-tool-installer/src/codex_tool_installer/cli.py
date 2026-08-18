@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Mapping, Sequence
 
 from .config import ConfigTransactionError, restore_config_exact, update_config_transactionally
-from .credentials import LibsecretStore, MacOSKeychainStore, MaskedPrompt, ProtectedFileStore, resolve_credential
+from .credentials import LibsecretStore, MacOSKeychainStore, MaskedPrompt, ProtectedFileStore, credential_value_is_usable, resolve_credential
 from .dependencies import dependency_plan
 from .discovery import discover, managed_bin_environment, preflight
 from .execution import LifecycleExecutor, LifecycleStatusError, PendingTransaction, default_selection, interactive_selection, parse_selection
@@ -212,7 +212,12 @@ def main(argv: Sequence[str] | None = None, *, environ: Mapping[str, str] | None
 
     def verify(definition):
         if definition.kind == "mcp":
-            return verify_mcp(definition, CodexVisibleMcpClient(runner, mcp_transport or HttpMcpTransport(), environ), not definition.credential_env or bool(environ.get(definition.credential_env)))
+            return verify_mcp(
+                definition,
+                CodexVisibleMcpClient(runner, mcp_transport or HttpMcpTransport(), environ),
+                not definition.credential_env
+                or credential_value_is_usable(environ.get(definition.credential_env)),
+            )
         return all(runner.run(command, env=environ).returncode == 0 for command in definition.verify)
 
     results = LifecycleExecutor(install, verify, configure).execute(
