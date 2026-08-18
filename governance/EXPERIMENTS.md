@@ -2,6 +2,62 @@
 
 [Terminal experiment archive](EXPERIMENTS_ARCHIVE.md)
 
+## EXP-20260818-001 - Cross-Platform Atomic Rename
+
+Date: 2026-08-18
+Status: TESTING
+
+Problem:
+The native Codex activator uses Darwin-only `renameatx_np`, so its fail-closed
+atomic publication path is unavailable on Linux and blocks CMA activation.
+
+Evidence:
+On blockmanpro Ubuntu 24.04 x86_64, libc exposes `renameat2` but not
+`renameatx_np`; the full repository suite ran 385 tests with 13 failures and
+5 errors rooted in `atomic_rename_unavailable`.
+
+Hypothesis:
+Dispatching the existing exclusive-publish and atomic-exchange semantics to
+Darwin `renameatx_np` or Linux `renameat2`, with platform-specific flags, will
+restore Linux activation without weakening no-overwrite, descriptor anchoring,
+rollback, or cleanup guarantees.
+
+Solution Attempt:
+Introduce an explicit semantic-to-platform syscall adapter: Darwin uses
+`RENAME_EXCL=4` and `RENAME_SWAP=2`; Linux uses `RENAME_NOREPLACE=1` and
+`RENAME_EXCHANGE=2`. Unsupported platforms, symbols, semantics, or kernel and
+filesystem support remain fail-closed without a plain rename fallback.
+
+Test:
+Capture RED for Linux symbol and flag dispatch before implementation; then run
+platform/errno/fallback unit tests, real-host atomic publish/no-overwrite tests,
+the focused native-activation suite, Python compilation, whitespace checks,
+and the full repository suite. Re-run the focused and full suites on
+blockmanpro after separately approved deployment.
+
+Success Criteria:
+- Darwin and Linux select their correct libc symbol and exact flags.
+- Both source and target remain anchored to the supplied directory FD.
+- Existing targets are never overwritten and staging files are cleaned.
+- Missing or unsupported atomic operations fail closed without fallback.
+- Race, rollback, cleanup, and idempotency regressions remain green.
+- The Ubuntu focused and 385-test full suites pass without skips.
+
+Result:
+The pre-change focused suite produced the required RED with exit 1: Linux
+dispatch attempted no `renameat2` call and raised `atomic_rename_unavailable`;
+unsupported syscall and semantic cases also failed. The platform adapter then
+passed all 23 focused native-activation tests. Python compilation and
+`git diff --check` passed, the full repository suite passed 389/389, and
+focused branch coverage for the activator measured 82 percent. Darwin real-host
+publication remained idempotent, preserved descriptor anchoring, rejected an
+existing target, and left no hidden staging artifact. The exact Ubuntu backend
+and full-suite verification remain pending because deployment to blockmanpro is
+outside the approved local-fix mutation scope.
+
+Decision:
+NEED_MORE_DATA
+
 ## EXP-20260817-009 - Blockmanpro Fix Commit Deployment
 
 Date: 2026-08-17

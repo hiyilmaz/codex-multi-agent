@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import errno
 import fcntl
 import hashlib
 import json
@@ -50,8 +51,8 @@ XCODE_SECTION = re.compile(
     r"(?:^|\.)\s*(?P<prefix>mcp_servers|['\"]mcp_servers['\"])\s*\.\s*"
     r"(?P<token>xcodebuildmcp|['\"]xcodebuildmcp['\"])\s*$",
 )
-RENAME_SWAP = 0x00000002
-RENAME_EXCL = 0x00000004
+RENAME_SWAP = "swap"
+RENAME_EXCL = "exclusive"
 
 
 class ActivationError(Exception):
@@ -136,19 +137,33 @@ def _identity_at(parent_fd: int, name: str) -> tuple[int, int, int]:
     return _identity(os.stat(name, dir_fd=parent_fd, follow_symlinks=False))
 
 
-def _renameatx(parent_fd: int, source: str, target: str, flags: int) -> None:
-    function = getattr(ctypes.CDLL(None, use_errno=True), "renameatx_np", None)
+def _renameatx(parent_fd: int, source: str, target: str, semantic: str) -> None:
+    if semantic == RENAME_EXCL:
+        darwin_flag, linux_flag = 4, 1
+    elif semantic == RENAME_SWAP:
+        darwin_flag, linux_flag = 2, 2
+    else:
+        raise ActivationError("unsupported_atomic_rename_semantic")
+    if sys.platform == "darwin":
+        symbol, flag = "renameatx_np", darwin_flag
+    elif sys.platform.startswith("linux"):
+        symbol, flag = "renameat2", linux_flag
+    else:
+        raise ActivationError("atomic_rename_unavailable")
+    function = getattr(ctypes.CDLL(None, use_errno=True), symbol, None)
     if function is None:
         raise ActivationError("atomic_rename_unavailable")
     function.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
     function.restype = ctypes.c_int
     result = function(
-        parent_fd, os.fsencode(source), parent_fd, os.fsencode(target), flags,
+        parent_fd, os.fsencode(source), parent_fd, os.fsencode(target), flag,
     )
     if result != 0:
         error = ctypes.get_errno()
-        if error == 17:
+        if error == errno.EEXIST:
             raise FileExistsError(error, os.strerror(error), target)
+        if error in {errno.ENOSYS, errno.EOPNOTSUPP}:
+            raise ActivationError("atomic_rename_unavailable")
         raise OSError(error, os.strerror(error), target)
 
 

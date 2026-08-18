@@ -1,4 +1,5 @@
 import contextlib
+import errno
 import hashlib
 import importlib.machinery
 import importlib.util
@@ -427,6 +428,99 @@ class CodexNativeActivationTests(unittest.TestCase):
             os.close(descriptor)
         self.assertEqual((moved / "owned.txt").read_bytes(), b"safe\n")
         self.assertEqual(list(outside.iterdir()), [])
+
+    def test_atomic_rename_dispatches_platform_symbol_flags_and_fd_arguments(self) -> None:
+        module = self.module()
+        cases = (
+            ("darwin", "renameatx_np", module.RENAME_EXCL, 4),
+            ("darwin", "renameatx_np", module.RENAME_SWAP, 2),
+            ("linux", "renameat2", module.RENAME_EXCL, 1),
+            ("linux", "renameat2", module.RENAME_SWAP, 2),
+        )
+        for platform, symbol, semantic, expected_flag in cases:
+            with self.subTest(platform=platform, semantic=semantic):
+                function = mock.Mock(return_value=0)
+                libc = mock.Mock(spec=[])
+                setattr(libc, symbol, function)
+                with mock.patch.object(module.sys, "platform", platform), mock.patch.object(
+                    module.ctypes, "CDLL", return_value=libc,
+                ):
+                    module._renameatx(17, "source", "target", semantic)
+                function.assert_called_once_with(
+                    17, os.fsencode("source"), 17, os.fsencode("target"), expected_flag,
+                )
+
+    def test_atomic_rename_rejects_missing_symbol_platform_and_semantic(self) -> None:
+        module = self.module()
+        for platform in ("darwin", "linux"):
+            with self.subTest(platform=platform), mock.patch.object(
+                module.sys, "platform", platform,
+            ), mock.patch.object(module.ctypes, "CDLL", return_value=object()), mock.patch.object(
+                module.os, "rename",
+            ) as rename, mock.patch.object(module.os, "replace") as replace:
+                with self.assertRaisesRegex(module.ActivationError, "atomic_rename_unavailable"):
+                    module._renameatx(5, "source", "target", module.RENAME_EXCL)
+                rename.assert_not_called()
+                replace.assert_not_called()
+
+        with mock.patch.object(module.sys, "platform", "win32"), mock.patch.object(
+            module.ctypes, "CDLL",
+        ) as library, mock.patch.object(module.os, "rename") as rename, mock.patch.object(
+            module.os, "replace",
+        ) as replace:
+            with self.assertRaisesRegex(module.ActivationError, "atomic_rename_unavailable"):
+                module._renameatx(5, "source", "target", module.RENAME_EXCL)
+            library.assert_not_called()
+            rename.assert_not_called()
+            replace.assert_not_called()
+
+        with mock.patch.object(module.ctypes, "CDLL") as library:
+            with self.assertRaisesRegex(
+                module.ActivationError, "unsupported_atomic_rename_semantic",
+            ):
+                module._renameatx(5, "source", "target", "unknown")
+            library.assert_not_called()
+
+    def test_atomic_rename_maps_errno_without_unsafe_fallback(self) -> None:
+        module = self.module()
+        cases = (
+            (errno.EEXIST, FileExistsError),
+            (errno.ENOSYS, module.ActivationError),
+            (errno.EOPNOTSUPP, module.ActivationError),
+            (errno.EACCES, PermissionError),
+        )
+        for platform, symbol in (("darwin", "renameatx_np"), ("linux", "renameat2")):
+            for error, exception in cases:
+                with self.subTest(platform=platform, error=error):
+                    function = mock.Mock(return_value=-1)
+                    libc = mock.Mock(spec=[])
+                    setattr(libc, symbol, function)
+                    with mock.patch.object(module.sys, "platform", platform), mock.patch.object(
+                        module.ctypes, "CDLL", return_value=libc,
+                    ), mock.patch.object(module.ctypes, "get_errno", return_value=error), mock.patch.object(
+                        module.os, "rename",
+                    ) as rename, mock.patch.object(module.os, "replace") as replace:
+                        with self.assertRaises(exception) as raised:
+                            module._renameatx(7, "source", "target", module.RENAME_EXCL)
+                    rename.assert_not_called()
+                    replace.assert_not_called()
+                    if isinstance(raised.exception, OSError):
+                        self.assertEqual(raised.exception.errno, error)
+                        self.assertEqual(raised.exception.filename, "target")
+
+    def test_atomic_create_publishes_once_without_overwrite_or_staging_artifact(self) -> None:
+        module = self.module()
+        parent = self.root / "atomic-publish"
+        parent.mkdir()
+        descriptor = os.open(parent, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            module._atomic_bytes_at(b"first\n", descriptor, "owned.txt", 0o600)
+            with self.assertRaises(FileExistsError):
+                module._atomic_bytes_at(b"second\n", descriptor, "owned.txt", 0o600)
+        finally:
+            os.close(descriptor)
+        self.assertEqual((parent / "owned.txt").read_bytes(), b"first\n")
+        self.assertEqual(list(parent.glob(".*.cma-*")), [])
 
     def test_rollback_identity_mismatch_never_deletes_replacement(self) -> None:
         module = self.module()
