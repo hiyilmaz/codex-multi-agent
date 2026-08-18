@@ -2,6 +2,14 @@
 
 ## Pending
 
+- ID: DF-20260818-0000-001
+  Type: OPERATIONAL_HARDENING
+  Discovered At: 2026-08-18
+  Source Task: Blockmanpro codex-tools live repair
+  Location: /root/.local/share/cma-rollbacks/codex-tools-pre-*
+  Summary: Owner-only UV-tool rollback copies were created and their expected top-level contents were inspected, but a full recursive integrity manifest and isolated restore rehearsal were not performed against the live package environment.
+  Recommended Fix: Add an isolated rollout harness that records a recursive manifest and rehearses restoration outside the active UV tool path before using the backup in a real rollback.
+
 - ID: DF-20260817-0000-001
   Type: SECURITY_HARDENING
   Discovered At: 2026-08-17

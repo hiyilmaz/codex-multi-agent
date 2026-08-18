@@ -4,8 +4,22 @@
 
 ## Archive Index (Previous 30 Dates)
 
+- [2026-06-11](CHANGELOG_ARCHIVE.md#2026-06-11)
 - [2026-06-10](CHANGELOG_ARCHIVE.md#2026-06-10)
 - [2026-05-22](CHANGELOG_ARCHIVE.md#2026-05-22)
+
+## 2026-08-18
+
+- [FIX] EXP-20260817-009 deployed the resumable codex-tools fixes to
+  blockmanpro through clean fast-forward commits and exact repo-sourced UV
+  rebuilds. Go-installed scanners are now discovered without profile edits;
+  Context7 passes live functional verification; rollback uses the updater's
+  actual config pre-state; and malformed stored/environment/prompt credentials
+  are rejected as typed `AUTH_REQUIRED` before subprocess use. The final normal
+  install reports ten healthy tools, zero generic failures, and only the
+  corrupted GitHub credential as incomplete with truthful exit 1. Package tests
+  passed 75/75 with 85% branch coverage, the full suite passed 385/385, and
+  independent code/security re-reviews passed.
 
 ## 2026-08-17
 
@@ -596,8 +610,3 @@
   `AGENTS.md` files without resetting them.
 - [INFRA] Added project-level `ORCHESTRATION_MODE` and the
   `orchestration-gate` decision skill across runtime variants.
-
-## 2026-06-11
-
-- [FIX] Install Dolphin launcher into the selected runtime home as
-  `llm-dolphin`.

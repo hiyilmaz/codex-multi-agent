@@ -2,6 +2,290 @@
 
 [Back to active experiments](EXPERIMENTS.md)
 
+## EXP-20260817-004 - Qualified Plugin Skill Disable Selectors
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+The approved Vercel plugin disablement removed Vercel skills from a fresh
+Codex prompt, but nine Build iOS Apps skills remained visible after unqualified
+skill-name disable entries were added to the global configuration.
+
+Evidence:
+`codex debug prompt-input` returned all nine `build-ios-apps:*` qualified skill
+names after the first configuration attempt, while no `vercel:*` skill remained.
+
+Hypothesis:
+Plugin-provided skills are matched by their model-visible qualified names, so
+changing only the nine selectors from unqualified names to
+`build-ios-apps:<skill>` will remove them without disabling unrelated skills or
+changing the already-disabled XcodeBuildMCP server.
+
+Solution Attempt:
+Replace the nine unqualified `skills.config` names with their exact
+`build-ios-apps:`-qualified names. Keep the Vercel plugin override and every
+unrelated global configuration entry unchanged.
+
+Test:
+Run strict configuration validation, render a fresh model-visible prompt, and
+search it for both `vercel:*` and `build-ios-apps:*` skill names.
+
+Success Criteria:
+- Strict configuration validation passes.
+- A fresh prompt contains no Vercel skill names.
+- A fresh prompt contains no Build iOS Apps skill names.
+- Existing unrelated configuration and owner-only file mode remain unchanged.
+
+Result:
+Codex 0.147.0 strict configuration validation passed with 17 checks OK and no
+warnings or failures. A fresh model-visible prompt contained zero `vercel:*`
+skills and zero `build-ios-apps:*` skills. The global configuration retained
+its owner-only `0600` mode, and the existing XcodeBuildMCP disable override
+remained unchanged.
+
+Decision:
+ACCEPT
+
+Notes:
+The initial unqualified selectors were schema-valid but behaviorally
+ineffective for plugin-qualified skills.
+
+## EXP-20260817-003 - Evidence-First Objectivity Policy
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+The core CMA policies require honesty and authoritative research, but they do
+not explicitly require evidence-supported conclusions over user agreement,
+credible counterevidence, source-independence checks, or a clear separation of
+verified facts, source claims, inferences, and opinions.
+
+Evidence:
+The approved policy review found these behaviors absent from the canonical
+Codex template and the Codex, Claude, and OpenCode projections. Applying an
+unbounded research rule to every task would also create unnecessary sourcing
+for routine coding, editing, translation, and operational work.
+
+Hypothesis:
+Adding one equivalent, evaluation-scoped Evidence-First Objectivity contract to
+all three runtime policies will improve neutrality and uncertainty reporting
+without forcing research for routine tasks.
+
+Solution Attempt:
+Add the approved eight-part semantic contract beneath Language And Conduct in
+the canonical template and every native projection, then document its scope.
+Do not add dependencies, automatic browsing, provider behavior, or mutate an
+active user runtime.
+
+Test:
+Capture RED with positive and negative semantic contract tests, including a
+diluted-policy mutant and an overbroad every-task research mutant. Then run
+policy parity and portable-install tests, the full repository suite, static
+checks, and independent code and security reviews.
+
+Success Criteria:
+- Codex template/projection parity remains byte-identical.
+- Codex, Claude, and OpenCode carry all eight approved semantic requirements.
+- Material decisions require genuinely independent evidence where available.
+- Counterevidence, conflicts, uncertainty, and fact/claim/inference/opinion
+  distinctions cannot be removed without failing tests.
+- Routine tasks do not acquire a mandatory research requirement.
+- No active user-global policy is modified by this repository-only change.
+
+Result:
+The canonical Codex template and Codex projection remain byte-identical at
+policy version 2.6, while Claude and OpenCode carry the same eight semantic
+requirements. Contract tests reject missing clauses, diluted objectivity,
+repeated-reporting source inflation, blanket every-task research, unconditional
+research, and explicit research mandates for routine work. Portable installs
+for all three variants expose the contract. Focused policy/runtime checks
+passed, the full repository suite passed 374/374, code review passed after two
+false-positive mutants tightened the oracle, and security review reported
+`NO_SECURITY_IMPACT` with no new browsing or execution authority.
+
+Decision:
+ACCEPT
+
+Notes:
+Existing native-policy preservation and merge-prompt behavior remains unchanged.
+
+## EXP-20260817-002 - Controlled Instruction Merge Hardening
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+The first controlled instruction-merge implementation can replace an existing
+user prompt, treats path and document content as trusted AI instructions, and
+uses check-then-open path operations that can be redirected by a concurrent
+ancestor swap.
+
+Evidence:
+Independent security review reproduced replacement of a custom prompt and
+identified unescaped prompt metadata, missing untrusted-document boundaries,
+and pathname-based source and destination races. It also found that prompt
+validation occurred after the confidential snapshot was persisted.
+
+Hypothesis:
+A descriptor-pinned, no-clobber publication helper with encoded metadata and an
+explicit untrusted-data merge protocol will preserve user files, contain
+snapshots, and prevent loaded instructions or path names from overriding the
+diff-only contract.
+
+Solution Attempt:
+Harden the single instruction merge helper: preflight all outputs, refuse
+existing non-CMA prompts, reuse only byte-identical generated prompts, pin file
+and directory operations with directory descriptors and no-follow flags, and
+encode prompt metadata while classifying both input documents as untrusted
+data.
+
+Test:
+Add regressions for custom prompt preservation, newline/control metadata,
+embedded hostile instructions, ancestor-swap resistance, and no partial
+snapshot on an unsafe prompt destination. Run focused installer/init tests,
+the full suite, static checks, and repeated independent code/security review.
+
+Success Criteria:
+- Existing user-owned prompt content is never overwritten.
+- Generated metadata cannot create Markdown instructions or extra fields.
+- Input documents are handled only as merge data, never executable commands.
+- Concurrently swapped source/destination ancestors cannot redirect reads or writes.
+- A failed preflight leaves no new confidential snapshot.
+- All focused and full regression checks pass and both reviews approve.
+
+Result:
+The helper now pins every source and destination ancestor with directory file
+descriptors and `O_NOFOLLOW`, publishes files atomically without replacement,
+preserves differing prompt content through deterministic hash-suffixed names,
+and validates the prompt destination before persisting confidential snapshots.
+Prompt metadata is Base64URL-encoded, referenced documents are explicitly
+untrusted/non-executable data, and runtime-rewritten candidates stay private.
+Custom-prompt, unsafe-target, hostile-metadata/document, and concurrent
+source/destination ancestor-swap regressions passed; the race suite passed
+10/10 three consecutive times, the full repository suite passed 370/370, and
+independent code and security re-reviews both passed.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment is limited to the approved instruction snapshot and merge-prompt flow.
+
+## EXP-20260817-001 - Independent Codex Tools Integration
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+The selected `codex-tools` installer is coupled to the ToolSmith benchmark
+workspace, and its default install path attempts to reconfigure healthy
+user-owned MCP entries. That prevents safe reuse as an independent CMA tool.
+
+Evidence:
+The P9 implementation passed its existing 41 tests and reported all 11 tools
+healthy in read-only checks, but a real non-interactive install exited nonzero
+after attempting to configure the healthy user-owned DeepWiki, GitHub, and
+Context7 MCP entries. The Codex config remained unchanged.
+
+Hypothesis:
+Extracting the installer as a self-contained package, adding an MCP
+`verify-only` ownership mode, and exposing it through an explicit CMA adapter
+will preserve CMA ownership while supporting both standalone and optional
+user-requested installation.
+
+Solution Attempt:
+Create `tools/codex-tool-installer` without ToolSmith runtime dependencies; add
+portable CLI, ownership, path, release-integrity, and idempotency contracts;
+add `bin/cma-tools`; and add an opt-in `--tools-mode` setup path. Do not mutate
+the active user Codex home, credential stores, remote MCP services, or host
+package managers during validation.
+
+Test:
+Capture meaningful RED for the new ownership and CMA adapter contracts, then
+run focused tests, branch coverage, the full project suite, shell syntax,
+packaging outside the repository, and independent code and security reviews.
+
+Success Criteria:
+- The package installs and runs independently of CMA and ToolSmith paths.
+- CMA mode verifies MCP entries without writing config or credentials.
+- Standalone mode changes only installer-marker-owned MCP entries and fails
+  closed on user-owned collisions.
+- JSON option placement is consistent and configuration paths fail closed on
+  symlinks or non-regular targets.
+- Downloaded releases use pinned HTTPS artifacts with verified checksums.
+- Package branch coverage is at least 80 percent and all project tests pass.
+
+Result:
+The independent package preserved the original 41-test baseline and expanded
+it to 56 passing tests with 80 percent branch coverage. Meaningful RED exposed
+missing ownership modes, option parity, symlink handling, release integrity,
+and adapter behavior. Code and security reviews then exposed four path and
+lifecycle issues plus mutable upstream references and ambient executable
+substitution; regression tests reproduced each blocking finding before the
+fixes. Final code and security re-reviews passed. A real isolated `uv tool`
+install, version/help execution, and uninstall succeeded outside the repo while
+preserving an unrelated sentinel. The full CMA suite passed 355/355, shell
+syntax and diff checks passed, and no active Codex config, credentials, remote
+MCP service, sudo command, or host package manager was mutated.
+
+Decision:
+ACCEPT
+
+Notes:
+Real Ubuntu 24 installation remains a separate live validation on an exact
+approved host. This experiment does not authorize writes to `~/.codex`.
+DF-20260817-0000-001 records the non-blocking directory-swap hardening opportunity.
+
+## EXP-20260816-001 - Multi-Runtime Registry Write Containment
+
+Date: 2026-08-16
+Status: ACCEPTED
+
+Problem:
+The multi-runtime setup flow writes status and preference files after a user
+declines template installation, allowing a symlinked runtime `registry/`
+directory to redirect those writes outside the selected runtime home.
+
+Evidence:
+Security review reproduced the redirected write with exit status zero.
+
+Hypothesis:
+Validating each selected runtime and its `registry/` directory as regular,
+non-symlinked directories before any setup-owned file write will fail closed
+and prevent writes outside the selected runtime home.
+
+Solution Attempt:
+Add a narrow runtime-registry validation helper and a regression test; retain
+the existing installer, reset, and template overwrite behavior.
+
+Test:
+Run the regression against a symlinked `registry/`, then focused setup tests,
+syntax checks, and the full regression suite.
+
+Success Criteria:
+- A redirected registry path exits nonzero without creating files outside the runtime.
+- Normal selected runtimes still receive their status and preference files.
+- Existing symlink and installer safety tests remain green.
+
+Result:
+The new regression failed before the fix by writing both files outside the
+selected runtime through a symlinked registry. The first fix prevented that
+write, but review found that its single system write could publish truncated
+content. The revised writer loops until every byte is written before fsync and
+atomic replacement, then preserves an existing regular file's mode. A later
+review found the first mode fix overrode restrictive umasks for new files; the
+final revision retains the caller umask for new files and preserves existing
+modes. Tests assert complete content, preserved restrictive permissions, and a
+new-file `077` umask result.
+
+Decision:
+ACCEPT
+
+Notes:
+This record covers only setup-owned registry writes after a declined template installation.
+
 ## EXP-20260815-003 - Autonomous Main Plan Execution
 
 Date: 2026-08-15
@@ -508,264 +792,3 @@ Notes:
 The line-limit exception is exclusive to EXP-20260811-003. Experiment-log
 maintenance remains a separate task. Scanner execution, Phase 8, and TDD
 simplification are not authorized.
-
-## EXP-20260811-002 - Local Repository Intelligence Core Skills
-
-Date: 2026-08-11
-Status: ACCEPTED
-
-Problem:
-CMA has a protected core-skill standard, registry, and three platform profiles,
-but Graphify, Serena, and ast-grep do not yet have narrow canonical contracts,
-native inactive projections, or independent trigger and parity validation.
-
-Evidence:
-The registry already assigns architecture analysis to Graphify, symbol
-intelligence to Serena, and structural search to ast-grep. The approved profiles
-define native projection constraints, while the current repository-tool router
-keeps exact text and path lookup on `rg`. No tool-specific core-skill definitions
-or projections exist under `core-skills/`. The user approved exactly one bounded
-line-limit exception for EXP-20260811-002 in the already over-800-line experiment
-log. This exception applies only to this record and does not authorize editing,
-reordering, refactoring, archiving, cleaning, or maintaining existing records.
-
-Hypothesis:
-Three short instruction-only canonical skills plus native inactive Codex,
-Claude, and stable-V1 OpenCode projections can preserve semantic parity and
-route one primary local evidence need per skill without installing, configuring,
-activating, or silently substituting tools.
-
-Solution Attempt:
-Add canonical Graphify, Serena, and ast-grep definitions; project each into the
-repository-owned native candidate locations defined by the approved profiles;
-add only compact routing references; and add one read-only validator with
-independent per-skill tests. Do not add scripts to the skills, change TDD, or
-touch active runtime configuration.
-
-Test:
-Capture meaningful RED before implementation. For each skill validate explicit
-and natural positive triggers, required negative and overlap cases, fail-closed
-tool absence, registry metadata, native platform metadata, and normalized
-semantic parity across Codex, Claude, and OpenCode. Run focused coverage,
-applicable regressions, the full suite, code review, security review, and active
-runtime isolation checks.
-
-Success Criteria:
-- Each canonical skill contains all required standard fields and matches its
-  protected registry entry.
-- Exact text/path remains `rg`; architecture, symbol intelligence, and
-  structural AST evidence select one distinct primary skill by default.
-- Every required negative trigger and overlap case rejects the wrong skill.
-- Missing required tools report `availability=unavailable`,
-  `status=unverified`, `success=false`, and stop without fallback.
-- Native projections preserve normalized semantics without byte-identity
-  requirements, implicit activation, installation, configuration, or runtime
-  writes.
-- Routing remains compact; focused and applicable full tests plus independent
-  code and security reviews pass.
-
-Result:
-Meaningful RED first failed only for the 18 absent Phase 6 surfaces. Two later
-code-review regressions proved that prompt labels were self-fulfilling and that
-synchronized invalid registry semantics could pass; both then failed closed.
-Security RED reproduced hidden or duplicate instructions, synchronized unsafe
-authority text, routing symlinks and authority widening, unknown Codex metadata,
-unsafe native descriptions, and deeply nested JSON before each bypass was
-closed.
-
-The final implementation contains three instruction-only canonical skills and
-nine inactive native projections. Exact text and path lookup remains on `rg`;
-Graphify, Serena, and ast-grep have distinct architecture, symbol, and
-structural-AST routes. Required-tool absence stops unavailable and unverified
-with `success=false`, without fallback, installation, or configuration. The
-read-only validator enforces registry authority, independent prompt routing,
-exact safety and unavailable contracts, native metadata, normalized semantic
-parity, bounded no-follow reads, and compact routing authority.
-
-Final verification passed 20/20 focused tests with 85% branch coverage and
-239/239 full repository tests. Skill format checks, cache-isolated compilation,
-direct CLI validation, diff checks, code review, security review, and exact
-pre/post active runtime manifests passed. No active Codex, Claude, or OpenCode
-skill or configuration was changed.
-
-Decision:
-ACCEPTED
-
-Notes:
-The line-limit exception is exclusive to EXP-20260811-002. Experiment-log
-maintenance remains a separate task. Phase 7 and TDD simplification are not
-authorized.
-
-## EXP-20260811-001 - Minimal OpenCode Core Skill Profile
-
-Date: 2026-08-11
-Status: ACCEPTED
-
-Problem:
-CMA has a canonical core-skill standard, protected registry, and native Codex
-and Claude profiles, but no stable OpenCode representation contract for future
-protected core-skill projections.
-
-Evidence:
-Current official stable OpenCode V1 documentation defines native Agent Skills
-through `SKILL.md`, project/global/compatibility discovery, model-visible skill
-descriptions, on-demand loading through the `skill` tool, and `allow`, `ask`,
-or `deny` skill permissions. The repository launcher delegates to stable
-`opencode`, and the installed binary reports `1.18.16`; official OpenCode V2 is
-a separate changing beta invoked as `opencode2`. Stable V1 does not document a
-per-skill explicit-only or autoinvoke-off field. The user approved exactly one
-bounded exception to add EXP-20260811-001 to the already over-800-line log.
-This exception applies only to this record and does not authorize editing,
-reordering, refactoring, archiving, cleaning, or otherwise maintaining existing
-experiment records.
-
-Hypothesis:
-One inactive stable-V1-native JSON profile plus a small stdlib-only read-only
-validator can preserve every canonical semantic field, registry authority,
-lazy loading, approval-gated future activation, platform limitations, and
-routing-only global guidance without creating or activating any skill, agent,
-plugin, MCP, permission, or runtime configuration.
-
-Solution Attempt:
-Add `core-skills/profiles/opencode.json`,
-`bin/cma-opencode-core-skill-profile`, and focused
-`tests/test_opencode_core_skill_profile.py`. The profile is representation-only.
-The validator may read and report but must never install, configure, project,
-enable, disable, activate, sync, prune, repair, or mutate state.
-
-Test:
-Capture meaningful RED for the absent profile and validator. Validate all 15
-canonical mappings, exact registry authority, stable-V1 native structure and
-discovery, the documented lack of explicit-only metadata, lazy approval-gated
-future activation, strict types, metadata fingerprint isolation,
-unavailable-tool behavior, routing, agent/plugin/MCP/config separation,
-secret-safe dependency reuse, and active-runtime isolation. Run focused branch
-coverage, Phase 2-5 and full regressions, static checks, code review, and
-security review.
-
-Success Criteria:
-- Every canonical field maps exactly once to supported stable-V1 OpenCode
-  targets; V2-only or unknown fields fail clearly.
-- `registry.json` remains the sole core/protected authority and OpenCode
-  metadata cannot change canonical semantics.
-- The profile remains inactive with zero projections or configuration writes;
-  future use is exact-ID user routing plus native `skill: ask`, without claiming
-  undocumented explicit-only enforcement.
-- Required-tool absence stops unverified with `success=false`; no tool install,
-  configuration, activation, emulation, or widened evidence route is allowed.
-- Candidate values, paths, tracebacks, secrets, and dependency substitutions do
-  not leak through validator output.
-- No active OpenCode state, OpenCode variant, canonical source, Codex/Claude
-  profile, TDD, sync, archive, tool-specific skill, or Phase 6 surface changes.
-- Focused tests and coverage, applicable and full regressions, code review, and
-  security review pass before acceptance.
-
-Result:
-Meaningful RED failed only for the absent OpenCode profile and validator. The
-completed profile maps all 15 canonical fields once, remains inactive with zero
-projections, targets stable V1 only, and records the lack of a documented
-explicit-only switch. The read-only validator rejects semantic drift, V2-only
-or behavioral metadata, registry type confusion, unavailable-tool widening,
-write-like flags, sibling-validator substitution, symlinked or replaced JSON
-inputs, inputs above 1 MiB, more than 64 levels, more than 50,000 nodes, and
-parser recursion without tracebacks, path disclosure, or candidate-value
-leakage. Focused tests passed 14/14 with 89% branch coverage; Phase 2-5 tests
-passed 62/62; the full suite passed 219/219. JSON, cache-isolated compilation,
-direct CLI, diff/static, canonical-source identity, OpenCode variant isolation,
-code review, and security review passed. No active OpenCode file was modified.
-
-Decision:
-ACCEPTED
-
-Notes:
-The line-limit exception is exclusive to EXP-20260811-001. Existing experiment
-records remain unchanged and unarchived. Experiment-log maintenance is a
-separate future task requiring explicit approval.
-
-## EXP-20260810-011 - Minimal Claude Core Skill Profile
-
-Date: 2026-08-10
-Status: ACCEPTED
-
-Problem:
-CMA has a canonical core-skill standard, protected registry, and Codex variant
-profile, but no native Claude representation contract for future protected core
-skill projections.
-
-Evidence:
-Current official Anthropic documentation defines Claude Code skills through
-`SKILL.md`, user/project/managed/plugin discovery, explicit `/name` invocation,
-description-driven model invocation, `disable-model-invocation`, plugin and MCP
-boundaries, scoped settings, and `CLAUDE.md` loading. No Claude core-skill
-profile or focused validator exists. The user approved exactly one bounded
-exception to add this EXP-20260810-011 record to the already over-800-line log.
-The exception applies only to EXP-011, does not authorize editing, reordering,
-refactoring, archiving, or cleaning existing records, keeps Phase 4 unchanged,
-and reserves experiment-log maintenance for a separate approved task.
-
-Hypothesis:
-One inactive Claude-native JSON profile plus a small stdlib-only read-only
-validator can preserve all canonical semantics, registry authority,
-explicit-only lazy activation, native discovery, plugin/MCP separation, and
-routing-only `CLAUDE.md` guidance without creating or activating any skill or
-runtime integration.
-
-Solution Attempt:
-Add `core-skills/profiles/claude.json`,
-`bin/cma-claude-core-skill-profile`, and focused
-`tests/test_claude_core_skill_profile.py`. The profile is representation-only.
-The validator may read and report but must never install, configure, project,
-enable, disable, activate, sync, prune, repair, or mutate state.
-
-Test:
-Capture meaningful RED for the absent profile and validator, then validate all
-canonical mappings, exact registry authority, native Claude structure and
-discovery, explicit-only activation, strict types, metadata fingerprint
-isolation, unavailable-tool behavior, `CLAUDE.md` routing, plugin/MCP/agent
-boundaries, secure read-only dependency reuse, and active-runtime isolation.
-Run focused branch coverage, applicable and full regressions, static/diff
-checks, code review, and security review.
-
-Success Criteria:
-- All 15 canonical fields map exactly once to supported Claude-native targets.
-- Future core skills use deterministic `name`, `description`,
-  `disable-model-invocation: true`, and `user-invocable: true` without any
-  implicit opt-in, disabled core ID, settings override, or projection.
-- `registry.json` remains the sole core/protected authority; Claude metadata,
-  plugins, agents, MCP, or SDK filters cannot change canonical semantics.
-- Unknown mappings, type confusion, permission-granting metadata, silent tool
-  fallback/setup, mutation commands, and dependency substitution fail closed.
-- No tool-specific skill, active Claude state, Claude variant, canonical
-  source, Codex/OpenCode profile, TDD, sync, archive, MCP, or Phase 5 surface
-  changes.
-- Focused tests and branch coverage, applicable and full regressions, code
-  review, and security review pass before acceptance.
-
-Result:
-Initial focused discovery produced meaningful RED because the Claude profile
-and validator did not exist. The implementation then passed the native
-structure, exact canonical mapping, registry authority, explicit-only lazy
-activation, metadata isolation, unavailable-tool, routing, integration,
-read-only, and dependency-substitution contracts.
-
-The first security review found that raw Phase 2 registry findings could echo a
-sensitive candidate value to stdout. A focused regression reproduced the leak
-with a controlled sentinel before the validator reduced dependency findings to
-validated `code` and optional `field` values. Code and security re-reviews both
-passed after the fix.
-
-Final verification passed 14/14 focused tests with 92% branch coverage for
-`bin/cma-claude-core-skill-profile`, 48/48 Phase 2-4 core-skill regressions, and
-205/205 full repository tests. JSON parsing, cache-free source compilation,
-direct CLI validation, diff checks, and exact active Claude, Claude variant,
-canonical-source, and Codex-profile hashes passed. No active Claude state,
-Claude variant, tool-specific skill, plugin, MCP, agent, scanner, TDD, sync,
-archive, OpenCode profile, or Phase 5 surface was changed.
-
-Decision:
-ACCEPT
-
-Notes:
-The line-limit exception is exclusive to EXP-20260810-011. Existing experiment
-records remain unchanged and unarchived. Experiment-log maintenance is a
-separate future task requiring explicit approval.

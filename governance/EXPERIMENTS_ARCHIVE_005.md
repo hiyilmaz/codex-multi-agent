@@ -2,6 +2,296 @@
 
 [Back to active experiments](EXPERIMENTS.md)
 
+## EXP-20260806-001 - Git Archive Executable Mode Verification
+
+Date: 2026-08-06
+Status: ACCEPTED
+
+Problem:
+The transferred CMA source archive passed SHA-256 verification, but the remote
+installer-mode check expected exactly `755` and observed `775`, leaving the
+source-integrity gate unresolved before installation.
+
+Evidence:
+The local and remote archive SHA-256 values are identical, the local and remote
+installer content SHA-256 values are identical, the local working-tree mode is
+`755`, and the extracted archive mode is `775` inside a root-owned mode-`700`
+staging directory.
+
+Hypothesis:
+Git archive preserved an executable script with additional group execute/write
+mode bits, while content and executable semantics remained intact. Verifying
+the executable bits together with the root-only staging boundary is the correct
+security and integrity criterion.
+
+Solution Attempt:
+Replace the overly strict exact-`755` staging assertion with checks that the
+installer is a regular root-owned file, has at least one executable bit, and is
+contained by a root-owned mode-`700` staging directory. Do not change archive
+content or installed target permissions.
+
+Test:
+Re-run the revised mode assertion, verify local and remote installer hashes are
+identical, and include a negative check proving a non-executable copied mode is
+rejected.
+
+Success Criteria:
+- Local and remote installer content hashes match exactly.
+- The extracted installer is a regular root-owned executable file.
+- The staging directory remains `root:root` mode `700`.
+- The same assertion rejects a non-executable mode.
+- No real runtime or project installation occurs before this gate passes.
+
+Result:
+The revised positive check accepted the root-owned executable installer at
+mode `775` inside the root-owned mode-`700` staging directory. Local and remote
+installer SHA-256 values both equal
+`627312caeaf016427267d4f67bda236113204818d970eec9dad14c4194526321`.
+The same checker rejected an explicit mode-`600` non-executable copy. No real
+runtime or project installation occurred during the test.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment is limited to the source-transfer mode assertion and does not
+expand the approved remote-installation scope.
+
+## EXP-20260806-002 - Sentinel Preservation Manifest Scope
+
+Date: 2026-08-06
+Status: ACCEPTED
+
+Problem:
+The isolated no-overwrite installation stopped because the before and after
+manifest files differed even though every seeded sentinel retained its hash.
+
+Evidence:
+The diff contains only three newly installed, previously absent skill files:
+`hypothesis-workflow`, `orchestration-gate`, and `record-archive`. All seven
+seeded managed and unrelated sentinels have identical before/after SHA-256
+values.
+
+Hypothesis:
+The first post-install `find` expression selected new files by shared basename,
+so it compared the complete installed tree rather than the fixed sentinel set.
+Comparing an explicit sentinel path list will prove preservation without
+mistaking legitimate additions for overwrites.
+
+Solution Attempt:
+Re-run the preservation assertion over the seven exact pre-seeded paths and
+separately require that a previously absent managed skill was installed. Keep
+the installer command and isolated target unchanged.
+
+Test:
+Generate before and after hashes from the same explicit sentinel path list,
+require byte-identical manifests, verify `Skipped existing:` output, and mutate
+a copied manifest value to prove the equality check fails.
+
+Success Criteria:
+- The seven exact sentinel hashes remain unchanged.
+- Existing managed files are reported as skipped.
+- Missing managed files are installed.
+- A deliberately altered expected hash is rejected.
+- No real runtime or project installation occurs during the test.
+
+Result:
+The explicit seven-path sentinel check confirmed identical SHA-256 values for
+all pre-existing managed and unrelated files. Installer output reported
+existing managed paths as skipped, and previously absent skills were installed.
+An altered expected hash was rejected. The isolated project conflict test also
+preserved archived conflicts and the unrelated file, while the cancellation
+test produced no project mutation.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment changes only the isolated-test manifest selection.
+
+## EXP-20260806-004 - Bounded Fresh SSH Codex Install
+
+Date: 2026-08-06
+Status: ACCEPTED
+
+Problem:
+Codex remains missing after apt completed because the original PTY stdin was
+consumed and later closed, preventing continuation in that session.
+
+Evidence:
+Node.js and npm are installed and verified through a fresh read-only SSH
+connection, while `codex` is missing. Writing to the previous session failed
+before command delivery.
+
+Hypothesis:
+A fresh non-PTY SSH invocation with the pinned npm command passed as the remote
+command argument will avoid stdin consumers and complete only the missing Codex
+installation.
+
+Solution Attempt:
+Run one bounded non-PTY SSH command that verifies the global prefix, installs
+`@openai/codex@0.146.1`, and prints executable paths and versions. Do not invoke
+apt or use a heredoc.
+
+Test:
+Require the SSH command to exit zero and then verify package identity and CLI
+version through an independent fresh SSH call.
+
+Success Criteria:
+- Only the pinned npm package is added.
+- `codex --version` reports `0.146.1`.
+- The executable resolves from npm's actual global prefix.
+- A separate verification command exits zero.
+- No service or host restart occurs.
+
+Result:
+The fresh non-PTY command installed two npm packages and exited successfully.
+The verified global prefix is `/usr/local`, the CLI resolves to
+`/usr/local/bin/codex`, and `codex --version` reports `codex-cli 0.146.1`.
+An independent SSH check confirmed `@openai/codex@0.146.1` under
+`/usr/local/lib/node_modules` and reproduced the expected CLI version.
+
+Decision:
+ACCEPT
+
+Notes:
+This is the final retry for the missing Codex package action.
+
+## EXP-20260801-003 - Root-Only Contextual Voice Notification
+
+Date: 2026-08-01
+Status: ACCEPTED
+
+Problem:
+The active global `Stop` hook always speaks the same message and does not
+distinguish root Codex completion, failure, user-input waiting, or subagent
+completion. Subagent turns therefore produce unwanted voice notifications.
+
+Evidence:
+`~/.codex/hooks.json` runs `notify_stop.sh` for every matching `Stop` event.
+The script unconditionally calls macOS `say`. Official Codex hook guidance
+defines separate `Stop` and `SubagentStop` events, but `Stop` itself has no
+agent identifier. Existing subagent transcripts identify themselves through
+`session_meta.payload.source.subagent`, while root transcripts use a non-
+subagent source.
+
+Hypothesis:
+If the notification script reads the hook payload, suppresses transcripts
+whose session metadata marks them as subagents, and classifies the final root
+message into failure, waiting, or completion, voice notifications will occur
+only for root Codex with an appropriate message.
+
+Solution Attempt:
+Change only the active notification script. Preserve the existing trusted Stop
+hook definition and add a silent dry-run mode for deterministic tests without
+playing audio.
+
+Test:
+Run RED synthetic hook payloads against the old implementation. After the
+change, test root completion, root failure, root approval/question waiting,
+direct `SubagentStop`, subagent transcript metadata, malformed input, shell
+syntax, JSON hook output, and preservation of the hook/config definitions.
+
+Success Criteria:
+- Root completion selects `Kodex işlemi tamamladı.`
+- Root failure selects `Kodex bir hatayla karşılaştı.`
+- Root approval or question waiting selects `Kodex senden yanıt bekliyor.`
+- Subagent events and subagent transcripts produce no voice message.
+- Every invocation returns valid `{"continue":true}` hook JSON.
+- Existing hook registration and trusted config state remain unchanged.
+
+Result:
+The RED inspection found all five expected capabilities absent. After the
+change, eight silent dry-run cases passed: root completion, failure, approval
+waiting, question waiting, direct `SubagentStop`, a real subagent transcript,
+malformed payload, and a root payload without a final message. Every case
+returned valid continuation JSON, shell syntax validation passed, and the
+script retained executable mode.
+
+The active `hooks.json` and `config.toml` remained byte-identical to their
+backups, so hook registration and trusted state did not change. The previous
+script and both supporting files are recoverable from the timestamped archive.
+
+Decision:
+ACCEPT
+
+Notes:
+The user approved message option A. No subagent was spawned and no audio was
+played during validation; `CODEX_NOTIFY_TEST=1` exposed the selected message on
+stderr while preserving the production hook JSON response.
+
+## EXP-20260801-002 - Medium-Only Subagent Matrix
+
+Date: 2026-08-01
+Status: ACCEPTED
+
+Problem:
+The accepted CMA runtime uses six Sol/high routing variants and two additional
+Sol/high default roles. Higher reasoning effort increases token use and latency,
+which conflicts with the current objective of reducing subagent cost while
+retaining model-quality routing.
+
+Evidence:
+The managed and active Codex surfaces contain fourteen agent TOMLs: eight
+defaults plus six `*-high` variants. Eight of those files pin `high` reasoning.
+Official Codex guidance describes `medium` as the balanced default for most
+agents and recommends using the lowest effort that produces the needed result.
+
+Hypothesis:
+Using `medium` for every subagent, keeping Terra/medium defaults for support
+roles, and retaining only four Sol/medium model-escalation variants will reduce
+reasoning-token pressure without weakening the mandatory chain, review stages,
+approval gates, or test-integrity controls.
+
+Solution Attempt:
+Replace four Terra-role `*-high` variants with `*-sol` variants at medium,
+remove redundant code-reviewer and security-reviewer high variants, and change
+reviewer plus skill-agent-governor to medium. Update only the directly tied
+routing, registry, skill, test, and current planning surfaces before mirroring
+validated files into `/Users/iyilmaz/.codex`.
+
+Test:
+Add RED contracts requiring exactly twelve managed agent files, medium effort
+in every agent TOML, four named Sol variants, no `*-high` files or high routing,
+the unchanged mandatory chain, and portable-install packaging. Run focused and
+full suites, source-active parity checks, and a fresh-session routing probe.
+
+Success Criteria:
+- All managed and active subagent TOMLs use `medium` reasoning.
+- Exactly eight defaults and four Sol/medium variants remain.
+- No `*-high` agent or routing reference remains in active instructions.
+- Code-reviewer and security-reviewer stay Sol/medium and retain their required
+  review stages without redundant variants.
+- The mandatory chain, approval boundaries, truthful success, and test
+  integrity remain unchanged.
+- Focused, full, portable-install, parity, and fresh-session checks pass.
+- Historical experiment, evidence, changelog, and audit records remain intact.
+
+Result:
+The RED contract run executed 10 focused tests and failed seven assertions with
+one missing-file error, confirming that six high variants and two high defaults
+were still active. After implementation, the focused suite passed 10 tests and
+the complete repository suite passed 47 tests.
+
+Managed and active Codex surfaces each contain exactly 12 agent TOMLs: eight
+defaults and four Sol/medium variants. Every agent pins `medium`; no `*-high`
+file remains. Managed-to-active parity passed for all agent files and the owned
+routing, index, lazy-module, and skill files. A fresh ephemeral read-only Codex
+session independently reported 12 agents, `medium` as the only reasoning value,
+zero high variants, the four expected Sol variants, the exact mandatory chain,
+and the security no-impact contract.
+
+Both pre-change ZIP archives passed integrity checks. No project-local high
+agent override was found under `/Users/iyilmaz/WebStorm`, so project files did
+not require this runtime-matrix change.
+
+Decision:
+ACCEPT
+
+Notes:
+The main Codex session reasoning setting, project-local documents, Dolphin,
+remote hosts, auth, config, secrets, and plugin state are outside scope.
+
 ## EXP-20260801-001 - Local CMA Core And Lazy Runtime
 
 Date: 2026-08-01
@@ -506,271 +796,3 @@ ACCEPT
 Notes:
 The user approved source, tests, records, and isolated CMA Claude prompt
 synchronization only.
-
-## EXP-20260807-001 - Native Claude Global CMA Activation
-
-Date: 2026-08-07
-Status: ACCEPTED
-
-Problem:
-The Claude variant defaults to `${HOME}/.llm-runtimes/claude`, so the portable
-CMA package is isolated from Claude Code's native user-global `${HOME}/.claude`
-surface and is not available to normal Claude sessions.
-
-Evidence:
-The variant catalog and launcher select the isolated runtime. The current
-user's native `${HOME}/.claude` already contains `CLAUDE.md`, `settings.json`,
-skills, and runtime state, while the isolated CMA directory contains only the
-restoration prompt. Official Claude Code documentation defines
-`${HOME}/.claude` as user scope and `CLAUDE_CONFIG_DIR` as an override.
-
-Hypothesis:
-A dedicated native activation overlay can make CMA available to normal Claude
-Code sessions while preserving existing instructions, settings, credentials,
-history, plugins, and unrelated files. A separate managed policy plus one
-idempotent import avoids replacing the existing global `CLAUDE.md`.
-
-Solution Attempt:
-Change the Claude default home to `${HOME}/.claude`. Delegate only native-home
-installs to a transactional activation helper that validates all source and
-target paths before writes, preserves existing settings byte-for-byte, backs
-up and appends one `@registry/CMA_GLOBAL.md` import to existing instructions,
-installs missing CMA-owned files, rejects conflicts, and rolls back partial
-activation. Keep explicit non-native installs portable and leave the legacy
-isolated directory unchanged.
-
-Test:
-Add RED contracts for native default resolution, complete preservation-aware
-activation, idempotency, functional import detection, conflict and symlink
-rejection, rollback after copy failure, and incomplete source rejection. Run
-focused Claude activation, installer, runtime, and complete regression suites,
-shell syntax, JSON, diff, source-target parity, live native state preservation,
-and independent code and security reviews.
-
-Success Criteria:
-- Default Claude installation resolves to `${HOME}/.claude`; explicit alternate
-  runtime homes continue to use portable isolated installation behavior.
-- Existing `CLAUDE.md` content and mode are preserved with exactly one
-  functional CMA import and a byte-identical recoverable backup.
-- Existing `settings.json` bytes and mode never change.
-- Missing CMA agents, skills, registry, prompt, README, and launcher files are
-  installed; differing CMA-owned files fail before mutation.
-- Symlink, unsafe-type, incomplete-source, backup, and late-copy failures do
-  not leave partial activation or touch unrelated native Claude state.
-- Repeated activation is byte- and path-idempotent.
-- The legacy `${HOME}/.llm-runtimes/claude` tree remains unchanged.
-- Focused and complete tests, syntax, diff, live hashes, and independent code
-  and security reviews pass before acceptance.
-
-Result:
-The initial native-activation contract produced seven intended failures: the
-catalog still selected the isolated home, no preserved import or backup was
-created, force and differing managed files did not fail closed, incomplete
-sources reported success, and a symlinked native home could be followed.
-
-The first implementation passed 8/8 focused checks, both related suites at
-17/17, and the then-complete 120/120 suite. Live activation created a
-byte-identical policy backup, preserved existing policy and settings modes,
-preserved the settings and legacy-runtime hashes, installed the complete CMA
-surface with source parity, and remained idempotent on a second run.
-
-Independent code review then found an equivalent-path force bypass and two
-partial-backup cleanup gaps. New RED cases reproduced trailing, dot, and
-symlink-alias bypasses plus partial copy and post-move hash failures. Canonical
-native routing, non-native root-symlink rejection, atomic backup writes, and
-explicit incomplete-backup tracking resolved them. The durable plan was also
-updated to reflect the approved activation.
-
-Security review found insecure first-install permissions under an open umask.
-The new regression reproduced `0777` directories and a `0666` instruction
-bridge. Applying `umask 077` before creation made new directories `0700`, new
-files `0600`, and the launcher `0700` without changing existing file modes.
-Task-created live directory trees were narrowed from `0755` to `0700`.
-
-Final activation checks passed 10/10, installer and Claude runtime suites each
-passed 17/17, and the complete suite passed 122/122. Bash syntax and diff
-checks passed; ShellCheck was unavailable. Final code review and security
-review both passed with no blocking findings. No credentials, sessions,
-plugins, authenticated Claude request, legacy deletion, commit, push, or
-deployment were involved.
-
-Decision:
-ACCEPT
-
-Notes:
-The user explicitly approved active native Claude CMA activation with a
-preservation-first merge. Credential use, authenticated Claude requests,
-legacy deletion, commit, push, and deployment remain outside scope.
-
-## EXP-20260807-002 - CMA Self-Hosted Codex Runtime Alignment
-
-Date: 2026-08-07
-Status: ACCEPTED
-
-Problem:
-The CMA repository uses its own project instructions and user-global Codex
-runtime, but the project remains a legacy-safe bootstrap without
-`.codex/template-state.json`. Its project config and configuration prompt are
-older than the current templates, while selected active `${HOME}/.codex` CMA
-policy files differ from the current Codex variant.
-
-Evidence:
-The read-only project upgrade reports `State: legacy-safe bootstrap`, preserves
-both legacy managed files, and would create template state. Direct comparison
-shows the active global policy, runtime README, and orchestration gate are
-older than their packaged sources. Other differing global files contain user
-preferences, runtime audit history, or stricter record/archive behavior and
-must not be overwritten as ordinary template drift.
-
-Hypothesis:
-A preservation-first, targeted alignment can make the CMA repository use the
-current project templates and selected current Codex policy surfaces without
-weakening stronger active overrides or changing user configuration, secrets,
-sessions, audit history, or unrelated runtime state.
-
-Solution Attempt:
-Back up every file that will change. Align the project config and generated
-configuration prompt with their current templates, then create managed Codex
-template state. Synchronize only the active global policy, runtime README, and
-orchestration gate that are demonstrably older than source. Preserve
-`config.toml`, setup preferences, status messages, audit history, record
-contracts, archive implementation, credentials, sessions, and extra files.
-
-Test:
-Verify pre-change backups and hashes, project-template byte parity, valid TOML
-and JSON, managed-state ownership, a clean second project upgrade dry-run,
-source parity for the three approved global files, unchanged hashes for every
-explicitly preserved global file, focused upgrade/orchestration tests, the
-complete regression suite, and final Git diff integrity.
-
-Success Criteria:
-- Project config and configuration prompt match the current templates.
-- `.codex/template-state.json` records variant `codex`, schema version 1,
-  current template version, and matching managed hashes.
-- A second project upgrade dry-run reports managed `UNCHANGED` state.
-- The approved active global policy, README, and orchestration gate match their
-  packaged sources byte-for-byte.
-- Global config, preferences, status messages, audit history, record contracts,
-  archive implementation, and unrelated runtime files remain byte-identical.
-- Every changed pre-update file has a recoverable hash-recorded backup.
-- Focused and complete regressions pass without weakened assertions or skipped
-  checks.
-
-Result:
-The legacy baseline reproduced the expected drift: both project-managed files
-differed from their templates, template state was absent, and the selected
-global policy files differed from source. A restricted backup captured all
-five changed pre-update files with verified SHA-256 manifests under
-`/Users/iyilmaz/CodexBackups/cma-self-update-20260807T100340Z-qg3IdP/`.
-
-The project config and configuration prompt now match their templates
-byte-for-byte. Template state records schema version 1, template version 2.2,
-variant `codex`, merge ownership for `AGENTS.md`, and managed hashes for both
-project template files. A second upgrade dry-run reports managed state with
-`UNCHANGED` for every path.
-
-The active global policy, runtime README, and orchestration gate match their
-packaged sources. Hash verification confirms the global config, audit log,
-setup preferences, status messages, stricter records module, record archive
-skill, modular archive scripts, and unrelated runtime state were preserved.
-
-Project upgrade, orchestration, and lazy-runtime focused suites passed 52/52;
-the complete regression suite passed 122/122. Backup manifests, TOML and JSON
-parsing, source parity, preserved hashes, idempotency, and `git diff --check`
-passed. The first TOML validation command selected Python 3.10 without
-`tomllib`; rerunning the same parse with the installed Python 3.13 completed
-successfully and did not require a product change.
-
-Decision:
-ACCEPT
-
-Notes:
-The user selected the full safe update and retained the prior instruction to
-work without the orchestration chain. Commit and push are not authorized.
-
-## EXP-20260808-001 - Provider-Neutral OpenCode Runtime Variant
-
-Date: 2026-08-08
-Status: ACCEPTED
-
-Problem:
-The CMA runtime catalog supports Codex, Dolphin, and Claude, but it has no
-OpenCode-native package. Reusing a Codex or Claude runtime would expose the
-wrong settings and agent formats, while writing directly into the active
-`~/.config/opencode` tree could overwrite provider, model, permission, plugin,
-or user-preference state.
-
-Evidence:
-The catalog lists three variants and the installer has no OpenCode entry. The
-installed OpenCode 1.18.15 runtime uses JSON/JSONC configuration, Markdown
-agents, lazy skills, `OPENCODE_CONFIG`, and `OPENCODE_CONFIG_DIR`. The Browser
-Renderer pilot also resolves its Graphify plugin twice because its explicit
-path is interpreted relative to `.opencode` while the same plugin is
-auto-discovered from `.opencode/plugins`.
-
-Hypothesis:
-An isolated provider-neutral runtime under
-`${HOME}/.llm-runtimes/opencode`, launched through `llm-opencode`, can expose
-the Core CMA policy, Markdown agents, skills, registry, and prompts without
-changing the native OpenCode configuration or hardcoding a provider/model. A
-variant-aware project template can preserve unrelated `.opencode` content and
-remove the pilot's redundant explicit plugin path without weakening existing
-Codex, Dolphin, or Claude behavior.
-
-Solution Attempt:
-Add an `opencode` catalog entry, stable-schema runtime config, neutral launcher,
-Markdown CMA agents, portable skills and registry, provider-aware project
-init/upgrade ownership, regression tests, and user documentation. Validate the
-source in temporary runtime homes before the approved Browser Renderer pilot;
-do not install or activate the variant in the native global runtime.
-
-Test:
-Capture meaningful RED failures for the missing catalog, runtime package,
-launcher, agent contracts, and project preservation behavior. Then run focused
-OpenCode, installer, project-upgrade, and Claude regression suites; the complete
-unittest suite; JSON and Bash validation; source/install parity; prohibited
-provider/V2 scans; Browser Renderer OpenCode discovery checks; diff integrity;
-and independent code and security reviews.
-
-Success Criteria:
-- `opencode` installs to an explicit or isolated runtime with an executable
-  launcher and no writes under native `~/.config/opencode`.
-- Runtime policy and agents preserve truthful reporting and the exact
-  `planner -> tdd-guide -> code-reviewer -> security-reviewer` chain.
-- Runtime configuration contains no model, provider, credential, plugin, or
-  beta V2 settings and validates against the stable OpenCode schema surface.
-- Project init and upgrade preserve unrelated `.opencode` files, customized
-  managed files, modes, symlink protections, and dry-run behavior.
-- Browser Renderer loads Graphify exactly once through automatic discovery
-  after removing only the redundant explicit path.
-- All focused and complete tests pass without skips, weakened assertions,
-  hardcoded success, or regressions in existing variants.
-
-Result:
-The initial RED suite exposed the missing catalog, package, launcher,
-init/upgrade ownership, and documentation behavior. A later live check showed
-that `OPENCODE_CONFIG*` alone still merged native provider/model configuration;
-the launcher therefore also isolates config, data, cache, and state through
-symlink-protected XDG roots. Independent review then found and drove fixes for
-sensitive OpenCode config diffs, private init/upgrade archives, governor write
-approval, per-root symlink coverage, and custom runtime path rewriting.
-
-The final complete regression suite passed 141/141 without skips. Bash syntax,
-Python compile, JSON parsing, prohibited provider/model/agent scans, manifest
-parity, and diff integrity passed. The installed OpenCode 1.18.15 runtime
-reported no selected model or providers, eight provider-neutral CMA agents,
-approval-gated governor writes, and config/data/cache/state paths entirely
-inside `${HOME}/.llm-runtimes/opencode/runtime-state`. The Browser Renderer
-pilot resolved Graphify exactly once from `.opencode/plugins/graphify.js` after
-removing only the redundant explicit plugin entry. Final independent code and
-security reviews returned PASS.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved implementation, isolated runtime installation, and the
-Browser Renderer pilot. Native `~/.config/opencode`, provider/model/auth state,
-dependencies, commits, pushes, and deployments were not changed. Expected low
-residual risk remains: the native `opencode` executable is resolved from the
-user's `PATH`, and existing project-local plugins execute with user authority.

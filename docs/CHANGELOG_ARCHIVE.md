@@ -2,6 +2,11 @@
 
 [Back to active changelog](CHANGELOG.md)
 
+## 2026-06-11
+
+- [FIX] Install Dolphin launcher into the selected runtime home as
+  `llm-dolphin`.
+
 ## 2026-06-10
 
 - [FIX] Rewrite installed variant template paths to the selected runtime home.

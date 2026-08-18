@@ -5,7 +5,7 @@
 ## EXP-20260817-009 - Blockmanpro Fix Commit Deployment
 
 Date: 2026-08-17
-Status: TESTING
+Status: ACCEPTED
 
 Problem:
 Blockmanpro still reports the Go-installed scanners as missing after a Git pull
@@ -71,11 +71,20 @@ bypasses by requiring printable ASCII token values. Meaningful CLI and unit
 RED tests covered stored NUL, environment NUL, NEL, NBSP, line separator, and
 bidi override inputs. The revised credential boundary passes all 75 package
 tests with 85 percent branch coverage and the 385-test repository suite;
-independent code and security re-reviews pass. Final live deployment remains
-pending.
+independent code and security re-reviews pass. Final live deployment remained
+pending at that point. The final `65309d6` revision was then fast-forwarded to
+the clean server repository and rebuilt into the user-scoped UV environment
+from the exact source. Repository and installed credential-module hashes
+match. A live normal non-interactive install reports ten functionally healthy
+tools, zero generic failures, and only the corrupted stored GitHub value as typed
+`AUTH_REQUIRED`; Context7 passes functional verification. The expected exit 1
+truthfully reflects that one incomplete selected tool. Config hash, inode,
+mode, and mtime and credential-file inode, mode, and mtime remained unchanged
+during the final run. The real scanner version commands still pass, and the
+server repository is clean at `65309d6`.
 
 Decision:
-NEED_MORE_DATA
+ACCEPT
 
 ## EXP-20260817-008 - Transactional MCP Credentials
 
@@ -261,290 +270,6 @@ ACCEPTED
 Notes:
 The user approved one bounded exception to append this record while the active
 experiment file is over 800 lines. No other record maintenance is authorized.
-
-## EXP-20260817-004 - Qualified Plugin Skill Disable Selectors
-
-Date: 2026-08-17
-Status: ACCEPTED
-
-Problem:
-The approved Vercel plugin disablement removed Vercel skills from a fresh
-Codex prompt, but nine Build iOS Apps skills remained visible after unqualified
-skill-name disable entries were added to the global configuration.
-
-Evidence:
-`codex debug prompt-input` returned all nine `build-ios-apps:*` qualified skill
-names after the first configuration attempt, while no `vercel:*` skill remained.
-
-Hypothesis:
-Plugin-provided skills are matched by their model-visible qualified names, so
-changing only the nine selectors from unqualified names to
-`build-ios-apps:<skill>` will remove them without disabling unrelated skills or
-changing the already-disabled XcodeBuildMCP server.
-
-Solution Attempt:
-Replace the nine unqualified `skills.config` names with their exact
-`build-ios-apps:`-qualified names. Keep the Vercel plugin override and every
-unrelated global configuration entry unchanged.
-
-Test:
-Run strict configuration validation, render a fresh model-visible prompt, and
-search it for both `vercel:*` and `build-ios-apps:*` skill names.
-
-Success Criteria:
-- Strict configuration validation passes.
-- A fresh prompt contains no Vercel skill names.
-- A fresh prompt contains no Build iOS Apps skill names.
-- Existing unrelated configuration and owner-only file mode remain unchanged.
-
-Result:
-Codex 0.147.0 strict configuration validation passed with 17 checks OK and no
-warnings or failures. A fresh model-visible prompt contained zero `vercel:*`
-skills and zero `build-ios-apps:*` skills. The global configuration retained
-its owner-only `0600` mode, and the existing XcodeBuildMCP disable override
-remained unchanged.
-
-Decision:
-ACCEPT
-
-Notes:
-The initial unqualified selectors were schema-valid but behaviorally
-ineffective for plugin-qualified skills.
-
-## EXP-20260817-003 - Evidence-First Objectivity Policy
-
-Date: 2026-08-17
-Status: ACCEPTED
-
-Problem:
-The core CMA policies require honesty and authoritative research, but they do
-not explicitly require evidence-supported conclusions over user agreement,
-credible counterevidence, source-independence checks, or a clear separation of
-verified facts, source claims, inferences, and opinions.
-
-Evidence:
-The approved policy review found these behaviors absent from the canonical
-Codex template and the Codex, Claude, and OpenCode projections. Applying an
-unbounded research rule to every task would also create unnecessary sourcing
-for routine coding, editing, translation, and operational work.
-
-Hypothesis:
-Adding one equivalent, evaluation-scoped Evidence-First Objectivity contract to
-all three runtime policies will improve neutrality and uncertainty reporting
-without forcing research for routine tasks.
-
-Solution Attempt:
-Add the approved eight-part semantic contract beneath Language And Conduct in
-the canonical template and every native projection, then document its scope.
-Do not add dependencies, automatic browsing, provider behavior, or mutate an
-active user runtime.
-
-Test:
-Capture RED with positive and negative semantic contract tests, including a
-diluted-policy mutant and an overbroad every-task research mutant. Then run
-policy parity and portable-install tests, the full repository suite, static
-checks, and independent code and security reviews.
-
-Success Criteria:
-- Codex template/projection parity remains byte-identical.
-- Codex, Claude, and OpenCode carry all eight approved semantic requirements.
-- Material decisions require genuinely independent evidence where available.
-- Counterevidence, conflicts, uncertainty, and fact/claim/inference/opinion
-  distinctions cannot be removed without failing tests.
-- Routine tasks do not acquire a mandatory research requirement.
-- No active user-global policy is modified by this repository-only change.
-
-Result:
-The canonical Codex template and Codex projection remain byte-identical at
-policy version 2.6, while Claude and OpenCode carry the same eight semantic
-requirements. Contract tests reject missing clauses, diluted objectivity,
-repeated-reporting source inflation, blanket every-task research, unconditional
-research, and explicit research mandates for routine work. Portable installs
-for all three variants expose the contract. Focused policy/runtime checks
-passed, the full repository suite passed 374/374, code review passed after two
-false-positive mutants tightened the oracle, and security review reported
-`NO_SECURITY_IMPACT` with no new browsing or execution authority.
-
-Decision:
-ACCEPT
-
-Notes:
-Existing native-policy preservation and merge-prompt behavior remains unchanged.
-
-## EXP-20260817-002 - Controlled Instruction Merge Hardening
-
-Date: 2026-08-17
-Status: ACCEPTED
-
-Problem:
-The first controlled instruction-merge implementation can replace an existing
-user prompt, treats path and document content as trusted AI instructions, and
-uses check-then-open path operations that can be redirected by a concurrent
-ancestor swap.
-
-Evidence:
-Independent security review reproduced replacement of a custom prompt and
-identified unescaped prompt metadata, missing untrusted-document boundaries,
-and pathname-based source and destination races. It also found that prompt
-validation occurred after the confidential snapshot was persisted.
-
-Hypothesis:
-A descriptor-pinned, no-clobber publication helper with encoded metadata and an
-explicit untrusted-data merge protocol will preserve user files, contain
-snapshots, and prevent loaded instructions or path names from overriding the
-diff-only contract.
-
-Solution Attempt:
-Harden the single instruction merge helper: preflight all outputs, refuse
-existing non-CMA prompts, reuse only byte-identical generated prompts, pin file
-and directory operations with directory descriptors and no-follow flags, and
-encode prompt metadata while classifying both input documents as untrusted
-data.
-
-Test:
-Add regressions for custom prompt preservation, newline/control metadata,
-embedded hostile instructions, ancestor-swap resistance, and no partial
-snapshot on an unsafe prompt destination. Run focused installer/init tests,
-the full suite, static checks, and repeated independent code/security review.
-
-Success Criteria:
-- Existing user-owned prompt content is never overwritten.
-- Generated metadata cannot create Markdown instructions or extra fields.
-- Input documents are handled only as merge data, never executable commands.
-- Concurrently swapped source/destination ancestors cannot redirect reads or writes.
-- A failed preflight leaves no new confidential snapshot.
-- All focused and full regression checks pass and both reviews approve.
-
-Result:
-The helper now pins every source and destination ancestor with directory file
-descriptors and `O_NOFOLLOW`, publishes files atomically without replacement,
-preserves differing prompt content through deterministic hash-suffixed names,
-and validates the prompt destination before persisting confidential snapshots.
-Prompt metadata is Base64URL-encoded, referenced documents are explicitly
-untrusted/non-executable data, and runtime-rewritten candidates stay private.
-Custom-prompt, unsafe-target, hostile-metadata/document, and concurrent
-source/destination ancestor-swap regressions passed; the race suite passed
-10/10 three consecutive times, the full repository suite passed 370/370, and
-independent code and security re-reviews both passed.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment is limited to the approved instruction snapshot and merge-prompt flow.
-
-## EXP-20260817-001 - Independent Codex Tools Integration
-
-Date: 2026-08-17
-Status: ACCEPTED
-
-Problem:
-The selected `codex-tools` installer is coupled to the ToolSmith benchmark
-workspace, and its default install path attempts to reconfigure healthy
-user-owned MCP entries. That prevents safe reuse as an independent CMA tool.
-
-Evidence:
-The P9 implementation passed its existing 41 tests and reported all 11 tools
-healthy in read-only checks, but a real non-interactive install exited nonzero
-after attempting to configure the healthy user-owned DeepWiki, GitHub, and
-Context7 MCP entries. The Codex config remained unchanged.
-
-Hypothesis:
-Extracting the installer as a self-contained package, adding an MCP
-`verify-only` ownership mode, and exposing it through an explicit CMA adapter
-will preserve CMA ownership while supporting both standalone and optional
-user-requested installation.
-
-Solution Attempt:
-Create `tools/codex-tool-installer` without ToolSmith runtime dependencies; add
-portable CLI, ownership, path, release-integrity, and idempotency contracts;
-add `bin/cma-tools`; and add an opt-in `--tools-mode` setup path. Do not mutate
-the active user Codex home, credential stores, remote MCP services, or host
-package managers during validation.
-
-Test:
-Capture meaningful RED for the new ownership and CMA adapter contracts, then
-run focused tests, branch coverage, the full project suite, shell syntax,
-packaging outside the repository, and independent code and security reviews.
-
-Success Criteria:
-- The package installs and runs independently of CMA and ToolSmith paths.
-- CMA mode verifies MCP entries without writing config or credentials.
-- Standalone mode changes only installer-marker-owned MCP entries and fails
-  closed on user-owned collisions.
-- JSON option placement is consistent and configuration paths fail closed on
-  symlinks or non-regular targets.
-- Downloaded releases use pinned HTTPS artifacts with verified checksums.
-- Package branch coverage is at least 80 percent and all project tests pass.
-
-Result:
-The independent package preserved the original 41-test baseline and expanded
-it to 56 passing tests with 80 percent branch coverage. Meaningful RED exposed
-missing ownership modes, option parity, symlink handling, release integrity,
-and adapter behavior. Code and security reviews then exposed four path and
-lifecycle issues plus mutable upstream references and ambient executable
-substitution; regression tests reproduced each blocking finding before the
-fixes. Final code and security re-reviews passed. A real isolated `uv tool`
-install, version/help execution, and uninstall succeeded outside the repo while
-preserving an unrelated sentinel. The full CMA suite passed 355/355, shell
-syntax and diff checks passed, and no active Codex config, credentials, remote
-MCP service, sudo command, or host package manager was mutated.
-
-Decision:
-ACCEPT
-
-Notes:
-Real Ubuntu 24 installation remains a separate live validation on an exact
-approved host. This experiment does not authorize writes to `~/.codex`.
-DF-20260817-0000-001 records the non-blocking directory-swap hardening opportunity.
-
-## EXP-20260816-001 - Multi-Runtime Registry Write Containment
-
-Date: 2026-08-16
-Status: ACCEPTED
-
-Problem:
-The multi-runtime setup flow writes status and preference files after a user
-declines template installation, allowing a symlinked runtime `registry/`
-directory to redirect those writes outside the selected runtime home.
-
-Evidence:
-Security review reproduced the redirected write with exit status zero.
-
-Hypothesis:
-Validating each selected runtime and its `registry/` directory as regular,
-non-symlinked directories before any setup-owned file write will fail closed
-and prevent writes outside the selected runtime home.
-
-Solution Attempt:
-Add a narrow runtime-registry validation helper and a regression test; retain
-the existing installer, reset, and template overwrite behavior.
-
-Test:
-Run the regression against a symlinked `registry/`, then focused setup tests,
-syntax checks, and the full regression suite.
-
-Success Criteria:
-- A redirected registry path exits nonzero without creating files outside the runtime.
-- Normal selected runtimes still receive their status and preference files.
-- Existing symlink and installer safety tests remain green.
-
-Result:
-The new regression failed before the fix by writing both files outside the
-selected runtime through a symlinked registry. The first fix prevented that
-write, but review found that its single system write could publish truncated
-content. The revised writer loops until every byte is written before fsync and
-atomic replacement, then preserves an existing regular file's mode. A later
-review found the first mode fix overrode restrictive umasks for new files; the
-final revision retains the caller umask for new files and preserves existing
-modes. Tests assert complete content, preserved restrictive permissions, and a
-new-file `077` umask result.
-
-Decision:
-ACCEPT
-
-Notes:
-This record covers only setup-owned registry writes after a declined template installation.
 
 ## EXP-20260811-007 - Native TDD Simplification Evaluation
 
