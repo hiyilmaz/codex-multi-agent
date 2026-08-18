@@ -161,7 +161,6 @@ def main(argv: Sequence[str] | None = None, *, environ: Mapping[str, str] | None
         credential_name = definition.credential_env
         previous_credential = environ.get(credential_name) if credential_name else None
         had_previous_credential = bool(credential_name and credential_name in environ)
-        config_pre_state = config_path.read_bytes() if config_path.exists() else None
         if credential_name:
             if initial.platform.platform_key == "macos" and initial.capabilities.get("security"):
                 store = MacOSKeychainStore(runner)
@@ -175,10 +174,11 @@ def main(argv: Sequence[str] | None = None, *, environ: Mapping[str, str] | None
                 raise LifecycleStatusError(Status.AUTH_REQUIRED, f"{credential_name} unavailable")
             environ[credential_name] = credential.value or ""
         try:
-            update_config_transactionally(
+            config_transaction = update_config_transactionally(
                 config_path, definition.name, dict(definition.mcp or {}),
                 lambda path: _codex_validate(path, runner, environ), datetime.now().strftime("%Y%m%d-%H%M%S"),
             )
+            config_pre_state = config_transaction.original_content
             config_managed_state = config_path.read_bytes()
             config_managed_inode = config_path.stat(follow_symlinks=False).st_ino
         except Exception:

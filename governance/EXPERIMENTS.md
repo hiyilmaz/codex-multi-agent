@@ -2,6 +2,67 @@
 
 [Terminal experiment archive](EXPERIMENTS_ARCHIVE.md)
 
+## EXP-20260817-009 - Blockmanpro Fix Commit Deployment
+
+Date: 2026-08-17
+Status: TESTING
+
+Problem:
+Blockmanpro still reports the Go-installed scanners as missing after a Git pull
+and runs the old repair semantics.
+
+Evidence:
+The server repository and installed UV package have identical source hashes,
+but both are at main commit `85ca147` while the accepted codex-tools fix is at
+descendant commit `b45ddc7` on `origin/agent/cma-project-defaults`. The real
+scanner binaries exist under `/root/go/bin` with executable modes.
+
+Hypothesis:
+Fast-forwarding the clean server main branch to the accepted fix commit and
+reinstalling the user-scoped UV package from that exact repository will make
+the existing Go tools healthy without changing Codex config or credentials.
+
+Solution Attempt:
+Capture exact Git, package, config-hash, and permission pre-state; fast-forward
+only to `b45ddc7`; take a private UV-tool backup; force-reinstall the package
+from the repository; and run standalone install in MCP `verify-only` mode.
+
+Test:
+Compare repository and installed source hashes, execute the real scanner
+version commands, compare config hash and metadata before and after, and require
+JSON to distinguish `AUTH_REQUIRED` from genuine failures while continuing all
+selected CLI tools.
+
+Success Criteria:
+- The server repository and installed package both identify the accepted fix.
+- `osv-scanner` and `betterleaks` execute and report `HEALTHY` without profile edits.
+- All selected CLI tools are healthy; credential-gated MCP tools remain typed `AUTH_REQUIRED` when unavailable.
+- Codex config hash and credentials metadata remain unchanged in verify-only mode.
+- Any incomplete selected tool keeps the overall exit status nonzero without a false success claim.
+
+Result:
+The clean server main branch fast-forwarded from `85ca147` to the accepted
+`b45ddc7` fix, and the user-scoped UV package was rebuilt from that exact
+repository after an owner-only backup. Repository and installed `cli.py`
+hashes match. The real `osv-scanner` 2.5.0 and Betterleaks version commands
+execute, and both `check` and non-interactive MCP `verify-only` install report
+nine tools `HEALTHY`, two credential-gated MCP tools `AUTH_REQUIRED`, zero
+generic failures, and exact config preservation. Install exits 1 as required
+while selected credential-gated tools remain incomplete. Config hash, inode,
+mode, and mtime plus credential-file metadata remained unchanged; the server
+repository is clean at the expected commit. Independent code review found no
+behavioral or deployment defect. Security review then found that manage-mode
+rollback captured its pre-state before credential resolution, allowing a user
+edit made during the prompt to be overwritten after a later verification
+failure. A meaningful RED reproduced the overwrite. The revised implementation
+now carries the updater's actual original bytes in its transaction result; the
+new regression and all 72 package tests pass with 85 percent branch coverage,
+and the 385-test repository suite remains green. Final re-reviews and live
+deployment of this revision are pending.
+
+Decision:
+NEED_MORE_DATA
+
 ## EXP-20260817-008 - Transactional MCP Credentials
 
 Date: 2026-08-17

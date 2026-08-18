@@ -68,6 +68,7 @@ class DiscoveryResult:
 class TransactionResult:
     changed: bool
     backup_path: str | None = None
+    original_content: bytes | None = None
 
 
 @dataclass(frozen=True)

@@ -187,7 +187,9 @@ def update_config_transactionally(
         _reject_symlinked_ancestors(backup_dir)
         if backup_dir.exists() and not backup_dir.is_dir():
             raise ConfigTransactionError(f"Expected backup directory: {backup_dir}")
-        original = path.read_bytes() if path.exists() else b""
+        existed = path.exists()
+        original = path.read_bytes() if existed else b""
+        original_content = original if existed else None
     except ConfigTransactionError:
         raise
     except OSError as exc:
@@ -199,7 +201,7 @@ def update_config_transactionally(
         raise ConfigTransactionError(str(exc)) from exc
     candidate = candidate_text.encode("utf-8")
     if candidate == original:
-        return TransactionResult(False)
+        return TransactionResult(False, original_content=original_content)
     path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = None
     backup = backup_dir / f"config.toml.{timestamp}"
@@ -229,7 +231,7 @@ def update_config_transactionally(
             _atomic_restore(path, original)
             events.append("rollback")
             raise ConfigTransactionError("Codex rejected the updated config; original restored")
-        return TransactionResult(True, str(backup))
+        return TransactionResult(True, str(backup), original_content)
     except ConfigTransactionError:
         raise
     except Exception as exc:

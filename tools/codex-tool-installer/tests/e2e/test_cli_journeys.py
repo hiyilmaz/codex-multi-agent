@@ -69,6 +69,17 @@ class Prompt:
     def secret(self, message): return self.value
 
 
+class ConfigEditingPrompt(Prompt):
+    def __init__(self, value, config, content):
+        super().__init__(value)
+        self.config = config
+        self.content = content
+
+    def secret(self, message):
+        self.config.write_text(self.content, encoding="utf-8")
+        return super().secret(message)
+
+
 class CliJourneyTests(unittest.TestCase):
     def test_default_manage_changes_config_and_reports_not_preserved_then_is_idempotent(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -217,6 +228,33 @@ class CliJourneyTests(unittest.TestCase):
             self.assertEqual(1, code)
             self.assertEqual("FAILED", github["status"])
             self.assertEqual('model = "user-concurrent-edit"\n', config.read_text(encoding="utf-8"))
+            self.assertFalse(payload["credentials"]["GITHUB_PAT_TOKEN"]["available"])
+            self.assertNotIn(secret, output.getvalue())
+
+    def test_failed_mcp_restores_config_state_captured_after_credential_prompt(self):
+        secret = "pre-update-edit-secret-never-print"
+        edited = 'model = "user-edit-during-prompt"\n'
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / ".codex" / "config.toml"
+            config.parent.mkdir()
+            config.write_text('model = "safe"\n', encoding="utf-8")
+            output = io.StringIO()
+            prompt = ConfigEditingPrompt(secret, config, edited)
+            with patch("codex_tool_installer.cli.MaskedPrompt", return_value=prompt):
+                with redirect_stdout(output):
+                    code = main(
+                        ["--json", "install", "github"],
+                        environ={"HOME": str(root), "PATH": ""},
+                        platform_facts={"system": "Linux", "distribution": "Ubuntu", "version": "24.04", "machine": "x86_64"},
+                        runner=ConfiguredRunner(), connectivity_probe=lambda: True,
+                        mcp_transport=BrokenTransport(),
+                    )
+            payload = json.loads(output.getvalue())
+            github = next(tool for tool in payload["tools"] if tool["name"] == "github")
+            self.assertEqual(1, code)
+            self.assertEqual("BROKEN", github["status"])
+            self.assertEqual(edited, config.read_text(encoding="utf-8"))
             self.assertFalse(payload["credentials"]["GITHUB_PAT_TOKEN"]["available"])
             self.assertNotIn(secret, output.getvalue())
 
