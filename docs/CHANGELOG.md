@@ -10,6 +10,12 @@
 
 ## 2026-08-18
 
+- [FIX] EXP-20260818-001 added fail-closed Linux `renameat2` support to the
+  native Codex activator while preserving Darwin `renameatx_np`, directory-FD
+  anchoring, exclusive no-overwrite publication, atomic exchange rollback, and
+  staging cleanup. The focused suite passed 23/23 on both Darwin and Ubuntu,
+  the full suite passed 389/389 on both platforms, activator branch coverage
+  measured 82%, and independent code/security reviews passed.
 - [FIX] EXP-20260817-009 deployed the resumable codex-tools fixes to
   blockmanpro through clean fast-forward commits and exact repo-sourced UV
   rebuilds. Go-installed scanners are now discovered without profile edits;

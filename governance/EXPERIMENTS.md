@@ -5,7 +5,7 @@
 ## EXP-20260818-001 - Cross-Platform Atomic Rename
 
 Date: 2026-08-18
-Status: TESTING
+Status: ACCEPTED
 
 Problem:
 The native Codex activator uses Darwin-only `renameatx_np`, so its fail-closed
@@ -51,12 +51,14 @@ passed all 23 focused native-activation tests. Python compilation and
 `git diff --check` passed, the full repository suite passed 389/389, and
 focused branch coverage for the activator measured 82 percent. Darwin real-host
 publication remained idempotent, preserved descriptor anchoring, rejected an
-existing target, and left no hidden staging artifact. The exact Ubuntu backend
-and full-suite verification remain pending because deployment to blockmanpro is
-outside the approved local-fix mutation scope.
+existing target, and left no hidden staging artifact. Commit `85e0412` was then
+pushed to both the working branch and `main` and fast-forwarded into the clean
+blockmanpro repository. On Ubuntu 24.04 x86_64, the real `renameat2` focused
+suite passed 23/23 and the full repository suite passed 389/389, both with exit
+0. Independent code and security reviews found no blocking issue.
 
 Decision:
-NEED_MORE_DATA
+ACCEPT
 
 ## EXP-20260817-009 - Blockmanpro Fix Commit Deployment
 
