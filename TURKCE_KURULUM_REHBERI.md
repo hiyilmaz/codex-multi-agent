@@ -48,6 +48,10 @@ En kolay yöntem kurulum sihirbazını çalıştırmaktır:
 bin/codex-setup
 ```
 
+Değişiklik yapan genel kurulum için Node.js 22 veya üzeri ve `npx` zorunludur.
+Yardım ve varyant listeleme komutları bu ön kontrolden bağımsız, salt-okunur
+çalışır.
+
 Sihirbaz şunları sorar:
 
 - tüm etkin modellerin kurulup kurulmayacağı; **Evet** seçilirse her model
@@ -59,12 +63,24 @@ Sihirbaz şunları sorar:
 - YOLO modu
 - hata, izin, tamamlandı ve karar bekleme mesajları
 - istenirse proje içine Codex yapısı kurulumu
+- varsayılanı **Evet** olan resmi `npx ctx7 setup` adımı
+
+Context7 kimlik doğrulamayı ve algılanan Claude Code, OpenCode ve Codex için
+global MCP, rule ve skill değişikliklerini süreç kullanıcısının `HOME` dizini
+altında kendisi yönetir. Özel `--runtime-home` bu Context7 hedeflerini
+değiştirmez. CMA API anahtarını komut argümanına eklemez; Context7 başarısız
+olursa sihirbaz da aynı hata koduyla tamamlanmadan çıkar. Context7 en son
+çalıştığı için daha önce tamamlanan CMA yazımları otomatik geri alınmaz.
 
 Kullanıcı-global Codex ortamını kur:
 
 ```bash
 bin/codex-user-install
 ```
+
+Doğrudan değişiklik yapan `codex-user-install` çağrıları da Node.js 22 veya
+üzeri ve `npx` gerektirir. Bu komut tek başına `npx ctx7 setup` çalıştırmaz;
+interaktif çoklu-agent Context7 adımı genel `codex-setup` sihirbazına aittir.
 
 Belirli bir versiyonu kur:
 

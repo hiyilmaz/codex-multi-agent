@@ -5,6 +5,7 @@ usage() {
   cat <<'EOF'
 Usage: codex-setup [--runtime-home <path>] [--variant <id>] [--tools-mode <mode>]
        codex-setup [--codex-home <path>] [--variant <id>] [--tools-mode <mode>]
+       codex-setup --list-variants
 
 Runs an interactive setup for the selected runtime variant and optional project
 initialization.
@@ -19,6 +20,33 @@ VARIANT_ID=""
 TOOLS_MODE="skip"
 VARIANT_IDS=()
 
+require_node22_and_npx() {
+  local node_version=""
+  local node_major=""
+
+  if ! command -v node >/dev/null 2>&1; then
+    echo "FAILED: Node.js 22 or newer is required; node was not found." >&2
+    exit 1
+  fi
+  if ! node_version="$(node --version 2>/dev/null)"; then
+    echo "FAILED: Node.js 22 or newer is required; node version check failed." >&2
+    exit 1
+  fi
+  if [[ ! "$node_version" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)([-+].*)?$ ]]; then
+    echo "FAILED: Node.js 22 or newer is required; unable to parse node version." >&2
+    exit 1
+  fi
+  node_major="${BASH_REMATCH[1]}"
+  if (( 10#$node_major < 22 )); then
+    echo "FAILED: Node.js 22 or newer is required; found $node_version." >&2
+    exit 1
+  fi
+  if ! command -v npx >/dev/null 2>&1; then
+    echo "FAILED: npx is required for CMA user-global setup." >&2
+    exit 1
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --runtime-home|--codex-home)
@@ -32,6 +60,10 @@ while [[ $# -gt 0 ]]; do
     --tools-mode)
       TOOLS_MODE="$2"
       shift 2
+      ;;
+    --list-variants)
+      "$TEMPLATE_DIR/bin/codex-user-install" --list-variants
+      exit 0
       ;;
     -h|--help)
       usage
@@ -67,6 +99,8 @@ if [[ -n "$RUNTIME_HOME" && -z "$VARIANT_ID" ]]; then
   echo "FAILED: --runtime-home requires --variant; each model has its own runtime home." >&2
   exit 1
 fi
+
+require_node22_and_npx
 
 ask_yes_no() {
   local prompt="$1"
@@ -384,6 +418,12 @@ if [[ "$TOOLS_MODE" != "skip" ]]; then
   else
     CODEX_HOME="$TOOLS_CODEX_HOME" "$TEMPLATE_DIR/bin/cma-tools" "$TOOLS_MODE"
   fi
+fi
+
+echo
+if ask_yes_no "Context7 resmi genel kurulumu çalıştırılsın mı?" "y"; then
+  echo "Context7 setup başlatılıyor. Kimlik doğrulama ve agent seçimlerini Context7 yönetecek."
+  npx ctx7 setup
 fi
 
 echo

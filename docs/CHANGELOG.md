@@ -4,9 +4,23 @@
 
 ## Archive Index (Previous 30 Dates)
 
+- [2026-06-24](CHANGELOG_ARCHIVE.md#2026-06-24)
 - [2026-06-11](CHANGELOG_ARCHIVE.md#2026-06-11)
 - [2026-06-10](CHANGELOG_ARCHIVE.md#2026-06-10)
 - [2026-05-22](CHANGELOG_ARCHIVE.md#2026-05-22)
+
+## 2026-08-21
+
+- [FEAT] EXP-20260821-001 added a Node.js 22 and `npx` fail-closed preflight
+  to mutating CMA user-global setup entry points while keeping help and variant
+  discovery read-only. The general wizard now offers the exact interactive
+  `npx ctx7 setup` flow with a default answer of yes, propagates Context7
+  failures without a false completion message, and leaves authentication to
+  Context7 without putting API keys in command arguments. Focused tests passed
+  9/9, the full suite passed 398/398, shell syntax and diff checks passed, and
+  independent code and security reviews passed. The unpinned remote package,
+  process `PATH`, and third-party partial-write risks remain explicitly
+  documented; ShellCheck was unavailable.
 
 ## 2026-08-18
 
@@ -609,10 +623,3 @@
 ## 2026-06-26
 
 - [DOCS] Added deferred findings log behavior to global Codex instructions.
-
-## 2026-06-24
-
-- [FEAT] Added `codex-project-upgrade` to update initialized project
-  `AGENTS.md` files without resetting them.
-- [INFRA] Added project-level `ORCHESTRATION_MODE` and the
-  `orchestration-gate` decision skill across runtime variants.

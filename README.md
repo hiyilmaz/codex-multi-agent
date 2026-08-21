@@ -108,6 +108,9 @@ Installable runtime variants live under `variants/`:
 
 ## Quick Start
 
+Mutating user-global setup requires Node.js 22 or newer and `npx`. Help and
+variant discovery remain available without this runtime preflight.
+
 Install or refresh the default Codex runtime:
 
 ```bash
@@ -221,7 +224,14 @@ bin/codex-setup
 Without `--variant`, setup asks whether to install all catalog variants. Answer
 yes to install every active variant without further selection questions; answer
 no to choose each variant individually. `--variant <id>` keeps the explicit
-single-variant flow.
+single-variant flow. Before reporting completion, setup offers to run the
+official interactive `npx ctx7 setup` command with a default answer of yes.
+Context7 owns authentication and the resulting Claude Code, OpenCode, and Codex
+MCP, rule, and skill changes under the process user's global `HOME`. A custom
+`--runtime-home` does not redirect those Context7 targets. CMA never passes an
+API key on the command line, and a Context7 failure makes setup fail without a
+completion message. Context7 runs after CMA writes, so such a failure does not
+roll back runtime changes already completed by CMA.
 
 Initialize a project or add runtime variants:
 

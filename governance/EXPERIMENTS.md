@@ -2,6 +2,80 @@
 
 [Terminal experiment archive](EXPERIMENTS_ARCHIVE.md)
 
+## EXP-20260821-001 - Context7 General Setup And Node 22 Preflight
+
+Date: 2026-08-21
+Status: ACCEPTED
+
+Problem:
+The CMA general setup does not run Context7's official multi-agent setup flow,
+and mutating setup entry points do not fail closed when Node.js is older than
+the required major version 22.
+
+Evidence:
+The current `bin/codex-setup` completes without invoking `npx ctx7 setup`, and
+neither it nor `bin/codex-user-install` validates Node.js or `npx` before
+runtime mutations. A real Context7 setup configured MCP, rules, and skills for
+Claude Code, OpenCode, and Codex under the process user's global home.
+
+Hypothesis:
+An early Node.js 22 and `npx` preflight on mutating entry points, followed by an
+explicit default-yes `npx ctx7 setup` step at the end of the general wizard,
+will provide the requested multi-agent Context7 setup without leaking
+credentials or reporting false completion.
+
+Solution Attempt:
+Add equivalent fail-closed runtime preflights to `codex-setup` and
+`codex-user-install`, preserve read-only help and variant listing without the
+preflight, and let the Context7 CLI exclusively own its interactive
+authentication and global configuration flow.
+
+Test:
+Capture RED and GREEN with real setup scripts and hermetic fake `node` and
+`npx` executables. Cover missing, malformed, too-old, boundary, and newer Node
+versions; missing `npx`; exact unpinned Context7 argv; explicit skip; exact
+failure propagation; secret-free argv/output; custom runtime HOME behavior;
+focused regressions; shell syntax; diff checks; and the full repository suite.
+
+Success Criteria:
+- Node.js below 22, malformed versions, missing Node.js, and missing `npx` fail
+  before runtime or network mutation.
+- Node.js 22 and newer allow mutating setup flows to continue.
+- Read-only help and variant listing remain available without Node.js or `npx`.
+- The accepted Context7 step invokes exactly `npx ctx7 setup` once; an explicit
+  rejection invokes nothing.
+- Context7 failures preserve their exit status and suppress CMA completion.
+- CMA never adds the Context7 API key or token value to argv or its own output.
+- Focused and full regression suites pass without real network access.
+
+Result:
+The pre-change focused suite produced meaningful RED: Node.js below 22,
+malformed versions, missing Node.js, and missing `npx` did not stop mutation;
+`codex-setup --list-variants` was unavailable; no Context7 command or exit
+propagation occurred; and the required documentation was absent. After the
+implementation, the new focused suite passed 8/8, variant-install regressions
+passed 31/31, codex-tools integration regressions passed 7/7, and shell syntax
+validation passed. The first full regression passed 397/397. Code review then
+found that a valid-looking Node version printed by a failing `node --version`
+process was accepted because its exit status was swallowed. A dedicated RED
+reproduced the false continuation. The revised preflight now treats that exit
+status as terminal; the focused suite passes 9/9 and the full regression passes
+398/398. Code re-review passed after the fix. Security review passed with no blocking
+finding and retained the explicitly accepted risks of unpinned remote `npx`
+execution, user-controlled `PATH` resolution, and no transactional rollback for
+third-party partial writes. ShellCheck was unavailable; Bash syntax validation
+passed instead. The record archive regression passed 19/19, the focused suite
+remained 9/9, and the post-archive check reported every managed record below
+its compaction threshold.
+
+Decision:
+ACCEPT
+
+Notes:
+The Context7 command remains interactive and unpinned by explicit user request.
+It targets the process user's global agent locations even when CMA uses a
+custom runtime home. CMA does not install Node.js or modify shell profiles.
+
 ## EXP-20260818-001 - Cross-Platform Atomic Rename
 
 Date: 2026-08-18

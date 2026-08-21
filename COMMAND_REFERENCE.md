@@ -12,6 +12,7 @@ Use quoted absolute paths when a runtime or project path contains spaces.
 
 ```bash
 bin/codex-setup --help
+bin/codex-setup --list-variants
 bin/codex-user-install --help
 bin/codex-user-install --list-variants
 bin/codex-project-init --help
@@ -40,6 +41,15 @@ Start the interactive runtime and optional project setup:
 ```bash
 bin/codex-setup
 ```
+
+Mutating setup requires Node.js 22 or newer and `npx`; help and variant
+discovery bypass this preflight. Before completion, the wizard offers the
+default-yes official `npx ctx7 setup` flow. Context7 owns authentication and
+updates the detected Claude Code, OpenCode, and Codex global MCP, rule, and
+skill locations under the process `HOME`. `--runtime-home` does not redirect
+those Context7 targets. CMA does not put an API key in command arguments, and a
+failed Context7 process keeps its exit status and suppresses completion.
+Because Context7 runs last, that failure does not roll back earlier CMA writes.
 
 Without `--variant`, this asks whether to install all active catalog variants.
 Yes installs all without individual prompts; no asks once per variant. A custom
@@ -109,6 +119,11 @@ uv tool uninstall codex-tool-installer
 ```
 
 ## Runtime Installation
+
+Direct mutating `codex-user-install` calls also require Node.js 22 or newer and
+`npx`. Its `--help` and `--list-variants` commands remain read-only and do not
+require either executable. The standalone installer does not itself run
+`npx ctx7 setup`; that interactive global step belongs to `codex-setup`.
 
 Install the default variant selected in `variants/config.toml`:
 
