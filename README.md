@@ -147,6 +147,22 @@ bin/cma-tools dry-run
 bin/cma-tools install
 ```
 
+Check an existing server before setup or upgrade. This portable, read-only
+command does not install packages or alter Codex configuration:
+
+```bash
+bin/cma-tool-check
+```
+
+It reports paths and versions for Node.js, npm, npx, Codex, Bubblewrap,
+Agent Browser, GitHub CLI, img-process, and Serena. Node.js 22+ and a working
+`codex mcp list` are required checks; missing optional tools remain visible as
+`MISSING` without making the inventory fail. Running it as root requires an
+explicit `--allow-root`; use `--show-mcp-output` only when the raw MCP listing
+is suitable for the current terminal or log. The script itself does not install
+or edit configuration, but it executes the tools resolved from the caller's
+trusted `PATH`; it cannot guarantee their behavior or impose a portable timeout.
+
 For a standalone installation without the CMA adapter:
 
 ```bash

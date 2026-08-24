@@ -4,10 +4,21 @@
 
 ## Archive Index (Previous 30 Dates)
 
+- [2026-06-26](CHANGELOG_ARCHIVE.md#2026-06-26)
 - [2026-06-24](CHANGELOG_ARCHIVE.md#2026-06-24)
 - [2026-06-11](CHANGELOG_ARCHIVE.md#2026-06-11)
 - [2026-06-10](CHANGELOG_ARCHIVE.md#2026-06-10)
 - [2026-05-22](CHANGELOG_ARCHIVE.md#2026-05-22)
+
+## 2026-08-24
+
+- [FEAT] Added `bin/cma-tool-check`, a portable read-only Codex host inventory
+  command. It verifies Node.js 22+, records executable paths and versions for
+  common runtime tools, checks `codex mcp list` when Codex is available, marks
+  optional missing tools truthfully, and returns a nonzero status for required
+  Node/Codex/MCP or version failures. Focused fake-PATH regression coverage,
+  shell syntax validation, a local smoke run, and independent code/security
+  reviews were completed.
 
 ## 2026-08-21
 
@@ -619,7 +630,3 @@
 - [FIX] Prevented launcher-free runtime variants from exiting the user installer
   with a failure status after copying their files.
 - [DOCS] Added ECC source and license attribution for the imported workflow.
-
-## 2026-06-26
-
-- [DOCS] Added deferred findings log behavior to global Codex instructions.

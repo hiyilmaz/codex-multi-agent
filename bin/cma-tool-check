@@ -1,0 +1,134 @@
+#!/bin/bash
+set -u
+
+usage() {
+  printf '%s\n' \
+    'Usage: cma-tool-check [--allow-root] [--show-mcp-output] [--help]' \
+    '' \
+    'Read-only inventory and health check for the Codex runtime tools:' \
+    'node, npm, npx, codex, bwrap, agent-browser, gh, img-process, and serena.' \
+    '' \
+    'Node.js 22+ and Codex (including `codex mcp list`) are required health checks.' \
+    'The other tools are optional inventory entries: their absence is reported as' \
+    'MISSING but does not make the command fail.' \
+    '' \
+    'Running as root requires --allow-root. MCP output is hidden unless' \
+    '--show-mcp-output is explicitly requested.'
+}
+
+allow_root="false"
+show_mcp_output="false"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --allow-root) allow_root="true" ;;
+    --show-mcp-output) show_mcp_output="true" ;;
+    -h|--help) usage; exit 0 ;;
+    *) printf 'FAILED: unknown option: %s\n' "$1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+if [[ $EUID -eq 0 && "$allow_root" != "true" ]]; then
+  printf 'FAILED: running as root requires --allow-root\n' >&2
+  exit 2
+fi
+
+found_count=0
+missing_count=0
+failure_count=0
+node_status="FAIL"
+codex_path=""
+codex_version_ok="false"
+
+normalize_output() {
+  local value="$1"
+  value="${value//$'\r'/ }"
+  value="${value//$'\n'/ }"
+  if [[ "$value" == *$'\033'* ]]; then
+    printf '%s' '[unsafe terminal output suppressed]'
+    return
+  fi
+  printf '%s' "$value"
+}
+
+report_tool() {
+  local label="$1"
+  local command="$2"
+  local required="$3"
+  local resolved=""
+  local version=""
+  local status=0
+
+  resolved="$(command -v "$command" 2>/dev/null || true)"
+  if [[ -z "$resolved" || ! -x "$resolved" ]]; then
+    printf '%s | MISSING | - | -\n' "$label"
+    missing_count=$((missing_count + 1))
+    if [[ "$required" == "true" ]]; then
+      failure_count=$((failure_count + 1))
+    fi
+    return
+  fi
+
+  version="$("$resolved" --version 2>&1)"
+  status=$?
+  version="$(normalize_output "$version")"
+  if [[ $status -ne 0 ]]; then
+    printf '%s | VERSION_FAILED | %s | exit %s: %s\n' "$label" "$resolved" "$status" "$version"
+    failure_count=$((failure_count + 1))
+    return
+  fi
+
+  found_count=$((found_count + 1))
+  if [[ "$label" == "node" ]]; then
+    if [[ "$version" =~ ^v([0-9]+)\.[0-9]+\.[0-9]+$ ]] && [[ ${BASH_REMATCH[1]} -ge 22 ]]; then
+      node_status="PASS"
+      printf 'node | PASS | %s | %s\n' "$resolved" "$version"
+    else
+      printf 'node | FAIL | %s | %s\n' "$resolved" "$version"
+      failure_count=$((failure_count + 1))
+    fi
+    return
+  fi
+
+  if [[ "$label" == "codex" ]]; then
+    codex_path="$resolved"
+    codex_version_ok="true"
+  fi
+  printf '%s | FOUND | %s | %s\n' "$label" "$resolved" "$version"
+}
+
+printf 'TOOL | STATUS | PATH | VERSION\n'
+report_tool node node true
+report_tool npm npm false
+report_tool npx npx false
+report_tool codex codex true
+report_tool bwrap bwrap false
+report_tool agent-browser agent-browser false
+report_tool gh gh false
+report_tool img-process img-process false
+report_tool serena serena false
+
+printf 'NODE_22_PLUS=%s\n' "$node_status"
+if [[ "$codex_version_ok" == "true" ]]; then
+  mcp_output="$("$codex_path" mcp list 2>&1)"
+  mcp_status=$?
+  if [[ $mcp_status -eq 0 ]]; then
+    printf 'MCP | PASS | codex mcp list | -\n'
+    if [[ "$show_mcp_output" == "true" ]]; then
+      printf '%s\n' "$(normalize_output "$mcp_output")"
+    fi
+  else
+    printf 'MCP | FAIL | codex mcp list | exit %s\n' "$mcp_status"
+    if [[ "$show_mcp_output" == "true" ]]; then
+      printf '%s\n' "$(normalize_output "$mcp_output")"
+    fi
+    failure_count=$((failure_count + 1))
+  fi
+else
+  printf 'MCP | SKIPPED | codex mcp list | unavailable\n'
+fi
+
+printf 'SUMMARY | found=%s missing=%s failed=%s\n' "$found_count" "$missing_count" "$failure_count"
+if [[ $failure_count -gt 0 ]]; then
+  exit 1
+fi
