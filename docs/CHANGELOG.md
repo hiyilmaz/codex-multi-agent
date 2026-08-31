@@ -4,11 +4,224 @@
 
 ## Archive Index (Previous 30 Dates)
 
+- [2026-07-14](CHANGELOG_ARCHIVE.md#2026-07-14)
 - [2026-06-26](CHANGELOG_ARCHIVE.md#2026-06-26)
 - [2026-06-24](CHANGELOG_ARCHIVE.md#2026-06-24)
 - [2026-06-11](CHANGELOG_ARCHIVE.md#2026-06-11)
 - [2026-06-10](CHANGELOG_ARCHIVE.md#2026-06-10)
 - [2026-05-22](CHANGELOG_ARCHIVE.md#2026-05-22)
+
+## 2026-08-31
+
+- [OPS] Provisioned `ALM-MILA01` on the Almila ESXi host with 4 vCPU,
+  8 GiB RAM, EFI, one 100 GiB thin PVSCSI disk, and one VMXNET3 NIC on
+  `PG-OFFICE`. The Ubuntu 26.04 Server source ISO matched Canonical's
+  published SHA-256 value before a task-owned autoinstall copy was created.
+  The guest completed installation, rebooted from disk with both installation
+  media disconnected, and reported hostname `alm-mila01`, Ubuntu 26.04,
+  DHCP address `192.168.1.185/24`, working DNS/HTTPS, active UFW and
+  open-vm-tools, and key-only SSH for `milaadmin`. Existing VM inventory,
+  VM power states, port groups, vSwitches, uplinks, and vmkernel networking
+  remained unchanged except for the newly registered VM. `EXP-20260831-001`
+  added persistent private/link-local IPv4 and local IPv6 egress isolation
+  after the first security review identified the shared Office Layer-2 risk.
+  A second SSH session, gateway DNS, and public HTTPS survived rule activation
+  and a clean reboot, while Office-DC IPv4 and local-prefix IPv6 negative
+  probes incremented the intended DROP counters. Hermes, Telegram,
+  model-provider configuration, ESXi autostart, static addressing, and DHCP
+  reservation were intentionally not configured.
+
+## 2026-08-28
+
+- [SECURITY] Added a transactional, persistent ALM-MGMT01 nftables exception
+  for stateful AD/DC traffic only between `192.168.1.10/32` and
+  `192.168.50.10/32`. The rules precede the existing physical-subnet DROP
+  rules and allow only the approved DNS, Kerberos, NTP, RPC, LDAP, SMB,
+  password-change, Global Catalog, dynamic RPC, and limited ICMPv4 traffic.
+  Syntax and active ordering passed; the two broad Office/Lab DROP rules and
+  Tailscale forwarding rules remain active, IPv4/IPv6 NAT hashes did not
+  change, and both DC RDP endpoints remain reachable locally from the
+  management VM. The pre-change configuration is retained under root-only
+  backup, and the upstream physical Layer-2 overlap is tracked separately as
+  `DEFERRED-NET-L2-001` without blocking the approved AD rollout.
+
+- [SECURITY] Applied the scoped `SEC-NET-IPv6-001` host control on
+  `ALM-LAB-DC01`: a persistent, all-profile outbound Windows Firewall block
+  for global-unicast IPv6 destination range `2000::/3`. Before the change,
+  ICMPv6 to Google DNS succeeded; afterward both ICMPv6 and TCP/443 tests to
+  public IPv6 targets failed. IPv4 `192.168.50.10/24`, absence of an IPv4
+  default route, Lab reachability, RDP, the IPv6 binding, and link-local IPv6
+  remained intact. PersistentStore and ActiveStore read-back, a SHA-256
+  verified firewall export, and independent configuration/security reviews
+  passed. Upstream VLAN 50 IPv6 isolation and NAT64/transition-path coverage
+  remain open under `DF-20260828-0000-001` pending the dedicated physical
+  stateful firewall/router.
+
+- [SECURITY] Reconciled both Windows Server activation and AD states from live,
+  key-safe evidence and completed the approved activation-helper cleanup.
+  `ALM-OFF-DC01` is ServerStandard Retail, permanently activated, and is the
+  running Global Catalog/DNS DC for `ad.almilafarma.com`; `ALM-LAB-DC01` is
+  ServerStandard Retail, permanently activated, remains a standalone WORKGROUP
+  server, and has neither AD DS nor DNS installed. Any earlier snapshot that
+  reported `ALM-LAB-DC01` as Notification or activation-incomplete is
+  superseded by the live 2026-08-28 reconciliation. Exact activation-only
+  nftables filter/NAT objects, rollback units, runtime script, Windows
+  scheduled task, rollback directory, ActiveStore gateway, Windows Firewall
+  rule, and local temporary workspace are absent after cleanup. The permanent
+  Tailscale/Office-Lab guard remained unchanged; MacBook routes and real SSH,
+  RDP, and HTTPS probes passed through the Tailscale tunnel. Protected VM power
+  states, VMX hashes, vSwitch/uplink mappings, and `vmk0` matched baseline.
+  `LAB-IPV6-EGRESS-001` remains OPEN and is now tracked as
+  `DF-20260828-0000-001`; no IPv6 or AD configuration was changed.
+
+- [SECURITY] EXP-20260828-003 completed normal-client/default-gateway
+  bidirectional physical-subnet isolation validation with two temporary,
+  single-NIC Ubuntu 26.04 cloud-image VMs.
+  TEST-OFFICE01 received DHCP `192.168.1.177/24`, gateway/DNS
+  `192.168.1.1`; TEST-LAB01 used conflict-checked `192.168.50.31/24` because
+  packet capture proved the Lab network had no DHCP offer, with its normal
+  gateway/DNS `192.168.50.1`. Neither client used ALM-MGMT01 or a manual
+  cross-subnet route. Office-to-Lab RDP/HTTPS/SSH and Lab-to-Office
+  RDP/HTTP/HTTPS probes were blocked, while MacBook Tailscale probes to both
+  networks remained successful. Per the approved test constraint, no manual
+  route used ALM-MGMT01 as a gateway; these probes validate normal network-path
+  isolation, while ALM-MGMT01's explicit physical-interface DROP rules and
+  earlier hook-order review remain configuration evidence rather than a forced
+  transit behavior test. Both VMs shut down normally, had no snapshots, were
+  unregistered, and their exact datastore directories and local ephemeral
+  key/image workspace were removed. User-supplied ZTE screenshots show DMZ off
+  and no active port-forward entry. Protected VM power/VMX hashes, network
+  backings, vSwitch/uplink mappings, vmk0, and ALM-MGMT01 remained unchanged.
+
+- [SECURITY] Prepared `ALM-MGMT01` for interactive Tailscale authentication.
+  A persistent native nftables forward guard was installed before enabling
+  IPv4 forwarding: Office-to-Lab and Lab-to-Office transit are explicitly
+  dropped, only `tailscale0`-initiated forwarding to the two physical networks
+  is allowed, return traffic is stateful, and all other forwarding fails
+  closed. IPv6 forwarding remains disabled and no bridge or physical-subnet
+  NAT was added. Tailscale 1.102.3 was installed from its official Ubuntu
+  26.04 `resolute` repository; `tailscaled` is active and requires the
+  nftables service at startup. User-interactive authentication completed and
+  the node now advertises exactly `192.168.1.0/24` and `192.168.50.0/24` with
+  default subnet-router SNAT retained. Control-plane approval is active: the
+  MacBook receives both routes as peer `AllowedIPs`/`PrimaryRoutes` and installs
+  both `/24` networks on its Tailscale tunnel. Office service probes from that
+  client reached ZTE HTTPS, ALM-OFF-DC01 RDP, and ALM-MGMT01 SSH through the
+  tunnel, with nftables counters confirming Tailscale ingress and stateful
+  replies. After the MacBook physical Lab interface was removed, Lab probes
+  were repeated with both route checks pinned to the Tailscale tunnel. Both
+  Lab servers, ESXi HTTPS/SSH, WIN-SRV2022 RDP, and ACQ01-03 RDP passed; the
+  `tailscale0` to Lab counter increased by 30 packets and the stateful Lab
+  reply counter by 20 packets during the test. Tailscale SSH and exit-node
+  operation remain disabled. User-supplied ZTE configuration screenshots show
+  DMZ disabled and no active port-forward entry; only the empty new-entry form
+  is visible, with no observed WAN-to-LAN forwarding rule. Normal Office/Lab
+  client negative transit tests remain unverified because no suitable
+  non-production client is currently attached to either physical subnet.
+
+- [OPS] Completed the post-install static network preparation for
+  `ALM-MGMT01`. MAC-bound netplan configuration assigns
+  `192.168.1.30/24` with the sole default route and Office DNS through
+  `192.168.1.1`, plus `192.168.50.30/24` on the Lab NIC with no gateway,
+  DNS, DHCP, or IPv6 router acceptance. Duplicate-address probes were clean
+  before both assignments. A normal guest shutdown allowed the Lab NIC's
+  connect-at-power-on setting to be enabled, and reboot verification confirmed
+  both addresses, SSH, open-vm-tools, Office internet/DNS, ZTE web, both DC RDP
+  ports, and ESXi web/SSH access. IPv4 forwarding remained disabled; no bridge,
+  NAT, firewall rule, or Tailscale package was introduced. Protected VM power
+  states and VMX hashes, vSwitch/uplink topology, port groups, and `vmk0`
+  remained unchanged; credentials were consumed only in process memory and
+  were not recorded.
+
+- [OPS] Prepared `ALM-MGMT01` for a manual clean Ubuntu installation after
+  confirming that it was stalled at the UEFI `No Media` screen with no guest
+  OS running. A controlled power-off was followed by exactly two persistent
+  connection changes: the Lab NIC now remains disconnected at power-on and
+  the verified Ubuntu Server ISO connects at power-on. The Office NIC remains
+  connected to `PG-OFFICE`; the 30 GiB thin VMDK, PVSCSI controller/unit,
+  backing UUID, inode, size, and descriptor hash were preserved. The VM was
+  powered on, UEFI handed off to the SATA CD-ROM, and the Ubuntu live installer
+  reported a running guest with VMware Tools. Protected VM power states and
+  VMX hashes, both vSwitch/uplink chains, port groups, and `vmk0` were unchanged.
+
+- [SECURITY] EXP-20260828-001 promoted `ALM-OFF-DC01` as the first writable
+  Global Catalog and DNS server for the new `ad.almilafarma.com` forest with
+  NetBIOS name `ALMILA` and Windows Server 2016 forest/domain functional
+  levels. The DSRM secret was entered only by the user, the NIC DNS client was
+  restricted to `192.168.1.10`, and AD DS/DNS services, SYSVOL/NETLOGON,
+  integrated DNS zones and SRV records, `dcdiag`, and expected single-DC
+  `repadmin` state were verified. `ALM-LAB-DC01`, ESXi Lab networking, and all
+  Shimadzu VM power/network mappings remained unchanged. Firewall rule scope
+  and DNS root-hints/recursion egress remain deferred read-only validation
+  items; no firewall, routing, NAT, bridge, or second-DC change was made.
+
+- [OPS] Created the Powered Off `ALM-MGMT01` Ubuntu 26.04 LTS VM shell on
+  `VM_DATASTORE` with 2 vCPU, 2 GB RAM, UEFI, one 30 GiB thin PVSCSI disk,
+  and exactly two VMXNET3 NICs mapped to `PG-OFFICE` and `VM Network`. The
+  attached Ubuntu Server ISO matched Canonical's signed SHA-256 manifest.
+  Protected VM power states, VMX hashes, NIC backings, port groups, vSwitches,
+  vmkernel networking, and uplinks remained unchanged. Guest installation,
+  IP assignment, firewall, forwarding, Tailscale authentication, route
+  advertisement, and end-to-end validation remain pending user console work.
+
+## 2026-08-27
+
+- [OPS] EXP-20260827-004 detached `SERVER_EVAL_x64FRE_en-us.iso` from the two
+  powered-on DC VM CD/DVD devices and mounted the ESXi-native Windows VMware
+  Tools media with `vim-cmd vmsvc/tools.install`. The ESXi system backing was
+  proven to be the same ProductLocker object by canonical resolution and inode
+  identity; the pre-mount Tools ISO SHA-256 was retained. Both VMs stayed
+  Powered On with unchanged boot times, original CPU/RAM/thin disks/single-NIC
+  port groups, and no snapshots. The Evaluation ISO file was not modified or
+  deleted, normalized Lab integrity remained unchanged, and independent code
+  and security reviews passed. Guest-side Tools installation remains manual.
+
+- [FIX] EXP-20260827-003 repaired the missing HW21 PCI root-bridge topology in
+  `ALM-OFF-DC01` and `ALM-LAB-DC01`. Hash-verified `root:root` mode `0600`
+  VMX backups were retained, and the minimal pre-power diff added only the
+  verified `pciBridge0/1` structure while removing three invalid failed-attempt
+  slot values. Separate controlled Power On tests succeeded without new
+  DevicePowerOn, PCI, or SCSI errors; ESXi assigned collision-free native slots
+  and both VMs were returned to Powered Off. Their 100 GiB thin LSI SAS disks,
+  single VMXNET3 network mappings, empty CD backing, and the normalized Lab
+  integrity signature remained unchanged. Independent code and security
+  reviews passed.
+
+- [SECURITY] Removed the prohibited `SERVER_EVAL_x64FRE_en-us.iso` backing
+  that had been manually attached to both Powered Off DC VM shells. The CD/DVD
+  devices remain present as empty client-backed AHCI devices with
+  connect-at-power-on enabled; no production ISO was attached. Two full ISO
+  SHA-256 reads matched, both target VM backups were restricted to `root:root`
+  with mode `0600`, the normalized Lab hash remained unchanged, and independent code and
+  security reviews passed. Production Windows Server 2022 media remains
+  blocked pending positive boot, WIM, edition, architecture, and non-Evaluation
+  verification.
+
+- [OPS] Prepared `ALM-OFF-DC01` and `ALM-LAB-DC01` for manual installation by
+  adding one empty client-backed AHCI CD/DVD device to each Powered Off VM with
+  connect-at-power-on enabled. No ISO, boot-order change, power-on, guest
+  configuration, or network change was performed. The available Windows
+  Server Evaluation ISO was explicitly excluded; independent device read-back,
+  normalized Lab comparison, code review, and security review passed. A
+  licensed non-Evaluation Windows Server 2022 x64 ISO remains pending.
+
+- [OPS] EXP-20260827-002 created the Powered Off `ALM-OFF-DC01` and
+  `ALM-LAB-DC01` Windows Server 2022 x64 VM shells on `VM_DATASTORE`. Each VM
+  has 2 vCPU, 8 GB RAM, UEFI, one LSI SAS controller, one 100 GiB thin disk,
+  and one VMXNET3 NIC on its isolated assigned port group. No ISO, CD-ROM,
+  snapshot, power-on, VMkernel, routing, NAT, bridge, or shared uplink was
+  introduced. Independent post-check, normalized Lab comparison, code review,
+  and security review passed. The 100 Mbps Office uplink remains tracked as
+  `DEFERRED-NET-001`.
+
+- [OPS] EXP-20260827-001 created the isolated ESXi Office topology
+  `vmnic1 -> vSwitch-OFFICE -> PG-OFFICE` with MTU 1500 and VLAN ID 0.
+  Normalized pre/post comparisons and an independent live read-back confirmed
+  that the Lab uplink, `vSwitch0`, port groups, `vmk0`, and all four Shimadzu
+  VM network mappings remained unchanged. No Office VMkernel, VM consumer,
+  bridge, routing, NAT, or shared uplink was created. Independent code and
+  security reviews passed; `DEFERRED-NET-001` remains open for the accepted
+  100 Mbps Full link speed.
 
 ## 2026-08-24
 
@@ -605,28 +818,3 @@
   `gpt-5.6-sol` and archived the previous definitions.
 - [DOCS] Recorded the deferred risk that a future forced runtime refresh could
   restore older subagent model overrides from the Codex variant template.
-
-## 2026-07-14
-
-- [DOCS] Added a consolidated command reference for runtime installation,
-  project initialization and upgrades, docs refresh, and verification.
-- [FIX] Removed FormProxy-specific and crypto strategy skills from the generic
-  Codex runtime package and active skill registry.
-- [DOCS] Audited packaged runtime skills and identified FormProxy and crypto
-  strategy content that should not ship in the generic runtime template.
-- [FEAT] Added versioned project template state and hash-aware safe migrations
-  for already initialized projects.
-- [FIX] Preserved locally developed project prompts, configs, documentation,
-  domain rules, and custom configuration values during template upgrades.
-- [DOCS] Made project upgrade dry-run-first with explicit `--apply` execution
-  and per-upgrade archives.
-- [TEST] Added regression coverage for fresh, legacy, customized, and unchanged
-  managed project upgrade scenarios.
-- [FEAT] Packaged the existing MIT-licensed ECC `tdd-workflow` skill in the
-  Codex and Dolphin runtime variants.
-- [FIX] Updated project initialization and upgrade contracts to require both
-  `orchestration-gate` and `tdd-workflow` while keeping `openai-docs`
-  project-specific.
-- [FIX] Prevented launcher-free runtime variants from exiting the user installer
-  with a failure status after copying their files.
-- [DOCS] Added ECC source and license attribution for the imported workflow.
