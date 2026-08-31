@@ -2,6 +2,275 @@
 
 [Back to active experiments](EXPERIMENTS.md)
 
+## EXP-20260817-009 - Blockmanpro Fix Commit Deployment
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+Blockmanpro still reports the Go-installed scanners as missing after a Git pull
+and runs the old repair semantics.
+
+Evidence:
+The server repository and installed UV package have identical source hashes,
+but both are at main commit `85ca147` while the accepted codex-tools fix is at
+descendant commit `b45ddc7` on `origin/agent/cma-project-defaults`. The real
+scanner binaries exist under `/root/go/bin` with executable modes.
+
+Hypothesis:
+Fast-forwarding the clean server main branch to the accepted fix commit and
+reinstalling the user-scoped UV package from that exact repository will make
+the existing Go tools healthy without changing Codex config or credentials.
+
+Solution Attempt:
+Capture exact Git, package, config-hash, and permission pre-state; fast-forward
+only to `b45ddc7`; take a private UV-tool backup; force-reinstall the package
+from the repository; and run standalone install in MCP `verify-only` mode.
+
+Test:
+Compare repository and installed source hashes, execute the real scanner
+version commands, compare config hash and metadata before and after, and require
+JSON to distinguish `AUTH_REQUIRED` from genuine failures while continuing all
+selected CLI tools.
+
+Success Criteria:
+- The server repository and installed package both identify the accepted fix.
+- `osv-scanner` and `betterleaks` execute and report `HEALTHY` without profile edits.
+- All selected CLI tools are healthy; credential-gated MCP tools remain typed `AUTH_REQUIRED` when unavailable.
+- Codex config hash and credentials metadata remain unchanged in verify-only mode.
+- Any incomplete selected tool keeps the overall exit status nonzero without a false success claim.
+
+Result:
+The clean server main branch fast-forwarded from `85ca147` to the accepted
+`b45ddc7` fix, and the user-scoped UV package was rebuilt from that exact
+repository after an owner-only backup. Repository and installed `cli.py`
+hashes match. The real `osv-scanner` 2.5.0 and Betterleaks version commands
+execute, and both `check` and non-interactive MCP `verify-only` install report
+nine tools `HEALTHY`, two credential-gated MCP tools `AUTH_REQUIRED`, zero
+generic failures, and exact config preservation. Install exits 1 as required
+while selected credential-gated tools remain incomplete. Config hash, inode,
+mode, and mtime plus credential-file metadata remained unchanged; the server
+repository is clean at the expected commit. Independent code review found no
+behavioral or deployment defect. Security review then found that manage-mode
+rollback captured its pre-state before credential resolution, allowing a user
+edit made during the prompt to be overwritten after a later verification
+failure. A meaningful RED reproduced the overwrite. The revised implementation
+now carries the updater's actual original bytes in its transaction result; the
+new regression and all 72 package tests pass with 85 percent branch coverage,
+and the 385-test repository suite remains green. Final re-reviews and live
+deployment of this revision are pending. The first live manage-mode run then
+repaired Context7 but exposed a second input-boundary defect: a stored GitHub
+credential containing a control character reached subprocess environment
+construction and produced a generic config failure. An isolated transaction
+confirmed a `ValueError` cause without printing the value. New unit and E2E
+RED tests require invalid environment, secure-store, and prompt values to be
+rejected before subprocess use and reported as typed `AUTH_REQUIRED` in
+non-interactive mode. Review then extended the same boundary to configured MCP
+discovery and verification and rejected Unicode whitespace/control/format
+bypasses by requiring printable ASCII token values. Meaningful CLI and unit
+RED tests covered stored NUL, environment NUL, NEL, NBSP, line separator, and
+bidi override inputs. The revised credential boundary passes all 75 package
+tests with 85 percent branch coverage and the 385-test repository suite;
+independent code and security re-reviews pass. Final live deployment remained
+pending at that point. The final `65309d6` revision was then fast-forwarded to
+the clean server repository and rebuilt into the user-scoped UV environment
+from the exact source. Repository and installed credential-module hashes
+match. A live normal non-interactive install reports ten functionally healthy
+tools, zero generic failures, and only the corrupted stored GitHub value as typed
+`AUTH_REQUIRED`; Context7 passes functional verification. The expected exit 1
+truthfully reflects that one incomplete selected tool. Config hash, inode,
+mode, and mtime and credential-file inode, mode, and mtime remained unchanged
+during the final run. The real scanner version commands still pass, and the
+server repository is clean at `65309d6`.
+
+Decision:
+ACCEPT
+
+## EXP-20260817-008 - Transactional MCP Credentials
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+Standalone MCP installation can persist a prompted credential before config
+and functional verification succeed, and empty credentials become `FAILED`.
+
+Evidence:
+The blockmanpro run left a private credential file after GitHub failed, while
+Context7 was reported as `FAILED` instead of `AUTH_REQUIRED`.
+
+Hypothesis:
+Deferring credential persistence until config and functional verification
+succeed, with per-tool config rollback and typed outcomes, will prevent partial
+state while allowing later independent tools to continue.
+
+Solution Attempt:
+Add a per-tool pending transaction that commits the prompted credential only
+after verification and restores that tool's config pre-state on failure.
+
+Test:
+Capture RED for deferred persistence, exact rollback, typed `AUTH_REQUIRED`,
+continued execution, idempotency, and secret-free output.
+
+Success Criteria:
+- Failed MCP setup leaves config bytes and credential storage unchanged.
+- Successful setup commits config and prompted credential once.
+- `AUTH_REQUIRED` remains distinct from `FAILED`; later tools still run.
+- Secrets never appear in output, status details, config, or backups.
+
+Result:
+Prompted credentials now remain in memory until config and read-only functional
+verification pass. Failed MCP setup restores only that tool's owned config
+state, preserves earlier successful MCP changes, cleans the process credential
+even when rollback is refused, and reports missing credentials as the typed
+`AUTH_REQUIRED` outcome. Rollback verifies expected bytes and inode first, so
+a concurrent user edit is preserved. Secret-bearing success, functional
+failure, store failure, concurrent edit, empty prompt, later-tool continuation,
+and idempotency regressions passed without exposing test secrets. Package tests
+passed 71/71 with 85 percent branch coverage; the CMA adapter passed 7/7 and
+the full repository passed 385/385. Independent code and security re-reviews
+passed.
+
+Decision:
+ACCEPT
+
+## EXP-20260817-007 - Truthful Config Preservation
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+`config_preserved` currently mirrors config validity rather than whether the
+config bytes changed.
+
+Evidence:
+The blockmanpro output claimed existing settings were preserved even though a
+new DeepWiki MCP table was present after standalone installation.
+
+Hypothesis:
+Comparing the exact config pre-state and post-state will make preservation
+reporting independent from TOML validity and reject false success.
+
+Solution Attempt:
+Capture config bytes before lifecycle execution and pass their exact equality
+to the summary renderer.
+
+Test:
+Require `preserved=true` for byte-identical and exact rollback cases, and
+`preserved=false` for valid but changed config.
+
+Success Criteria:
+- Validity and preservation are independently reported.
+- Whitespace or comment-only byte changes count as changed.
+- A successful exact rollback reports preserved.
+
+Result:
+The lifecycle now compares exact config bytes captured before and after the
+selected operation. Validity and preservation are reported independently:
+the first managed DeepWiki write reports changed, an idempotent repeat reports
+preserved, and an exact rollback reports preserved. Non-regular or unreadable
+capture fails closed with structured evidence instead of crashing. Package
+tests passed 71/71 with 85 percent branch coverage; the CMA adapter passed 7/7
+and the full repository passed 385/385. Independent code and security
+re-reviews passed.
+
+Decision:
+ACCEPT
+
+## EXP-20260817-006 - Installed Binary Rediscovery
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+Go tools can install successfully into `GOBIN` or `GOPATH/bin` but be reported
+as failed when that directory is absent from the invoking shell's `PATH`.
+
+Evidence:
+On blockmanpro both Go binaries existed under `/root/go/bin` and became healthy
+when that directory was added only to the check process environment.
+
+Hypothesis:
+Resolving managed user bin directories inside the installer process will make
+same-run verification accurate without editing shell profiles.
+
+Solution Attempt:
+Use a scoped effective environment for install, discovery, and verification,
+including explicit `GOBIN` or the first `GOPATH/bin` plus the user-local bin.
+
+Test:
+Capture RED where a binary exists only outside the original PATH, then require
+healthy discovery, nonzero-version failure handling, and no profile mutation.
+
+Success Criteria:
+- Successfully installed Go tools are healthy in the same lifecycle run.
+- Missing or broken binaries remain missing or broken.
+- Caller environment and shell profile files remain unchanged.
+
+Result:
+The installer now appends the user-local bin directory and active absolute
+`GOBIN` or first `GOPATH/bin` to a process-only effective PATH while preserving
+the caller's command precedence. It refreshes that environment after installing
+Go as a missing dependency, so both preinstalled-Go and fresh-host scenarios
+rediscover and verify `osv-scanner` in the same run. Relative Go paths are
+ignored and no caller environment or shell profile is written. Package tests
+passed 71/71 with 85 percent branch coverage; the CMA adapter passed 7/7 and
+the full repository passed 385/385. Independent code and security re-reviews
+passed.
+
+Decision:
+ACCEPT
+
+## EXP-20260817-005 - Turkish Dialogue And Simple Decisions
+
+Date: 2026-08-17
+Status: ACCEPTED
+
+Problem:
+Agents can answer the user in English, and `CRITICAL DECISION` blocks can be
+too technical or difficult to choose between.
+
+Evidence:
+The user reported both behaviors directly and approved a bounded policy change.
+The current policies say only `User dialogue: Turkish` and define English,
+placeholder-heavy decision fields without an explicit simplicity contract.
+
+Hypothesis:
+An explicit always-Turkish user-dialogue rule plus a short Turkish six-line
+decision template with two concrete options will make runtime communication
+consistent and decisions easier to understand.
+
+Solution Attempt:
+Update the canonical Codex, Claude, and OpenCode policies and orchestration-gate
+projections with one shared dialogue and decision-simplicity contract.
+
+Test:
+Add contract and portable-install tests before production edits. Require all
+user-facing message classes to remain Turkish, reject language-switching and
+verbose decision mutants, and preserve the six-line stop boundary.
+
+Success Criteria:
+- Every packaged runtime requires Turkish for all user-facing dialogue.
+- The decision block uses short Turkish labels, exactly two options, and one
+  short recommendation.
+- Tests reject partial, English-only, and verbose replacement policies.
+- Focused and full regressions pass without changing approval or safety scope.
+
+Result:
+The new contract failed against the old policies, then passed across all four
+packaged runtime policies, all three orchestration-gate projections, and all
+three portable installer variants. Focused orchestration, variant, Claude, and
+OpenCode suites passed 80/80. The final full suite passed 382/382 in 93.173 seconds.
+Active Codex, Claude, and OpenCode global policies match their packaged sources;
+the active Codex and Claude orchestration gates also match their projections.
+
+Decision:
+ACCEPTED
+
+Notes:
+The user approved one bounded exception to append this record while the active
+experiment file is over 800 lines. No other record maintenance is authorized.
+
 ## EXP-20260817-004 - Qualified Plugin Skill Disable Selectors
 
 Date: 2026-08-17
@@ -460,335 +729,3 @@ record does not authorize credential changes, dependency upgrades, commit,
 push, scanner-wide scans, cplt payload execution, or xcodebuildmcp activation.
 Acceptance covers safe global availability and narrow lazy routing; it does not
 claim a measured token-cost reduction.
-
-## EXP-20260811-006 - TDD Responsibility Simplification
-
-Date: 2026-08-11
-Status: ROLLED_BACK
-
-Problem:
-The three CMA variants carry a large general-purpose TDD workflow that mixes
-test reasoning with framework examples, repository exploration, tool choice,
-and broad testing infrastructure guidance. This increases TDD context and can
-duplicate discovery already completed before the tdd-guide stage.
-
-Evidence:
-Each Codex, Claude, and OpenCode candidate TDD skill is currently 428 lines and
-1,369 words. The user requires a measured before/after comparison while
-preserving test quality and the mandatory orchestration chain. The user
-approved exactly one bounded line-limit exception for EXP-20260811-006 in the
-already over-800-line experiment log. This exception applies only to this
-record and does not authorize editing, reordering, refactoring, archiving,
-cleaning, or maintaining existing experiment records.
-
-Hypothesis:
-A short semantic TDD contract that accepts a bounded planner handoff and owns
-only acceptance mapping, meaningful RED, sufficient case selection, observable
-oracles, regressions, and anti-hardcode checks will reduce TDD input and
-discovery work without weakening test quality or changing orchestration.
-
-Solution Attempt:
-Replace the three native candidate TDD skill bodies with small semantically
-equivalent instructions, narrow the native tdd-guide contracts and CMA TDD
-modules where required, and add focused representative-task validation. Do not
-change core skills, repository-tool routing, active runtime configuration,
-permissions, providers, installation, or the mandatory chain.
-
-Test:
-Capture meaningful RED against the current broad contract. Validate complete
-acceptance mapping, positive/negative/boundary/regression selection, meaningful
-RED, observable oracles, dummy/hardcoded-success rejection, missing-input
-reporting, no broad discovery or core-tool selection, three-variant semantic
-parity, and unchanged chain behavior. Compare a frozen representative task set
-before and after for instruction input size, allowed tool calls, repository
-discovery operations, and output-quality score; run focused and full tests plus
-independent code and security review.
-
-Success Criteria:
-- TDD owns test reasoning only and receives bounded discovered facts from the
-  planner/main handoff.
-- Repository discovery, architecture analysis, tool selection, core tools,
-  installation/configuration, scanners, and provider activation are excluded.
-- Every representative task preserves complete acceptance mapping, meaningful
-  RED, sufficient cases, observable oracles, regressions, and anti-hardcode
-  strength.
-- Candidate TDD input size does not increase; permitted tool calls do not
-  increase; broad discovery operations decrease to zero by contract.
-- Codex, Claude, and OpenCode remain semantically aligned in native formats.
-- The mandatory chain and implementation position remain unchanged.
-- Focused/full tests and independent code/security reviews pass, with active
-  runtime files unchanged.
-
-Result:
-Meaningful RED exposed the current broad TDD ownership. The candidate reduced
-each skill from 428 to 97 lines and removed Claude discovery tools while its
-focused tests and 317-test full suite passed. Independent code review found
-that the representative output-quality comparison remained self-declared:
-static fixtures were not outputs produced by the candidate native TDD agents,
-and keyword-based contradiction checks remained bypassable. Proving candidate
-behavior would require a separately authorized live/native runtime evaluation,
-which Phase 10 explicitly excludes. The candidate instruction, metadata,
-agent, module, prompt, runtime-test, fixture, and focused-test changes were
-therefore restored to their exact Phase 10 preimages. Active runtime files were
-never changed.
-
-Decision:
-ROLLBACK
-
-Notes:
-The line-limit exception is exclusive to EXP-20260811-006. Experiment-log
-maintenance remains a separately approved task. Active runtime synchronization,
-tool installation, provider activation, core-skill edits, and later phases are
-outside Phase 10.
-The design may be reconsidered only with a separately approved, bounded native
-evaluation that produces real before/after outputs and tool-call traces.
-
-## EXP-20260811-005 - cplt Isolated Execution Core Skill
-
-Date: 2026-08-11
-Status: ACCEPTED
-
-Problem:
-CMA protects discovery, security, and external-knowledge capabilities, but its
-registered cplt isolated-execution capability has no narrow canonical skill,
-inactive native projections, or independent contract preventing risky commands
-from escaping to an ordinary host shell when isolation is unavailable.
-
-Evidence:
-The canonical registry already defines cplt as a required, protected
-`isolated-execution` capability. Existing CMA routing denies execution authority
-but has no distinct cplt selection boundary. The user approved exactly one
-bounded line-limit exception for EXP-20260811-005 in the already over-800-line
-experiment log. This exception applies only to this record and does not
-authorize editing, reordering, refactoring, archiving, cleaning, or maintaining
-existing experiment records.
-
-Hypothesis:
-One short instruction-only cplt skill with an explicit execution-isolation
-decision gate, evidence-based containment claims, fail-closed absence, and
-strict negative routes can preserve semantic parity across inactive Codex,
-Claude, and OpenCode candidates without installing, configuring, activating,
-or executing cplt.
-
-Solution Attempt:
-Add one canonical cplt definition, three native inactive candidate projections,
-one compact routing row per variant, and a bounded read-only validator with
-independent trigger, authority, unavailable-tool, isolation-evidence, parity,
-and runtime-isolation tests. Do not change the standard, registry, profiles,
-TDD, active runtime, permissions, other skills, or later phases.
-
-Test:
-Capture meaningful RED for the absent Phase 9 production surfaces and missing
-route. Validate explicit and natural positive triggers; safe-command,
-repository-discovery, scanner, mention-only, missing-authority, and
-ordinary-sandbox-sufficient negatives; fail-closed absence; no host fallback;
-evidence-based isolation reporting; native metadata; semantic parity; bounded
-no-follow parsing; truthful status; and exact active-runtime isolation. Never
-execute cplt or a dangerous payload. Run focused branch coverage, applicable
-and full regressions, code review, and security review.
-
-Success Criteria:
-- The canonical skill contains every required standard field and matches the
-  protected cplt registry entry.
-- cplt is selected only after the required command is chosen and stronger
-  isolation is justified; it never replaces discovery, scanners, or external
-  knowledge.
-- Missing cplt, authority, or verifiable isolation stops unavailable and
-  unverified with `success=false`, without host-shell fallback.
-- Isolation success distinguishes requested, available, and verified controls
-  and is never inferred from configuration presence or exit code alone.
-- Native candidates preserve semantic parity without implicit activation,
-  runtime writes, permission changes, installation, configuration, or cplt
-  execution.
-- Focused coverage, full tests, independent code/security reviews, and exact
-  active-runtime manifest comparison pass.
-
-Result:
-Meaningful RED exposed exactly seven absent production surfaces and the missing
-route in all three variants. Independent review then exposed natural-language
-authority bypasses and weak self-declared isolation evidence. The final router
-does not infer authority from prompt text: strict orchestration state provides
-authority, command-selection, and ordinary-sandbox sufficiency, while prompt
-text only classifies risk and isolation need. The isolation schema is explicitly
-not execution proof and requires bounded runtime, policy, digest, path, control,
-and result evidence. Final validation passed 16/16 focused tests with 81%
-validator branch coverage, 152/152 core-skill regressions, 55/55 runtime
-regressions, and 309/309 full tests. Independent code and security reviews
-passed, active-runtime and canonical authority manifests remained unchanged,
-and cplt or a risky payload was never executed.
-
-Decision:
-ACCEPTED
-
-Notes:
-The line-limit exception is exclusive to EXP-20260811-005. Experiment-log
-maintenance remains a separate approved task. cplt activation, configuration,
-permissions, TDD simplification, and later phases are not authorized.
-
-## EXP-20260811-004 - External Knowledge Core Skills
-
-Date: 2026-08-11
-Status: ACCEPTED
-
-Problem:
-CMA has protected local-intelligence and conditional security skills, but its
-three external evidence needs still lack narrow, inactive skill contracts and
-independent validation: authoritative remote GitHub facts, conceptual public
-repository knowledge, and version-specific library documentation.
-
-Evidence:
-The canonical registry already assigns GitHub MCP to remote source knowledge,
-DeepWiki MCP to public-repository knowledge, and optional Context7 to
-version-specific documentation. Current repository routing combines DeepWiki
-and Context7 and does not fully encode local-first authority or untrusted
-external-content handling. Official provider documentation confirms distinct
-evidence models and shows that retrieved content and tool results require
-source validation rather than instruction authority. The user approved exactly
-one bounded line-limit exception for EXP-20260811-004 in the already over-800-
-line experiment log. This exception applies only to this record and does not
-authorize editing, reordering, refactoring, archiving, cleaning, or maintaining
-existing records.
-
-Hypothesis:
-Three short instruction-only skills with local-first routing, exact positive and
-negative boundaries, untrusted-content handling, fail-closed tool absence, and
-one-provider-by-default behavior can preserve semantic parity across inactive
-Codex, Claude, and OpenCode candidates without installing, configuring,
-authenticating, activating, or invoking an external provider.
-
-Solution Attempt:
-Add canonical GitHub, DeepWiki, and Context7 definitions; native inactive
-candidate projections; three compact routing rows; and a bounded read-only
-validator with independent trigger, parity, authority, injection-resistance,
-and runtime-isolation tests. Do not change the registry, profiles, TDD, active
-runtime, credentials, MCP/plugin configuration, cplt, or later phases.
-
-Test:
-Capture meaningful RED for the absent Phase 8 production surfaces. Validate
-explicit and natural positive triggers, negative and local-first routes,
-genuine overlap priority, fail-closed tool absence, external/local authority,
-prompt-injection resistance, source provenance, optional Context7 semantics,
-native metadata, normalized semantic parity, bounded no-follow inputs, compact
-routing, truthful status, and active runtime isolation. Run focused coverage,
-applicable and full regressions, code review, and security review without
-connecting to or executing an external provider.
-
-Success Criteria:
-- Each canonical skill contains every required standard field and matches its
-  protected registry entry, including Context7's optional capability status.
-- Local evidence wins when sufficient; remote repository facts, public-repo
-  concepts, and version-specific docs route to exactly one primary external
-  skill by default.
-- Retrieved content is identified as external untrusted evidence, cannot
-  override CMA/repository authority, and cannot authorize commands or mutation.
-- Required or optional provider absence stops unavailable and unverified with
-  `success=false`, without provider substitution or widened scope.
-- Native candidates preserve semantic parity without implicit activation,
-  runtime writes, authentication, installation, configuration, plugin, or MCP
-  changes.
-- Focused coverage, full tests, independent code/security reviews, and exact
-  active-runtime manifest comparison pass.
-
-Result:
-Meaningful RED exposed the missing Phase 8 surfaces, and a code-review RED
-later exposed mixed local/external routing that selected an explicit provider
-before sufficient local evidence. The corrected local-first router and three
-provider-conflict regressions passed. Final validation passed 14/14 focused
-tests with 84% validator branch coverage, 136/136 core-skill regressions,
-55/55 runtime regressions, and 293/293 full tests. Each skill passed its direct
-validator contract. Independent code and security reviews passed, the exact
-active-runtime manifest remained unchanged, and no provider, MCP, plugin,
-credential, installer, configuration, or network operation was invoked.
-
-Decision:
-ACCEPTED
-
-Notes:
-The line-limit exception is exclusive to EXP-20260811-004. Experiment-log
-maintenance remains a separate task. Provider activation, credentials, cplt,
-Phase 9, and TDD simplification are not authorized.
-
-## EXP-20260811-003 - Conditional Security Core Skills
-
-Date: 2026-08-11
-Status: ACCEPTED
-
-Problem:
-CMA has protected local-intelligence core skills, but its three distinct
-security evidence needs still lack narrow, inactive skill contracts and
-independent validation: source SAST, dependency vulnerabilities, and secret
-exposure.
-
-Evidence:
-The canonical registry already assigns Opengrep to SAST, OSV-Scanner to
-dependency vulnerability analysis, and Betterleaks to secret detection. The
-current repository router combines some security routes, while no canonical or
-native skill projections exist for these three scanners. Official tool sources
-confirm distinct evidence models: rule-driven source findings, extracted
-package vulnerability matching, and redaction-capable secret detection. The
-user approved exactly one bounded line-limit exception for EXP-20260811-003 in
-the already over-800-line experiment log. This exception applies only to this
-record and does not authorize editing, reordering, refactoring, archiving,
-cleaning, or maintaining existing records.
-
-Hypothesis:
-Three short instruction-only skills with conditional triggers, exact negative
-boundaries, fail-closed tool absence, and secret-safe output contracts can
-preserve semantic parity across inactive Codex, Claude, and OpenCode candidates
-without installing, configuring, activating, or running scanners.
-
-Solution Attempt:
-Add canonical Opengrep, OSV-Scanner, and Betterleaks definitions; native inactive
-candidate projections; three compact routing rows; and a bounded read-only
-validator with independent trigger, parity, authority, redaction, and runtime
-isolation tests. Do not change the registry, profiles, TDD, active runtime, or
-scanner configuration.
-
-Test:
-Capture meaningful RED for exactly 17 absent Phase 7 surfaces. Validate explicit
-and natural positive triggers, negative and overlap routes, fail-closed tool
-absence, Betterleaks redaction, output contracts, registry metadata, native
-metadata, normalized semantic parity, bounded no-follow inputs, compact routing,
-truthful status, and active runtime isolation. Run focused coverage, applicable
-and full regressions, code review, and security review without executing a
-scanner.
-
-Success Criteria:
-- Each canonical skill contains every required standard field and matches its
-  protected registry entry.
-- Source security, dependency CVE, and secret exposure route to exactly one
-  primary scanner by default; scanners remain conditional.
-- Required-tool absence stops unavailable and unverified with `success=false`,
-  without scanner substitution or widened scope.
-- Security outputs require finding type, optional supplied severity, location,
-  short explanation, and remediation direction; Betterleaks never exposes a
-  matched secret value.
-- Native candidates preserve semantic parity without implicit activation,
-  runtime writes, tool installation, configuration, plugin, or MCP changes.
-- Focused coverage, full tests, independent code/security reviews, and exact
-  active-runtime manifest comparison pass.
-
-Result:
-Meaningful RED failed only for the expected 17 absent Phase 7 production
-surfaces. The three instruction-only skills and inactive native projections
-were then added without installing, configuring, activating, or executing a
-scanner. Independent validation now rejects semantic drift, incomplete
-negative sets, fake overlap labels, unsafe unavailable-tool behavior, raw
-secret output, native activation widening, routing drift, symlinks, deep JSON,
-and malformed bounded input types. Final validation passed 40/40 focused tests
-with 85% validator branch coverage and 279/279 full tests. Direct per-skill CLI
-validation returned exact truthful passed payloads, code and security reviews
-passed after their findings were closed, and the active Codex, Claude, and
-OpenCode skill/config manifest remained byte-identical to its pre-task baseline.
-
-Decision:
-ACCEPTED. Phase 7 establishes Opengrep for conditional source SAST,
-OSV-Scanner for conditional dependency vulnerability evidence, and Betterleaks
-for conditional redacted secret detection. Each evidence need has one primary
-scanner by default, all unavailable-tool paths stop fail-closed, and no active
-runtime or scanner state was changed.
-
-Notes:
-The line-limit exception is exclusive to EXP-20260811-003. Experiment-log
-maintenance remains a separate task. Scanner execution, Phase 8, and TDD
-simplification are not authorized.

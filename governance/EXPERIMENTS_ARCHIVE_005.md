@@ -2,6 +2,323 @@
 
 [Back to active experiments](EXPERIMENTS.md)
 
+## EXP-20260808-003 - Additive Multi-Variant Project Initialization
+
+Date: 2026-08-08
+Status: ACCEPTED
+
+Problem:
+`codex-project-init --variant opencode` was applied to an already initialized
+project and reset shared project state. The command treats every variant
+selection as an exclusive new/reset initialization, so the same data-loss risk
+applies when adding Codex, Dolphin, Claude, or OpenCode to a project that
+already uses another runtime.
+
+Evidence:
+The init conflict list always archives `AGENTS.md`, `.codex/config.toml`, the
+shared prompt, and `.codex/template-state.json`, then copies a blank project
+template. Manifest schema 1 stores one `variant`; OpenCode replaces the Codex
+config entry instead of coexisting with it. The original project files remain
+recoverable in the private init archive and their hashes were captured before
+rollback.
+
+Hypothesis:
+If init distinguishes first/reset initialization from additive variant
+activation, preserves shared files byte-for-byte, and records an ordered set of
+active variants in a backward-compatible manifest migration, every supported
+runtime can coexist without resetting project configuration or customized
+variant files.
+
+Solution Attempt:
+Restore the exact pre-init project state, make existing-project init additive
+by default, require an explicit reset flag for destructive reinitialization,
+and evolve template state to represent multiple active variants plus the union
+of their managed files. Preserve customized and unrelated files.
+
+Test:
+Capture RED tests that initialize each variant after another variant and assert
+unchanged shared hashes, coexisting variant surfaces, manifest migration from
+schema 1, explicit reset behavior, customized-file preservation, symlink
+failure, and idempotency. Then run focused project-init/upgrade tests, the full
+regression suite, live additive OpenCode init on this repository, diff
+integrity, and security-oriented recovery checks.
+
+Success Criteria:
+- Adding any supported variant never replaces an existing `AGENTS.md` or
+  removes another variant's project files.
+- Codex, Dolphin, Claude, and OpenCode can all be represented as active in one
+  project manifest.
+- Schema 1 state migrates without losing file ownership or customization
+  evidence.
+- Destructive reset remains possible only through an explicit reset option and
+  keeps a private recovery archive.
+- The erroneous local init effects are fully reversed before the corrected
+  additive OpenCode activation is applied.
+- Relevant and complete tests pass without weakened assertions or skipped
+  cases.
+
+Result:
+The erroneous local init was reversed first: `AGENTS.md`, Codex config, the
+shared prompt, and schema-1 template state matched their captured pre-init
+hashes, the generated OpenCode project file was removed, and the private reset
+archive was moved into the external recovery backup. The valid global OpenCode
+runtime installation was retained.
+
+Meaningful RED tests reproduced blank `AGENTS.md` replacement, loss of other
+variant state, customized OpenCode config overwrite, the single-variant
+manifest limitation, absent explicit-reset behavior, incomplete standalone
+schema-1 migration, and same-second reset archive reuse. The implementation now
+uses additive existing-project init, ordered multi-variant schema 2 state,
+backward-compatible schema-1 migration, explicit `--reset`, and unique private
+init/upgrade archives.
+
+Focused project-init/upgrade tests passed 33/33 and the complete regression
+suite passed 152/152 without skips. Bash syntax, Python compilation, and diff
+integrity passed. Live additive OpenCode init on this repository preserved the
+exact `AGENTS.md`, `.codex/config.toml`, and shared-prompt hashes, produced
+`variants: [codex, opencode]`, kept the OpenCode config, used a `0700` recovery
+archive, and was idempotent on a second run. Security-oriented symlink,
+customized-config, secret-redaction, explicit-reset, and recovery tests passed.
+
+Decision:
+ACCEPT
+
+Notes:
+The user approved a direct implementation without an orchestration chain.
+Global OpenCode runtime installation is valid and remains in scope; only the
+project-reset behavior is being rolled back and redesigned.
+
+## EXP-20260808-004 - Fail-Closed Result Semantics
+
+Date: 2026-08-08
+Status: ROLLED_BACK
+
+Problem:
+The first ARK implementation passed its source tests but independent code review found configuration type gaps, zero-execution success paths, and optional documentation flags that did not affect routing.
+
+Evidence:
+`config.py` accepted boolean schema version `true`, leaked `TypeError` for malformed collection types including a nested Serena mode value, allowed runtime root `.`, and accepted malformed GitHub identities. `run --intent docs` returned exit code 0 despite `success=false`. An empty security profile returned `passed` with no steps. DeepWiki and Context7 enable flags produced identical plans. Security review later found ambient cplt credentials, sensitive scanner output emission, unbounded subprocesses, and a Graphify output symlink escape.
+
+Hypothesis:
+Enforcing one fail-closed invariant across parsing and routing—invalid input becomes `ConfigError`, and no executed or executable work can never be `passed`—will remove all four review findings without widening ARK's MVP.
+
+Solution Attempt:
+Add RED regression tests for malformed configuration types and identities, runtime-root containment, no-execution CLI exits, empty security profiles, explicit enabled documentation providers, credential-free cplt isolation, suppressed security findings, bounded subprocesses, and Graphify output containment; then make the smallest config/router/CLI changes required.
+
+Test:
+Run focused config, routing, and CLI tests before and after implementation, followed by the full suite, branch coverage, live CLI probes, and independent code review.
+
+Success Criteria:
+All new regression tests fail before the fix and pass afterward; invalid configuration exits 2 without traceback; every `run` path with zero steps exits nonzero; empty security cannot report success; docs flags and provider selection change the plan; full branch coverage remains at least 80%.
+
+Result:
+The regression cycles reproduced the configuration, result-semantics, credential exposure, sensitive-output, symlink, memory-bound, locale, process-group, and closed-pipe timeout findings before each scoped fix. The final suite passed 33/33 with 91% branch coverage. Reopened code review and security review both returned PASS with no blocking findings.
+
+Decision:
+ACCEPT
+
+Notes:
+The attempt remained limited to reviewer-identified config, router, runner, tests, and records. External tools and live MCP transports remain out of scope. Security review retained two non-blocking advisories: broader ambient environment exposure for non-cplt local tools and theoretical same-user symlink TOCTOU races.
+
+Migration note: This record was originally ARK-local `EXP-20260808-001`; it was remapped because that ID already belongs to CMA's Provider-Neutral OpenCode Runtime Variant.
+
+## EXP-20260809-001 - ARK Monorepo Test Discovery
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+The documented root-relative ARK test command fails after monorepo adoption because CMA's root `tests` package shadows `ARK/tests` during unittest discovery.
+
+Evidence:
+Fresh coverage execution from the CMA root collected 28 ARK tests but produced one `_FailedTest`: `ARK/tests/test_cli.py` could not import `tests.test_config`. The same ARK suite previously passed 33/33 from the ARK working directory.
+
+Hypothesis:
+Declaring `ARK` as unittest's explicit top-level directory with `-t ARK` will preserve root-relative commands while resolving `tests.*` imports to `ARK/tests` instead of CMA's root test package.
+
+Solution Attempt:
+Require `-t ARK` in root-relative ARK discovery commands and leave ARK production code and tests byte-identical.
+
+Test:
+First add a failing monorepo contract assertion for `-t ARK`, then rerun the contract, the 33-test ARK suite, and fresh branch coverage from the CMA root.
+
+Success Criteria:
+All 33 ARK tests collect and pass from the CMA root, branch coverage remains at least 80%, no import or fixture error occurs, and the functional ARK hash manifest remains unchanged.
+
+Result:
+The contract first failed because neither authoritative command included `-t ARK`. With the explicit top-level directory, all 33 ARK tests passed from the CMA root with no import errors and fresh branch coverage reached 85%. The functional ARK hash manifest remained unchanged.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment changes only test invocation documentation and its monorepo contract; it does not authorize ARK runtime wiring or functional code changes.
+
+## EXP-20260809-002 - ARK Monorepo CLI Config Resolution
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+The documented root-relative `ARK/bin/ark` commands resolve the default `ark.json` against the CMA working directory instead of the ARK module directory.
+
+Evidence:
+Independent code review executed `ARK/bin/ark doctor --json` from the CMA root. It exited 2 with `cannot read configuration` for the nonexistent root `ark.json`, while the contract test checked only textual command prefixes.
+
+Hypothesis:
+Passing the existing module config explicitly as `--config ARK/ark.json` in every root-relative command will make the documented interface executable without changing the already-reviewed launcher or runtime behavior.
+
+Solution Attempt:
+Make the monorepo contract execute the documented doctor command, require the explicit config argument on every example, and update the README and integration plan commands only.
+
+Test:
+Capture a RED failure by executing the current documented command from the CMA root, then require exit 0 and valid successful JSON after the documentation change. Rerun ARK, contract, and complete CMA suites.
+
+Success Criteria:
+Every documented ARK command names `ARK/ark.json`; the documented doctor command exits 0 from the CMA root with `status=passed` and `success=true`; functional ARK hashes remain unchanged.
+
+Result:
+The executable contract first reproduced exit 2 and the missing root `ark.json`. After adding the explicit config argument, the documented doctor command exited 0 from the CMA root with `status=passed` and `success=true`; the contract passed 9/9, the ARK suite passed 33/33, and functional ARK hashes remained unchanged.
+
+Decision:
+ACCEPT
+
+Notes:
+Automatic CMA routing, launcher behavior changes, global activation, and external tool installation remain outside this experiment.
+
+## EXP-20260804-003 - Atomic Evidence Claim Contract
+
+Date: 2026-08-04
+Status: ACCEPTED
+
+Problem:
+CMA requires one material claim per bullet and direct proof outside Claims, but
+does not explicitly prevent one bullet from combining independently verifiable
+outcomes. Codex can therefore enter repeated EV validation cycles or weaken a
+claim into a statement that output was reported.
+
+Evidence:
+An observed Codex/EV run repeatedly split test, review, gateway-health, and
+admin-capability assertions before GLM could bind each claim to direct proof.
+The final validation passed, but the repeated rewrites exposed missing atomic
+claim semantics in CMA rather than a need to weaken EV.
+
+Hypothesis:
+If CMA requires one independently verifiable outcome per claim, one coherent
+verbatim proof excerpt for that outcome, and semantic preservation during
+splitting, future evidence will bind cleanly without narrowing acceptance
+meaning or expanding EV.
+
+Solution Attempt:
+Add four prospective atomic-claim clauses to the existing Claims contract and
+verify the managed and portable records modules. Do not rewrite historical
+reports, alter EV, or synchronize the active global runtime.
+
+Test:
+Add source and portable-install contract tests before changing the records
+module. Include negative checks showing that formatting-only wording and a
+reporting-only downgrade do not satisfy the contract. Run focused and full CMA
+regression suites, independent code and security reviews, and EV validation of
+the new evidence report.
+
+Success Criteria:
+- Each claim bullet contains exactly one independently verifiable outcome.
+- One coherent verbatim proof excerpt outside Claims directly proves it.
+- Splitting preserves every original acceptance outcome.
+- Outcome claims cannot be weakened into reporting-only meta-claims.
+- Managed and portable records modules are byte-identical and satisfy the rule.
+- No EV, active global runtime, historical evidence, dependency, commit, push,
+  or deployment change occurs.
+
+Result:
+The targeted source and portable tests first failed 2/2 because the records
+module lacked the independently verifiable outcome clause. After the four
+prospective semantics were added, both targeted tests passed. The focused CMA
+records suite passed 17/17, the complete CMA suite passed 55/55, and
+`git diff --check` completed cleanly. Independent code and security reviews
+both passed. EV first returned `UNVERIFIED` for negated review-proof prose;
+after each PASS result was placed in its own direct proof sentence, the same
+six atomic claims returned `PASS` with `success=true` and no diagnostics.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment is intentionally limited to the prospective CMA records
+contract and its verification.
+Detailed evidence is recorded in
+`docs/reports/EVIDENCE_EXP-20260804-003_ATOMIC_CLAIM_CONTRACT_20260804.md`.
+
+## EXP-20260805-001 - Optional Evidence Mode
+
+Date: 2026-08-05
+Status: ACCEPTED
+
+Problem:
+CMA projects declare an evidence path but have no explicit switch controlling
+automatic evidence creation or validation. Evidence can therefore add cost and
+friction to low-risk work even after EV hooks are disabled.
+
+Evidence:
+The user approved optional evidence with exactly `enable | disable`, selected
+`disable` as the default, and requested the setting across all active CMA
+projects under `/Users/iyilmaz/WebStorm`.
+
+Hypothesis:
+An explicit fail-closed project field with missing treated as disabled will
+make evidence genuinely optional without weakening evidence quality when the
+mode is enabled or when the user explicitly requests it.
+
+Solution Attempt:
+Add `EVIDENCE_MODE: disable` to the project template and active CMA project
+configuration blocks. Gate only automatic evidence-report creation and
+automatic EV use in the records module. Preserve explicit user requests and
+all existing evidence quality rules.
+
+Test:
+Add RED tests for fresh-project defaults, configuration guidance, source and
+portable records semantics, missing values, invalid values, and explicit user
+requests. Run focused and full CMA suites, verify an explicit 17-project
+manifest, and preserve excluded archives, backups, worktrees, and variants.
+
+Success Criteria:
+- Only literal `enable` activates automatic evidence creation and validation.
+- Literal `disable` and a missing field keep automation disabled.
+- Invalid explicit values are reported and never enable automation.
+- Explicit user evidence requests remain applicable in either mode.
+- Fresh projects and all 17 active CMA projects declare `disable` exactly once.
+- Excluded copies and unrelated dirty changes remain untouched.
+- Active global CMA runtime, dependencies, commits, pushes, and deployment
+  remain unchanged.
+
+Result:
+The initial targeted run failed 3/3 because fresh projects omitted the field
+and the source and portable records modules lacked the mode contract. After the
+minimal framework change, the targeted tests passed 3/3, project-upgrade tests
+passed 6/6, and CMA lazy-runtime tests passed 20/20. The explicit rollout
+manifest verified exactly one `EVIDENCE_MODE: disable` declaration in each of
+17 active CMA projects. The complete CMA suite passed 60/60 and
+`git diff --check` completed cleanly. Code review passed. Security review
+confirmed that the project declarations are staged but not yet enforced by the
+active global runtime because its `CMA_RECORDS.md` lacks the new mode gate.
+After separate option A approval, the previous active records module was backed
+up at
+`~/.codex/archive/cma-evidence-mode-20260805_135615/CMA_RECORDS.md` with SHA-256
+`c3d4813491a493775db57f24b451e13c5b9168c5a15445113d1f33a72e9299ea`.
+Only the four EVIDENCE_MODE clauses were added to the active module; its new
+SHA-256 is
+`e8d6a962ea74990028baedea10f183726484e8fe64ba5f4995bb1c1d1921c065`
+and mode remains `0644`. Reopened code and security reviews both passed with
+no blocking findings.
+
+Decision:
+ACCEPT
+
+Notes:
+Active global runtime synchronization was performed only after separate option
+A approval. No evidence report was created because this project now declares
+`EVIDENCE_MODE: disable` and the user did not explicitly request one.
+
 ## EXP-20260806-001 - Git Archive Executable Mode Verification
 
 Date: 2026-08-06
@@ -442,357 +759,3 @@ Notes:
 The user approved repository implementation and a verified, reversible update
 of the active local Codex policy. Commit, push, remote deployment, dependency,
 API, schema, skill, agent, and registry changes are outside scope.
-
-## EXP-20260727-002 - Event-Driven Record Archiving
-
-Date: 2026-07-27
-Status: ACCEPTED
-
-Problem:
-Deferred findings, experiments, and changelog files grow without bound, but
-checking or compacting them at every task closure would add recurring latency
-and cost.
-
-Evidence:
-The accepted design review found that record files need bounded active context
-without losing history. It also found that a five-date changelog window is too
-small, while keeping fifty full date sections would likely exceed the runtime's
-file-size guidance.
-
-Hypothesis:
-An event-driven `record-archive` skill with deterministic thresholds, dry-run
-checks, atomic fail-closed writes, and format-specific retention rules will
-bound active context without adding work to unrelated task closures.
-
-Solution Attempt:
-Add one reusable skill and script for Deferred Findings, experiments, and
-changelog records. Trigger checks only when a finding becomes completed, an
-experiment becomes terminal, or a new changelog date is created. Keep five
-recent completed findings, five recent terminal experiments, and twenty full
-changelog dates plus a thirty-date archive index.
-
-Test:
-Run contract tests against temporary repositories for below-threshold no-ops,
-threshold rotation, preservation, duplicate and malformed-input rejection,
-dirty-file protection, idempotence, portable installation, and runtime policy
-activation.
-
-Success Criteria:
-- No event-independent or every-task archive check is introduced.
-- Deferred Findings and experiments rotate at ten eligible records and retain
-  five eligible records in the active file.
-- Changelog rotation starts at thirty detailed dates or five hundred lines,
-  retains twenty detailed dates, and exposes up to thirty archive links.
-- Pending findings and non-terminal experiments always remain active.
-- No record is lost, duplicated, or moved to the wrong section.
-- `check` is non-mutating; `apply` is atomic, fail-closed, and idempotent.
-- Codex, Dolphin, and the active local runtime expose the same validated skill.
-
-Result:
-The initial RED run failed on all thirteen missing behavior and packaging
-surfaces. After implementation and two real-format compatibility revisions,
-the focused suite passed 16 tests and the full project suite passed 35 tests.
-Measured statement coverage for the bundled script is 87%. Codex, Dolphin, and
-the active local skill passed `quick_validate.py`, compiled successfully, and
-were checksum-equivalent. A read-only check against `yedekparcasor.com`
-reported Deferred Findings and Changelog below threshold and Experiments ready
-for rotation without changing that project. Dirty files, malformed formats,
-duplicates, unsupported headings, and broken symlinks failed closed.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment changes only record-retention automation. It does not alter the
-mandatory orchestration chain, agent reasoning defaults, or task approval
-rules.
-
-## EXP-20260727-001 - Conditional Hypothesis Workflow
-
-Date: 2026-07-27
-Status: ACCEPTED
-
-Problem:
-The runtime has evidence, retry, TDD, and review controls, but it does not yet
-provide the conditional experiment workflow tracked by ORCH-005. Making the
-workflow mandatory for every task would add duplicate records and latency.
-
-Evidence:
-`docs/ORCHESTRATION_IMPROVEMENT_TASKS.md` keeps ORCH-005 pending and limits
-experiment escalation to failed attempts, unclear evidence, competing
-hypotheses, regressions, or measured comparisons.
-
-Hypothesis:
-A concise global trigger combined with a reusable `hypothesis-workflow` skill
-will add traceable experiments only when difficulty or uncertainty justifies
-the extra process, without changing routine task flow or the mandatory agent
-chain.
-
-Solution Attempt:
-Package the conditional skill for Codex and Dolphin, register it globally,
-link it from runtime policy, preserve existing evidence and changelog paths,
-and explicitly prohibit proactive experiment-file creation for routine work.
-
-Test:
-Run focused contract tests, the complete unit suite, skill validation, and
-temporary Codex and Dolphin installations. Verify the active local Codex
-runtime after synchronization.
-
-Success Criteria:
-- Routine first-pass work does not activate the experiment workflow.
-- Defined escalation triggers activate prior-record review and a dated ID.
-- Project `AGENTS.md` does not need to declare the skill.
-- Existing `CHANGELOG_PATH` and `EVIDENCE_PATH` remain authoritative.
-- The mandatory agent chain and `medium` reasoning defaults remain unchanged.
-- Codex and Dolphin temporary installs contain the validated skill.
-- Tests reject unconditional activation and missing test-integrity guardrails.
-
-Result:
-The corrected RED run failed on all missing behavior surfaces: skill files,
-global policy, registry links, and portable installation. After implementation,
-the focused suite passed 7 tests and the full suite passed 19 tests. Both
-packaged skills and the active global skill passed `quick_validate.py`. Codex
-and Dolphin temporary installs contained identical skill contracts.
-`~/.codex/AGENTS.md`, the active skill, and active registry policy were
-checksum-equivalent to their source templates after targeted synchronization.
-The existing active audit history remained intact.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment changes one main behavior: conditional activation of a
-traceable hypothesis cycle. It does not alter approval, scope, destructive
-operation, retry, orchestration, or security boundaries. The prior active
-policy and registry files are recoverable from
-`~/.codex/archive/hypothesis-workflow-20260727_004001/`.
-
-## EXP-20260803-001 - Independent Opt-In GLM Evidence Validator
-
-Date: 2026-08-03
-Status: ACCEPTED
-
-Problem:
-Evidence validation is useful for selected projects, but embedding it in CMA
-policy, templates, or the default completion path would change every project.
-
-Evidence:
-The rejected first attempt coupled validation to CMA runtime templates and
-failed review on MCP initialization, portable paths, hook preservation, and
-missing tests. The approved scope requires an independent installation with no
-automatic project activation.
-
-Hypothesis:
-A standalone ACP client installed under `~/.codex/evidence-validator`, combined
-with project-local opt-in configuration and hooks, can validate changed evidence
-without changing CMA instructions, evidence creation rules, global hooks, or
-inactive projects.
-
-Solution Attempt:
-Implement and test an independent validator, project enable/disable/status
-commands, hash-based session evidence detection, strict GLM result parsing, and
-project-local hook merging. Install it globally but activate only a temporary
-pilot project.
-
-Test:
-Run unit and integration tests against temporary projects and a fake ACP agent,
-then run a real GLM smoke test using the existing `glm-acp-agent` setup. Verify
-that CMA files, the active global hook, and real project files remain unchanged.
-
-Success Criteria:
-- No CMA policy, template, installer, or evidence-creation instruction changes.
-- No real project is activated automatically.
-- Enable and disable preserve unrelated project hooks and are idempotent.
-- Only session-created or session-modified evidence is sent for validation.
-- Only schema-valid `PASS` permits completion; every uncertain path is
-  `UNVERIFIED`.
-- The existing global notification hook remains byte-identical.
-- Focused tests, regression tests, real GLM smoke validation, code review, and
-  security review complete without blocking findings.
-
-Result:
-The independent validator was installed under `~/.codex/evidence-validator`
-without changing global CMA instructions, Codex configuration, or the existing
-global notification hook. The final focused suite passed 24/24 with no skipped
-tests. A temporary project completed real pinned GLM ACP manual validation with
-`PASS`, then its changed evidence completed the real Stop hook with `{}`. The
-temporary project was disabled and moved to Trash. Final independent code and
-security reviews both returned PASS with no blocking findings.
-
-Decision:
-ACCEPT
-
-Notes:
-The global installation makes the validator available only. Project activation,
-commit, and push remain outside this task.
-
-## EXP-20260806-010 - Portable Codex Subagent Restoration Prompt
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-The current Codex runtime has a verified token-conscious 12-agent matrix, but
-there is no installed CMA prompt for restoring that matrix without embedding a
-specific user's absolute home path or re-generating the full agent bodies.
-
-Evidence:
-The managed Codex variant and active runtime contain eight default agent TOMLs
-plus four conditional Sol variants, all at medium reasoning. The portable
-installer rewrites a selected runtime home but does not currently install a
-`prompts/` tree or prefer an active `CODEX_HOME` when no explicit target is
-provided.
-
-Hypothesis:
-A concise restoration prompt derived from the authoritative agent TOMLs,
-installed through a dynamically resolved runtime home, will make recovery
-portable while preserving the current model quality and reducing repeated
-discovery, generated output, and reasoning-token pressure.
-
-Solution Attempt:
-Add a Codex-only restoration prompt, teach the shared variant installer to
-manage optional prompt trees and prefer an explicit target, then `CODEX_HOME`,
-then the selected variant's current-user default. Preserve no-overwrite and
-symlink protections. Validate source before narrowly synchronizing only the
-prompt into the active Codex home.
-
-Test:
-Add RED contracts for the prompt's exact live TOML-derived inventory, portable
-runtime resolution, real installer output, no-overwrite preservation, and
-prompt-directory symlink rejection. Then run focused, related, and complete
-regressions, shell syntax and diff checks, active source-target hashes, and
-independent code and security reviews.
-
-Success Criteria:
-- No fixed username or `/Users/.../.codex` path appears in the prompt.
-- Exactly eight default roles and four conditional Sol variants retain their
-  current friendly identities, models, medium reasoning, and sandboxes.
-- The mandatory chain remains unchanged and no high-reasoning role is added.
-- Installer resolution is explicit target, active `CODEX_HOME`, then the
-  selected current-user default.
-- Existing prompt files are preserved without force and prompt-directory
-  symlink escapes fail before outside mutation.
-- Source tests pass before a narrow, hash-verified active prompt sync.
-- Config, auth, agent TOMLs, registries, skills, other providers, commit, push,
-  and deployment remain unchanged.
-
-Result:
-The initial five-test RED run produced four failures and one missing-file
-error for the absent prompt, missing installer transport, ignored
-`CODEX_HOME`, and missing prompt-directory preflight. The first implementation
-then passed the focused 5/5 checks, related suites at 17/17, 21/21, and 11/11,
-and the complete 111/111 regression suite. Shell syntax and diff checks passed.
-
-The approved narrow activation installed only the new prompt into the resolved
-active Codex home. Its SHA-256 matched the managed source and the protected
-runtime surface hash remained unchanged. Independent code review then found
-that the symlink test did not yet prove fail-before-write behavior. A second
-meaningful RED test reproduced policy overwrite before the symlink failure.
-Adding `prompts` to the pre-write managed-directory validation made that test
-and the focused 5/5 checks pass while preserving both target and outside
-sentinels.
-
-After remediation, the installer suite passed 17/17 and the complete suite
-passed 111/111. Shell syntax and diff checks passed. Code re-review and security
-review both passed with no remaining blocking finding; security review
-confirmed fail-before-write path containment, no-overwrite behavior, quoted
-runtime resolution, and no credential, auth, dependency, external-service, or
-destructive-operation change.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved Codex source, tests, records, and narrow active prompt
-synchronization. Claude adaptation is planning-only after Codex closure.
-
-## EXP-20260806-011 - Portable Claude Subagent Restoration Prompt
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-The portable Claude CMA variant has the verified 12-agent Sonnet/Opus matrix
-but lacks an installed recovery prompt that derives the current Markdown/YAML
-definitions without embedding a machine-specific user path or duplicating full
-agent bodies.
-
-Evidence:
-The Claude source contains eight canonical agents and four conditional Opus
-variants, all at medium effort. The shared installer now transports optional
-prompt trees safely, but the Claude package has no prompt to install and its
-exact manifest remains 34 files.
-
-Hypothesis:
-A Claude-native restoration prompt derived from authoritative frontmatter and
-installed only into an explicitly selected isolated runtime will provide
-portable recovery with bounded token use while preserving models, effort,
-tools, permissions, orchestration, and active native Claude isolation.
-
-Solution Attempt:
-Add one Claude prompt and document it. Reuse the existing provider-neutral
-installer prompt transport without changing installer behavior unless RED
-evidence requires it. Validate source and an isolated installation before
-narrowly synchronizing the prompt to the current user's isolated CMA Claude
-runtime, never the active native Claude home.
-
-Test:
-Add RED contracts for the 35-file manifest, actual frontmatter-derived role
-rows, target-resolution order, token/model rules, exact chain, explicit-runtime
-installation, no-overwrite preservation, and provider-neutral symlink
-preflight. Run focused Claude and installer suites, complete regressions,
-syntax/diff checks, isolated source-target hashes, and independent reviews.
-
-Success Criteria:
-- The prompt contains no fixed username or machine-specific absolute path.
-- Exactly 12 roles preserve their actual identity, model, medium effort, tools,
-  and permission mode, including four conditional Opus replacements.
-- Target resolution is explicit target, non-empty `CLAUDE_CONFIG_DIR`, then
-  the current user's `${HOME}/.claude`.
-- No Codex agent format, Codex model identifier, `-sol` role, unsupported token
-  field, extra chain stage, or broad escalation is introduced.
-- The installer copies the prompt to an explicit isolated runtime, preserves
-  existing prompts without force, and rejects prompt symlinks before writes.
-- Source validation precedes a narrow hash-verified sync to the isolated CMA
-  Claude runtime; `${HOME}/.claude` remains unchanged.
-- Settings, credentials, native Claude, SDK, dependencies, commit, push, and
-  deployment remain unchanged.
-
-Result:
-The initial source RED produced one manifest failure and one missing-file error:
-the package had 34 files and no Claude restoration prompt. The installer RED
-kept the Codex, no-overwrite, and symlink cases green while the Claude explicit
-install subcase failed because no source or installed prompt existed.
-
-After adding only the Claude-native prompt and README entry, the focused source
-checks passed 2/2 and provider-neutral installer checks passed 3/3. The Claude
-suite passed 17/17, installer suite 17/17, orchestration suite 11/11, and the
-complete suite 112/112. Shell syntax and diff checks passed. No shared installer
-implementation change was required.
-
-The isolated CMA Claude runtime did not previously exist, so broad installation
-was avoided. Only its `prompts/` directory and the approved prompt were created.
-The source and isolated prompt SHA-256 values match, the isolated runtime
-contains no other file, and the native `${HOME}/.claude` prompt path remains
-absent.
-
-Code review found a high-severity cross-runtime delegation risk: an explicit
-target could differ from the active `CLAUDE_CONFIG_DIR` while Sam remained
-scoped to the active runtime. After explicit user approval, a meaningful RED
-contract required fail-closed target equality, isolated-process continuation,
-and governor use only after the effective config directory equals the resolved
-target. The corrected contract passed and the prior isolated prompt was saved
-in a hash-verified recoverable backup before narrow replacement.
-
-After remediation, the Claude suite passed 17/17, installer suite 17/17, and
-complete suite 112/112; shell syntax and diff checks passed. Code re-review and
-security review both passed. The updated source and isolated prompt SHA-256 is
-`b6e1b926d4f47e8bd5d886eb450378792f4d12fbe05e4fa6ec326978334e17e8`,
-and native Claude state remains unchanged.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved source, tests, records, and isolated CMA Claude prompt
-synchronization only.

@@ -10,3 +10,4 @@
 - [Terminal experiments 004](EXPERIMENTS_ARCHIVE_004.md)
 - [Terminal experiments 005](EXPERIMENTS_ARCHIVE_005.md)
 - [Terminal experiments 006](EXPERIMENTS_ARCHIVE_006.md)
+- [Terminal experiments 007](EXPERIMENTS_ARCHIVE_007.md)
