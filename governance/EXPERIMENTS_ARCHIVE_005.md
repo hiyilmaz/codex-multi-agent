@@ -2,6 +2,432 @@
 
 [Back to active experiments](EXPERIMENTS.md)
 
+## EXP-20260809-007 - CMA-ARK Activation Identity Hardening
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+The inactive CMA-ARK candidate can invoke a passive adapter launcher that
+selects a user-owned Homebrew Python interpreter and resolves shell/runtime
+commands through writable PATH segments. A forged or replaced child boundary
+could therefore return a self-consistent plan before future repo activation.
+The activation design also lacks an executable disposable install/rollback
+pilot.
+
+Evidence:
+The final security review for EXP-20260809-006 accepted the inactive candidate
+but retained adapter entrypoint/symlink identity, child interpreter, and
+writable-PATH resolution as blocking gates for any `.agents/skills/cma-ark/`
+activation. Live inspection confirmed the adapter prefers the user-owned
+`/opt/homebrew/bin/python3` symlink from a group-writable directory.
+
+Hypothesis:
+Fixing both launchers to root-owned `/usr/bin/python3`, making the runtime
+Python 3.9 compatible, independently binding and revalidating every child
+identity, and proving manifest-owned install/rollback only in a disposable
+repository will close the activation blockers without activating the skill or
+adding dependencies.
+
+Solution Attempt:
+Use isolated literal launchers, a system-first fixed PATH, complete
+launcher/source/interpreter/tool identity verification before and immediately
+before spawn, and a repo-owned pilot that refuses the canonical CMA root and
+publishes or removes only an exact three-file candidate manifest in a
+disposable repository.
+
+Test:
+Capture RED failures for launcher selection, Python 3.9 compatibility,
+identity drift and symlink substitution, missing disposable pilot, atomic
+publication, idempotency, and drift-safe rollback. Then require real
+black-box planning with zero tool execution, at least 80 percent branch
+coverage, relevant adapter/ARK/CMA regressions, and independent code and
+security review.
+
+Success Criteria:
+- Root-owned fixed interpreters and system-first command resolution replace
+  ambient Homebrew/local launcher selection.
+- Every adapter, ARK, interpreter, target, and selected-tool identity mismatch
+  fails before adapter execution or before success reporting.
+- Disposable install publishes exactly the candidate manifest and rollback
+  removes only unchanged installer-owned files.
+- The canonical CMA repository never gains `.agents/skills/cma-ark`.
+- No global runtime, dependency, execution capability, commit, or push change
+  occurs.
+
+Result:
+RED tests reproduced ambient Python import injection, writable activation
+ancestors, concurrent installer-state races, file and directory identity drift,
+and false `not_applied` results after committed install/rollback mutations. The
+fixed implementation passed 58/58 adapter and disposable-pilot tests with 80%
+pilot branch coverage and 91% combined branch coverage. ARK passed 33/33 tests,
+the root ARK contracts passed 14/14, the candidate skill validator passed, and
+independent code and security reviews ended with no blocking findings. The
+canonical repository remained unactivated.
+
+Decision:
+ACCEPT. Keep the hardened launcher, runtime identity binding, and disposable
+install/rollback pilot as inactive repository-owned infrastructure. Any real
+`.agents/skills/cma-ark` activation remains a separate explicit approval and
+validation task.
+
+## EXP-20260809-006 - Inactive CMA-ARK Plan Skill Candidate
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+The accepted CMA-ARK activation design has no reviewable Codex skill candidate.
+Creating a discovered skill now would grant premature runtime authority, while
+leaving only prose cannot prove explicit-only metadata, plan-only behavior, or
+the fixed adapter boundary.
+
+Evidence:
+`EXP-20260809-005` accepted a non-discovered candidate as the next separately
+approved task. Governor preflight found no duplicate CMA-ARK skill but corrected
+the candidate layout so the directory and skill name both remain `cma-ark`.
+
+Hypothesis:
+A three-file candidate under
+`adapters/cma-ark/skill-candidate/cma-ark/`, initialized with the official skill
+creator and restricted to strict `text-search` planning, can provide a
+reviewable workflow without activation or execution authority.
+
+Solution Attempt:
+Create only `SKILL.md`, explicit-only `agents/openai.yaml`, and a stdlib
+plan coordinator. The coordinator accepts one bounded query object, verifies a
+fixed isolated Python bootstrap, calls only the passive adapter's `plan`
+operation for the canonical CMA root, validates the complete response, and
+returns normalized zero-execution evidence.
+
+Test:
+Capture meaningful RED failures for the absent candidate, then verify exact
+skill metadata, input bounds, bootstrap ordering, fixed process arguments,
+correlated adapter protocol, forged-success rejection, real fixed-adapter
+black-box planning, sentinel zero execution, at least 80 percent branch
+coverage, and all relevant regressions.
+
+Success Criteria:
+- The candidate exists only in the non-discovered name-matched source path.
+- Implicit invocation, `run`, approval/state, other intents, and tool execution
+  remain unavailable.
+- Invalid bootstrap, input, process, or adapter evidence fails closed before
+  any wider action.
+- The real black-box plan reports `execution_performed=false` while sentinel
+  tools remain untouched.
+- No activation, registry, audit, global, dependency, commit, or push change is
+  made.
+
+Result:
+The candidate was initialized through the official skill creator and retained
+exactly three non-discovered files. Meaningful RED tests first exposed the
+missing candidate behavior, incomplete provenance type validation, post-hoc
+subprocess buffering, an ineffective zero-tool sentinel, boolean/integer JSON
+type confusion, and raw-query disclosure. The scoped fixes added exact
+correlation types, bounded streaming, a disposable-repository sentinel that is
+selected but never executed, and digest-only query reporting.
+
+The final focused suite passed 11/11 with 89 percent branch coverage. The
+complete adapter suite passed 40/40, ARK passed 33/33, scoped CMA governance
+regressions passed, the official skill validator passed, and `git diff
+--check` passed. Independent code and security re-reviews returned PASS. The
+candidate remains absent from both repository discovery locations and made no
+global, registry, dependency, commit, push, or deployment change.
+
+Decision:
+ACCEPT
+
+Notes:
+This acceptance covers only the inactive source candidate. Future
+`.agents/skills/cma-ark/` activation remains blocked until the adapter
+entrypoint and symlink identity, child interpreter, and writable-PATH command
+resolution are pinned and independently verified. Activation requires a new
+task and explicit approval.
+
+## EXP-20260809-005 - Explicit CMA-ARK Activation Boundary
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+The passive CMA-ARK adapter is implemented, but activation ownership, Codex
+skill scope, authenticated approval, capability rollout, sensitive output,
+Graphify coordination, and rollback are not yet defined as one executable
+governance contract.
+
+Evidence:
+The adapter and integration documents explicitly leave activation pending. The
+active user-global skill index has no CMA-ARK entry, no repository activation
+surface exists, and the final Phase 3 security review retained these items as
+activation gates.
+
+Hypothesis:
+A repo-local, non-discovered skill candidate with explicit-only invocation and
+a plan-only, text-search-first pilot can define the narrowest activation
+boundary without granting execution authority or creating a second router.
+
+Solution Attempt:
+Define the activation architecture, trust boundaries, staged capabilities,
+future test contract, governor checks, and rollback order in documentation.
+Do not create the candidate, activate a skill, change user-global state, or
+implement the coordinator in this experiment.
+
+Test:
+Start with a failing documentation contract, then require the completed design
+to encode explicit invocation, repo-only scope, outer identity binding,
+single-use approval, output handling, Graphify serialization, rollback, and
+out-of-scope boundaries. Run relevant CMA and ARK regressions plus independent
+code and security review.
+
+Success Criteria:
+- The initial pilot is limited to explicit `text-search` against exactly the
+  canonical CMA root.
+- Implicit invocation, direct run, approval reuse, retry, fallback, and global
+  promotion remain prohibited.
+- `structure` and `explore` have separate evidence gates.
+- Repo skill discovery remains plan-only until trusted host/user-role approval,
+  isolated Python bootstrap, and atomic replay/rate controls are proven.
+- The design does not create an active skill or mutate user-global state.
+- Rollback and future activation tests are deterministic and fail closed.
+
+Result:
+The documentation contract first failed because the activation design was
+absent. After the initial design passed 2/2 focused checks, code review found a
+HIGH target-scope widening and later two installation containment/idempotency
+findings. Security review found authenticated-approval, Python bootstrap,
+atomic replay/rate, rollback ownership, and adversarial-output gaps. Each
+affected contract was reopened with a meaningful failing assertion, narrowed,
+and reverified. The final design limits repo activation to a plan-only,
+canonical-root text-search pilot; execution remains fail-closed until trusted
+host attestation and all named runtime gates are implemented. Final code and
+security re-reviews returned PASS.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment defines architecture and future acceptance gates only. It does
+not create the candidate, install a discovered skill, implement the
+coordinator, authorize execution, or mutate user-global state.
+
+## EXP-20260809-004 - Passive CMA-ARK Adapter Implementation
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+The approved CMA-ARK process-boundary design is not executable. CMA has no
+passive adapter that validates the v1 contract, binds an ARK plan to explicit
+approval evidence, or normalizes ARK subprocess results without duplicating
+routing.
+
+Evidence:
+`docs/CMA_ARK_ADAPTER_DESIGN.md` is accepted, while `adapters/cma-ark/` does not
+exist. The integration plan therefore still reports implementation pending.
+
+Hypothesis:
+A standard-library-only, one-request-per-process adapter using the fixed
+repository-owned `ARK/bin/ark` boundary can enforce the approved request,
+binding, approval, protocol, and exit contracts while leaving ARK as the sole
+router and remaining inactive by default.
+
+Solution Attempt:
+Add the passive adapter and RED-first unit, subprocess-integration, and
+black-box tests under `adapters/cma-ark/`. Do not modify functional ARK sources,
+activate a skill or registry entry, add dependencies, or implement the excluded
+CMA Graphify coordinator.
+
+Test:
+Capture meaningful RED failures before production files exist. Then verify
+exact request framing, fixed paths, plan/run binding, drift rejection, ARK
+protocol and exit normalization, bounded subprocess behavior, passive state,
+at least 80 percent adapter branch coverage, the unchanged ARK manifest, ARK
+tests, and relevant CMA governance regressions.
+
+Success Criteria:
+- Only the three approved read-only intents can reach ARK.
+- Planning performs no tool execution; denied runs perform no ARK run; an
+  approved unchanged plan executes exactly once.
+- Request, response, provenance, digest, status, and exit contracts fail closed.
+- Fixed launcher, config, source, target, tool, and graph identities are bound
+  and revalidated without request-controlled execution settings.
+- The adapter remains passive and stateless; activation and caller-side
+  Graphify serialization remain explicitly pending.
+- Adapter branch coverage is at least 80 percent and all scoped regressions pass.
+
+Result:
+The initial RED suite failed because the adapter package and launcher were
+absent. The completed stdlib adapter then passed 29 focused unit, subprocess,
+protocol, drift, and real fixed-ARK black-box tests with 82.81 percent branch
+coverage. The root passive contract passed 3/3, the unchanged ARK manifest
+passed 9/9, ARK passed 33/33, and orchestration, hypothesis, and record
+regressions passed 11/11, 7/7, and 19/19. Review fixes added symlink-free fixed
+resource revalidation, a bounded ARK JSON envelope large enough for both
+maximum tool streams, truthful unsupported-version status, and selected-tool
+PATH re-resolution before run. Final code and security reviews returned PASS.
+
+Decision:
+ACCEPT
+
+Notes:
+Approval JSON is propagated evidence, not authentication. The documented
+post-check/pre-exec race and direct-response repository-output exposure remain
+residual activation risks rather than claims solved by this implementation.
+Activation still requires authenticated approval and target authorization,
+interpreter identity binding, sensitive-response handling, replay/rate control,
+tested Graphify serialization, and acceptance of the documented final
+check-to-exec race. Graphify runtime behavior remains unverified because its
+executable is unavailable on the adapter's fixed PATH in this environment.
+
+## EXP-20260809-003 - CMA-ARK Adapter Process Boundary
+
+Date: 2026-08-09
+Status: ROLLED_BACK
+
+Problem:
+The first Phase 3 design review found that the adapter contract mixes a direct
+ARK Python-import boundary with ARK process-exit passthrough semantics, omits an
+exact run/error response schema, and claims tool-identity drift detection while
+the canonical plan leaves tool identity unverified.
+
+Evidence:
+The mandatory code review returned three HIGH findings and one MEDIUM finding.
+It identified the conflicting direct-import and `ark_exit_code` statements,
+missing result/error types and examples, a null selected-tool digest despite
+TOCTOU claims, and non-canonical digest placeholders.
+
+Hypothesis:
+Using the fixed repository-owned ARK CLI as the adapter's only ARK boundary,
+defining exact plan/run/error response examples, and requiring a resolved tool
+content/stat identity before a runnable plan will make exit origin, result
+normalization, and drift limits deterministic without duplicating ARK routing.
+
+Solution Attempt:
+Revise only the Phase 3 design contract. Bind the adapter to the absolute
+`ARK/bin/ark` launcher and config, define normalized result items and nullable
+error correlation fields, preserve the actual ARK subprocess exit separately
+from tool result exits, require a SHA-256/stat identity for runnable tools, use
+valid canonical digest examples, and state the residual post-check/pre-exec race.
+
+Test:
+Run a RED validator against the current contradictory design, then parse and
+validate all revised JSON examples, field types, digest encodings, exit origins,
+result cardinality, tool-identity requirements, and cross-document status. Run
+the monorepo contract and independent code/security review.
+
+Success Criteria:
+- The design chooses exactly one ARK integration boundary.
+- Plan, successful run, and malformed-request responses have deterministic
+  exact schemas and origin-aware exit fields.
+- A runnable plan cannot use an unverified or null selected-tool identity.
+- Canonical examples use valid encodings and only `explore` has a concurrency key.
+- TOCTOU guarantees are limited to observable pre-execution revalidation.
+- Existing ARK functional files and monorepo contracts remain unchanged.
+
+Result:
+The CLI-only boundary, exact request/plan/run/error schemas, canonical plan
+digest, tool and target identity binding, failed-run execution semantics, and
+honest truncation limits passed machine-readable validators. The monorepo
+contract passed 9/9 and diff/whitespace checks passed. The user-approved bounded
+continuation defined the complete POSIX/macOS ARK process range, signal-derived
+negative exits, wrapped tool-signal relation, and origin-aware overlap with
+adapter-reserved codes. Final code review and security review returned PASS.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment changes documentation only. Adapter implementation, activation,
+global configuration, dependencies, MCP, cplt, commit, and push remain outside scope.
+Revision after the first re-review: define `plan_sha256` over one exact canonical
+`plan` object shared by plan/run rather than either wire request; bind target
+device/inode identity; treat every spawned ARK run as execution even on failure;
+remove truncation booleans unavailable through the CLI contract; and define the
+exact normalized ARK plan and step schemas.
+Final revision after the second re-review: include adapter version, ARK schema,
+config/source digests, and selected-tool realpath inside the hashed plan binding
+rather than only in unhashed response provenance.
+User-approved bounded continuation: define the full observable ARK process-exit
+domain, distinguish normal and signal termination, preserve the original tool
+exit from valid ARK JSON, and make overlapping adapter-reserved codes
+unambiguous through nullable `ark_exit_code`.
+Security review retained non-blocking activation gates: approval JSON is not
+authentication; interpreter path and recursive source-manifest algorithms need
+pinning before activation; direct bounded output may expose repository secrets;
+the post-check/pre-exec race remains; and Graphify serialization depends on a
+tested CMA coordinator.
+
+## EXP-20260808-002 - Task Transition Gate Synchronization
+
+Date: 2026-08-08
+Status: ACCEPTED
+
+Problem:
+The active Codex global policy already stops at distinct task boundaries, but
+the portable Codex, Dolphin, Claude, and OpenCode policy sources do not all
+carry the same rule. A newly installed or refreshed runtime can therefore
+resume automatic task progression or interpret approval inconsistently.
+
+Evidence:
+`~/.codex/AGENTS.md` contains the complete Task Transition Gate, while
+`GLOBAL_AGENTS_TEMPLATE.md` and the four portable variant policies do not share
+that complete block. Active Dolphin, OpenCode, and native Claude CMA policy
+surfaces also lack it.
+
+Hypothesis:
+Adding one canonical semantic gate to every portable global policy and safely
+synchronizing only the three stale active runtime policy files will make task
+boundaries consistent without pausing the already approved steps inside one
+bounded task or overwriting unrelated runtime state.
+
+Solution Attempt:
+Add the canonical gate after Scope Lock in all five source policies, document
+the behavior, and update only stale active policies through targeted,
+permission-preserving backups. Preserve the already-correct active Codex file
+and the user-owned native Claude loader byte-for-byte.
+
+Test:
+Capture RED semantic policy, portable-install, and documentation tests; then
+verify focused and complete regressions, exact source/install contracts,
+targeted active-runtime parity, backup hashes, preserved modes, unchanged
+Codex and Claude loader hashes, diff integrity, and independent code/security
+review.
+
+Success Criteria:
+- Every portable policy enforces the six task-transition obligations.
+- The rule distinguishes a next distinct task from steps inside the same
+  explicitly approved bounded task.
+- Portable installs for Codex, Dolphin, Claude, and OpenCode expose the gate.
+- Active Codex and the Claude loader remain byte-identical to their pre-update
+  state; every changed active policy has an exact recoverable backup.
+- User documentation and changelog match verified behavior.
+- All tests and independent reviews pass without weakened assertions.
+
+Result:
+The initial semantic, portable-install, and documentation run produced 13
+expected RED subtest failures. The canonical gate was then added to all five
+source policies and the four user guides. A code-review finding exposed that
+the first negative fixture failed only because positive markers were absent;
+the replacement fixture kept the complete valid policy and added a conflicting
+every-step approval rule, reproduced the false pass, and now fails through an
+explicit conflict check.
+
+The focused suite passed 4/4 and the complete suite passed 145/145 without
+skips; `git diff --check` passed. Portable installs for all four variants expose
+the gate. Active Dolphin, OpenCode, and Claude CMA policies differ from their
+verified pre-state backups only by the canonical block, retain modes `0644`,
+`0644`, and `0600`, and have exact backups under the private `0700` recovery
+directory. Active Codex and the user-owned Claude loader retained their
+pre-update hashes and modes. Final independent code and security reviews
+returned PASS.
+
+Decision:
+ACCEPT
+
+Notes:
+The user approved Plan A and the mandatory orchestration chain. Commit and push
+remain outside scope.
+
 ## EXP-20260808-003 - Additive Multi-Variant Project Initialization
 
 Date: 2026-08-08
@@ -318,444 +744,3 @@ Notes:
 Active global runtime synchronization was performed only after separate option
 A approval. No evidence report was created because this project now declares
 `EVIDENCE_MODE: disable` and the user did not explicitly request one.
-
-## EXP-20260806-001 - Git Archive Executable Mode Verification
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-The transferred CMA source archive passed SHA-256 verification, but the remote
-installer-mode check expected exactly `755` and observed `775`, leaving the
-source-integrity gate unresolved before installation.
-
-Evidence:
-The local and remote archive SHA-256 values are identical, the local and remote
-installer content SHA-256 values are identical, the local working-tree mode is
-`755`, and the extracted archive mode is `775` inside a root-owned mode-`700`
-staging directory.
-
-Hypothesis:
-Git archive preserved an executable script with additional group execute/write
-mode bits, while content and executable semantics remained intact. Verifying
-the executable bits together with the root-only staging boundary is the correct
-security and integrity criterion.
-
-Solution Attempt:
-Replace the overly strict exact-`755` staging assertion with checks that the
-installer is a regular root-owned file, has at least one executable bit, and is
-contained by a root-owned mode-`700` staging directory. Do not change archive
-content or installed target permissions.
-
-Test:
-Re-run the revised mode assertion, verify local and remote installer hashes are
-identical, and include a negative check proving a non-executable copied mode is
-rejected.
-
-Success Criteria:
-- Local and remote installer content hashes match exactly.
-- The extracted installer is a regular root-owned executable file.
-- The staging directory remains `root:root` mode `700`.
-- The same assertion rejects a non-executable mode.
-- No real runtime or project installation occurs before this gate passes.
-
-Result:
-The revised positive check accepted the root-owned executable installer at
-mode `775` inside the root-owned mode-`700` staging directory. Local and remote
-installer SHA-256 values both equal
-`627312caeaf016427267d4f67bda236113204818d970eec9dad14c4194526321`.
-The same checker rejected an explicit mode-`600` non-executable copy. No real
-runtime or project installation occurred during the test.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment is limited to the source-transfer mode assertion and does not
-expand the approved remote-installation scope.
-
-## EXP-20260806-002 - Sentinel Preservation Manifest Scope
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-The isolated no-overwrite installation stopped because the before and after
-manifest files differed even though every seeded sentinel retained its hash.
-
-Evidence:
-The diff contains only three newly installed, previously absent skill files:
-`hypothesis-workflow`, `orchestration-gate`, and `record-archive`. All seven
-seeded managed and unrelated sentinels have identical before/after SHA-256
-values.
-
-Hypothesis:
-The first post-install `find` expression selected new files by shared basename,
-so it compared the complete installed tree rather than the fixed sentinel set.
-Comparing an explicit sentinel path list will prove preservation without
-mistaking legitimate additions for overwrites.
-
-Solution Attempt:
-Re-run the preservation assertion over the seven exact pre-seeded paths and
-separately require that a previously absent managed skill was installed. Keep
-the installer command and isolated target unchanged.
-
-Test:
-Generate before and after hashes from the same explicit sentinel path list,
-require byte-identical manifests, verify `Skipped existing:` output, and mutate
-a copied manifest value to prove the equality check fails.
-
-Success Criteria:
-- The seven exact sentinel hashes remain unchanged.
-- Existing managed files are reported as skipped.
-- Missing managed files are installed.
-- A deliberately altered expected hash is rejected.
-- No real runtime or project installation occurs during the test.
-
-Result:
-The explicit seven-path sentinel check confirmed identical SHA-256 values for
-all pre-existing managed and unrelated files. Installer output reported
-existing managed paths as skipped, and previously absent skills were installed.
-An altered expected hash was rejected. The isolated project conflict test also
-preserved archived conflicts and the unrelated file, while the cancellation
-test produced no project mutation.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment changes only the isolated-test manifest selection.
-
-## EXP-20260806-004 - Bounded Fresh SSH Codex Install
-
-Date: 2026-08-06
-Status: ACCEPTED
-
-Problem:
-Codex remains missing after apt completed because the original PTY stdin was
-consumed and later closed, preventing continuation in that session.
-
-Evidence:
-Node.js and npm are installed and verified through a fresh read-only SSH
-connection, while `codex` is missing. Writing to the previous session failed
-before command delivery.
-
-Hypothesis:
-A fresh non-PTY SSH invocation with the pinned npm command passed as the remote
-command argument will avoid stdin consumers and complete only the missing Codex
-installation.
-
-Solution Attempt:
-Run one bounded non-PTY SSH command that verifies the global prefix, installs
-`@openai/codex@0.146.1`, and prints executable paths and versions. Do not invoke
-apt or use a heredoc.
-
-Test:
-Require the SSH command to exit zero and then verify package identity and CLI
-version through an independent fresh SSH call.
-
-Success Criteria:
-- Only the pinned npm package is added.
-- `codex --version` reports `0.146.1`.
-- The executable resolves from npm's actual global prefix.
-- A separate verification command exits zero.
-- No service or host restart occurs.
-
-Result:
-The fresh non-PTY command installed two npm packages and exited successfully.
-The verified global prefix is `/usr/local`, the CLI resolves to
-`/usr/local/bin/codex`, and `codex --version` reports `codex-cli 0.146.1`.
-An independent SSH check confirmed `@openai/codex@0.146.1` under
-`/usr/local/lib/node_modules` and reproduced the expected CLI version.
-
-Decision:
-ACCEPT
-
-Notes:
-This is the final retry for the missing Codex package action.
-
-## EXP-20260801-003 - Root-Only Contextual Voice Notification
-
-Date: 2026-08-01
-Status: ACCEPTED
-
-Problem:
-The active global `Stop` hook always speaks the same message and does not
-distinguish root Codex completion, failure, user-input waiting, or subagent
-completion. Subagent turns therefore produce unwanted voice notifications.
-
-Evidence:
-`~/.codex/hooks.json` runs `notify_stop.sh` for every matching `Stop` event.
-The script unconditionally calls macOS `say`. Official Codex hook guidance
-defines separate `Stop` and `SubagentStop` events, but `Stop` itself has no
-agent identifier. Existing subagent transcripts identify themselves through
-`session_meta.payload.source.subagent`, while root transcripts use a non-
-subagent source.
-
-Hypothesis:
-If the notification script reads the hook payload, suppresses transcripts
-whose session metadata marks them as subagents, and classifies the final root
-message into failure, waiting, or completion, voice notifications will occur
-only for root Codex with an appropriate message.
-
-Solution Attempt:
-Change only the active notification script. Preserve the existing trusted Stop
-hook definition and add a silent dry-run mode for deterministic tests without
-playing audio.
-
-Test:
-Run RED synthetic hook payloads against the old implementation. After the
-change, test root completion, root failure, root approval/question waiting,
-direct `SubagentStop`, subagent transcript metadata, malformed input, shell
-syntax, JSON hook output, and preservation of the hook/config definitions.
-
-Success Criteria:
-- Root completion selects `Kodex işlemi tamamladı.`
-- Root failure selects `Kodex bir hatayla karşılaştı.`
-- Root approval or question waiting selects `Kodex senden yanıt bekliyor.`
-- Subagent events and subagent transcripts produce no voice message.
-- Every invocation returns valid `{"continue":true}` hook JSON.
-- Existing hook registration and trusted config state remain unchanged.
-
-Result:
-The RED inspection found all five expected capabilities absent. After the
-change, eight silent dry-run cases passed: root completion, failure, approval
-waiting, question waiting, direct `SubagentStop`, a real subagent transcript,
-malformed payload, and a root payload without a final message. Every case
-returned valid continuation JSON, shell syntax validation passed, and the
-script retained executable mode.
-
-The active `hooks.json` and `config.toml` remained byte-identical to their
-backups, so hook registration and trusted state did not change. The previous
-script and both supporting files are recoverable from the timestamped archive.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved message option A. No subagent was spawned and no audio was
-played during validation; `CODEX_NOTIFY_TEST=1` exposed the selected message on
-stderr while preserving the production hook JSON response.
-
-## EXP-20260801-002 - Medium-Only Subagent Matrix
-
-Date: 2026-08-01
-Status: ACCEPTED
-
-Problem:
-The accepted CMA runtime uses six Sol/high routing variants and two additional
-Sol/high default roles. Higher reasoning effort increases token use and latency,
-which conflicts with the current objective of reducing subagent cost while
-retaining model-quality routing.
-
-Evidence:
-The managed and active Codex surfaces contain fourteen agent TOMLs: eight
-defaults plus six `*-high` variants. Eight of those files pin `high` reasoning.
-Official Codex guidance describes `medium` as the balanced default for most
-agents and recommends using the lowest effort that produces the needed result.
-
-Hypothesis:
-Using `medium` for every subagent, keeping Terra/medium defaults for support
-roles, and retaining only four Sol/medium model-escalation variants will reduce
-reasoning-token pressure without weakening the mandatory chain, review stages,
-approval gates, or test-integrity controls.
-
-Solution Attempt:
-Replace four Terra-role `*-high` variants with `*-sol` variants at medium,
-remove redundant code-reviewer and security-reviewer high variants, and change
-reviewer plus skill-agent-governor to medium. Update only the directly tied
-routing, registry, skill, test, and current planning surfaces before mirroring
-validated files into `/Users/iyilmaz/.codex`.
-
-Test:
-Add RED contracts requiring exactly twelve managed agent files, medium effort
-in every agent TOML, four named Sol variants, no `*-high` files or high routing,
-the unchanged mandatory chain, and portable-install packaging. Run focused and
-full suites, source-active parity checks, and a fresh-session routing probe.
-
-Success Criteria:
-- All managed and active subagent TOMLs use `medium` reasoning.
-- Exactly eight defaults and four Sol/medium variants remain.
-- No `*-high` agent or routing reference remains in active instructions.
-- Code-reviewer and security-reviewer stay Sol/medium and retain their required
-  review stages without redundant variants.
-- The mandatory chain, approval boundaries, truthful success, and test
-  integrity remain unchanged.
-- Focused, full, portable-install, parity, and fresh-session checks pass.
-- Historical experiment, evidence, changelog, and audit records remain intact.
-
-Result:
-The RED contract run executed 10 focused tests and failed seven assertions with
-one missing-file error, confirming that six high variants and two high defaults
-were still active. After implementation, the focused suite passed 10 tests and
-the complete repository suite passed 47 tests.
-
-Managed and active Codex surfaces each contain exactly 12 agent TOMLs: eight
-defaults and four Sol/medium variants. Every agent pins `medium`; no `*-high`
-file remains. Managed-to-active parity passed for all agent files and the owned
-routing, index, lazy-module, and skill files. A fresh ephemeral read-only Codex
-session independently reported 12 agents, `medium` as the only reasoning value,
-zero high variants, the four expected Sol variants, the exact mandatory chain,
-and the security no-impact contract.
-
-Both pre-change ZIP archives passed integrity checks. No project-local high
-agent override was found under `/Users/iyilmaz/WebStorm`, so project files did
-not require this runtime-matrix change.
-
-Decision:
-ACCEPT
-
-Notes:
-The main Codex session reasoning setting, project-local documents, Dolphin,
-remote hosts, auth, config, secrets, and plugin state are outside scope.
-
-## EXP-20260801-001 - Local CMA Core And Lazy Runtime
-
-Date: 2026-08-01
-Status: ACCEPTED
-
-Problem:
-The local CMA runtime loads a broad global policy surface for every task, while
-friendly agent naming and conditional model escalation are only partially or
-non-operationally represented. This increases token cost and leaves the active
-routing behavior weaker than the approved plan.
-
-Evidence:
-The approved model matrix is present in the managed Codex variant and active
-local global agent files, but Core/Lazy modules do not exist, the global policy
-still contains the full detailed guidance, `display_name` is not part of the
-documented standalone custom-agent schema, and escalation rules exist only in
-planning documents.
-
-Hypothesis:
-A compact Core CMA policy plus trigger-loaded registry modules, supported
-friendly identities, and reliable static high-risk routing will reduce
-default context while preserving the mandatory chain, approval boundaries,
-truthful reporting, and test integrity.
-
-Solution Attempt:
-Add managed Core/Lazy registry modules, reduce the Codex global policy to the
-non-negotiable core and module router, remove unsupported agent metadata, and
-encode conditional model/reasoning routing in orchestration policy. Validate
-managed source before synchronizing only the approved files into
-`/Users/iyilmaz/.codex`.
-
-Test:
-Add failing contract tests for module packaging, compact policy routing,
-supported agent metadata, the approved model matrix, escalation triggers,
-portable installation, and mandatory-chain integrity. Then run focused and
-full suites, validate source-to-active equality, and perform bounded default
-and escalated runtime probes where the client exposes selected model metadata.
-
-Success Criteria:
-- The global Codex policy contains the complete non-negotiable core and a
-  compact trigger-to-module index.
-- Eight managed modules are packaged and installed by the portable Codex
-  installer.
-- `display_name` is absent from standalone agent TOML files while friendly
-  identities remain in instructions and registry documentation.
-- The approved model matrix remains exact and no mandatory role uses Luna.
-- Routing defines explicit default and static high-risk variants without
-  skipping or reordering the mandatory chain.
-- Source tests pass before active runtime synchronization.
-- Managed and active local global owned files are checksum-equivalent after a
-  fresh targeted backup.
-- Pilot evidence separates token/latency observations from quality results.
-
-Result:
-The initial RED suite ran five tests and produced 21 failures for missing lazy
-modules, an oversized 483-line policy, unsupported metadata, absent escalation,
-and incomplete portable packaging. Later RED revisions caught an invalid chain
-rendering, missing memory routing, unreliable spawn override assumptions, and
-ambiguous read-only precedence.
-
-The final focused suite passed 9 tests and the full suite passed 46 tests in
-8.785 seconds. The global policy is now 201 lines, 1,118 words, and 8,443 bytes;
-this reduces lines by 58.4 percent, words by 52.4 percent, and bytes by 48.4
-percent. Eight lazy modules and fourteen agent TOMLs are packaged and active.
-The fourteen TOMLs comprise the approved eight defaults plus six Sol/high
-routing variants. Unsupported `display_name` metadata is absent.
-
-Managed and active owned files are byte-equivalent, except the active
-append-only audit log intentionally preserves additional local history. The
-targeted rollback manifest passed SHA-256 validation. Fresh Terra/medium and
-Sol/high sessions completed, and the final routing probe preserved the exact
-four-role chain, approvals, memory routing, and security escalation.
-
-Decision:
-ACCEPT
-
-Notes:
-Scope is limited to this repository and `/Users/iyilmaz/.codex`. Remote hosts,
-Hermes profiles, other projects, Dolphin, config, auth, secrets, and plugin
-state are excluded.
-No subagents were spawned during implementation. Static role selection and
-fresh noninteractive sessions were used for bounded runtime validation.
-
-## EXP-20260728-001 - Truthful Success Reporting
-
-Date: 2026-07-28
-Status: ACCEPTED
-
-Problem:
-The runtime rejects false-positive tests, but its general outcome reporting does
-not define a shared status-to-success contract. An agent could therefore report
-an unexecuted or unverified task as successful.
-
-Evidence:
-The global runtime policies require honesty, and the TDD and reviewer contracts
-reject hardcoded success, skipped tests, and swallowed errors. They do not yet
-define `passed`, `failed`, `unverified`, and `not_executed` or constrain
-`success=true` to verified execution evidence.
-
-Hypothesis:
-A short global reporting rule, enforced by source and portable-install contract
-tests, will prevent unsupported success claims without changing normal
-conversation or adding a mandatory output format.
-
-Solution Attempt:
-Add the same minimal outcome-reporting contract to the Codex global template,
-the Codex runtime variant, and the Dolphin runtime variant. Keep existing
-skills, agents, registries, dependencies, and orchestration behavior unchanged.
-
-Test:
-First add contract assertions that fail while the policy is absent. Then verify
-the three source policies, Codex mirror equality, portable Codex and Dolphin
-installations, the full regression suite, and the active runtime copy and
-rollback backup.
-
-Success Criteria:
-- Only `passed` may use `success=true`.
-- `passed` requires execution, inspected real output, satisfied criteria, no
-  remaining critical failure, and concrete evidence.
-- `failed`, `unverified`, and `not_executed` always use `success=false`.
-- The rule applies only to explicit task, operation, or test outcome reporting;
-  it does not impose JSON or status fields on ordinary conversation.
-- Both portable runtime variants contain the validated contract.
-- The full test suite passes before the active runtime is changed.
-- The active runtime update has a verified backup and checksum rollback path.
-
-Result:
-The initial RED run executed 10 focused tests and failed five assertions because
-the contract was absent. The first GREEN attempt still failed five assertions
-because one semantic marker crossed a Markdown line break; whitespace
-normalization fixed that test defect without removing any required marker.
-The final focused suite passed 10 tests in 1.375 seconds and the full suite
-passed 37 tests in 7.716 seconds. Codex mirror equality, portable Codex and
-Dolphin installation, and `git diff --check` passed. Independent code review
-returned `PASS`, and security review returned `NO_SECURITY_IMPACT`.
-
-The active `~/.codex/AGENTS.md` was backed up before replacement. The backup
-matched the prior SHA-256
-`34d846dc2db9c3d9f817da01bb4c199914ec243ff972220b0af07458340954ad`;
-the active file then matched the validated source SHA-256
-`882fc5dc6c62c59085a9da24ba279797e467d7301dcde9119cb1a16b2317cfe3`
-with mode `0644`.
-
-Decision:
-ACCEPT
-
-Notes:
-The user approved repository implementation and a verified, reversible update
-of the active local Codex policy. Commit, push, remote deployment, dependency,
-API, schema, skill, agent, and registry changes are outside scope.

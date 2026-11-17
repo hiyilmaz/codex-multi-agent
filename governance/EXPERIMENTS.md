@@ -2,6 +2,110 @@
 
 [Terminal experiment archive](EXPERIMENTS_ARCHIVE.md)
 
+## EXP-20261118-001 - MCP Tool Verification and Serena Project Context
+
+Date: 2026-11-18
+Status: ACCEPTED
+
+Problem: The DeepWiki manifest expects a tool name absent from the live server,
+and the Serena workflow does not require evidence of the active project path.
+
+Evidence: DeepWiki `tools/list` returned `ask_wiki_question`, and its
+`read_wiki_structure` call returned content. Serena reported the CMA project
+as active while the requested symbol check targets `ektrun`.
+
+Hypothesis: Aligning the manifest and reporting the failing MCP stage will
+make the health check diagnostic. Confirming the active absolute project path
+before symbol lookups will prevent queries against the wrong project.
+
+Solution Attempt: Update the manifest and read-only check diagnostics. Add
+the same on-demand project verification workflow to the Serena skill and its
+tracked projections.
+
+Test: Exercise tool discovery, the functional call, and their failure paths.
+Verify the Serena skill projections and run the `businessDate` lookup in a
+separate Serena session on `ektrun`.
+
+Success Criteria: The check reports a healthy DeepWiki only after the live
+read-only call and explains failures. Serena confirms the exact project path
+before returning the symbol location.
+
+Result: The new tests failed against the previous manifest, health output,
+and Serena instructions. The installer suite passed 78 tests. The repository
+suite reported 436 tests with 1 skipped because it requires a root process.
+`bin/cma-tools check` exited 0 with 11 healthy tools and preserved Codex
+settings. An isolated Serena 1.7.0 session reported the
+invalid-path reason, confirmed the absolute `ektrun` path after activation,
+and located `businessDate` at `src/domain/rules.ts:3`. Serena created project-local
+configuration and symbol cache files under `.serena`. The queried source file's
+checksum matched before and after the lookup. Code and security reviews closed
+with no blocking findings.
+
+Decision: ACCEPT
+
+## EXP-20261006-001 - Native Grok CMA Variant
+
+Date: 2026-10-06
+Status: ACCEPTED
+
+Problem:
+Grok is not a catalog variant, and its native CMA asset discovery and
+preservation behavior have not been verified against the installed CLI.
+
+Evidence:
+The catalog contains Codex, Claude, and OpenCode. Installed Grok is 0.2.39.
+An isolated inspection discovers Grok agents/project config as well as external
+compatibility assets; instruction paths can use case and filesystem aliases.
+
+Hypothesis:
+A Grok-native projection of approved CMA assets, combined with additive project
+integration and a preservation-first activator, will provide discoverable CMA
+instructions, agents, and skills without altering existing settings or identity.
+
+Solution Attempt:
+Add one native Grok variant with no provider/model pins, a GROK_HOME launcher,
+and safe activation that treats configuration and authentication as opaque.
+
+Test:
+Capture test-first RED, focused and lifecycle regression tests, independent code
+and security review, and redacted real CLI inspect metadata after activation.
+
+Success Criteria:
+- Catalog/setup/init/upgrade support Grok and preserve existing project files.
+- Activation rejects unsafe paths/conflicts and is idempotent and recoverable.
+- Existing native settings, identity, and unrelated assets remain byte-identical.
+- Installed CLI discovers the packaged policy, eight agents, and workflow skills.
+- No model request, authentication change, or dependency installation occurs.
+
+Result:
+Initial RED ran 24 tests against the absent implementation. Focused final
+verification passed 29 tests, including meaningful FIFO, fsync, staging-cleanup,
+conflict, preservation, idempotence, and concurrent-edit rollback checks.
+The final full suite ran 435 tests: 434 passed and one existing environment test
+was skipped. New activator statement coverage is 89%; Python/Bash/TOML syntax
+and diff checks passed. Code and security reviewers returned PASS after a
+post-link cleanup blocker was reproduced and fixed.
+Temporary real CLI inspection verified four coexisting project variants. Native
+activation created 42 private assets, preserved all 3,745 pre-existing files or
+links and 1,470 directory modes, and recorded a private recovery manifest.
+Grok 0.2.39 inspection discovered the native policy, eight roles, and four
+workflow skills from their expected sources. Reinstallation created zero files
+and no backup. No model call, login, dependency installation, or model/provider
+change was performed.
+
+Decision:
+ACCEPT
+
+Notes:
+The user approved the disclosed plan and chain. This experiment is triggered by
+new runtime governance and unresolved native-discovery evidence, not by the
+expected absence of a new feature. Existing records are preserved in full;
+terminal transition triggers record-archive. Inspection lists an additional
+existing ECC plugin tdd-workflow entry; validation matches name and source
+without collapsing duplicate names. Vendor compatibility assets were preserved.
+Runtime skill selection and tool-permission enforcement remain unverified and
+are outside the approved no-model-call validation scope.
+
 ## EXP-20260831-001 - ALM-MILA01 Private Egress Isolation
 
 Date: 2026-08-31
@@ -66,383 +170,6 @@ The initial IPv6 mechanism was revised rather than accepted on partial
 evidence. Root-only pre-change UFW backups remain available for recovery.
 Hermes, Telegram, model-provider configuration, static addressing, DHCP
 reservation, and ESXi autostart remain outside this experiment.
-
-## EXP-20260827-004 - ESXi Native Tools Media Alias Validation
-
-Date: 2026-08-27
-Status: ACCEPTED
-
-Problem:
-The first native VMware Tools mount succeeded on `ALM-OFF-DC01`, but the
-fail-closed validator rejected the ESXi-reported backing
-`[] /usr/lib/vmware/isoimages/windows.iso` because it expected a ProductLocker
-path literal.
-
-Evidence:
-`vim-cmd vmsvc/tools.install 6` returned success, the VM remained Powered On
-with an unchanged boot time, the Evaluation ISO disappeared from its device
-backing, and the CD/DVD became connected to the ESXi system ISO path. The
-validator then stopped before touching `ALM-LAB-DC01`.
-
-Hypothesis:
-On this ESXi 8.0 U2 host, `/usr/lib/vmware/isoimages/windows.iso` is the native
-alias for the same VMware Tools media stored under ProductLocker. Verifying
-path resolution and content identity will allow the validator to recognize the
-native backing without weakening it to arbitrary ISO paths.
-
-Solution Attempt:
-Resolve the ESXi-reported system ISO and ProductLocker paths read-only, compare
-their file identity or SHA-256, then accept only that exact verified native
-alias for the completed first-VM check and the second native mount.
-
-Test:
-Require either equal file identity plus canonical path resolution or equal
-SHA-256 values for the ESXi system ISO and ProductLocker Windows Tools ISO.
-Then require unchanged target hardware/network and normalized Lab integrity
-before performing the same native Tools mount on VMID 7. Verify both final
-CD/DVD backings match the exact verified native path and no Evaluation ISO
-remains attached.
-
-Success Criteria:
-- The ESXi system ISO is proven identical to the ProductLocker Windows Tools
-  ISO by canonical resolution and inode identity; the ProductLocker hash is
-  captured while the file is readable.
-- Both DC VMs remain Powered On without a boot-time change.
-- Both CD/DVD devices are connected only to the verified native Tools media.
-- Disk, CPU, RAM, NIC, snapshot, isolation, and normalized Lab fields remain
-  unchanged.
-
-Result:
-The ESXi system path and ProductLocker path both reported inode `16779972`, and
-the system alias resolved directly to the ProductLocker datastore object. A
-second hash read was unavailable while the ISO was mounted because ESXi
-returned `Device or resource busy`; the pre-mount ProductLocker SHA-256 remains
-`532a3edf4faccdc93355c9810385c320d152ce8cf5ebed35a8bd45c4ce90029b`.
-The revised exact-alias validator then accepted VMID 6 without retrying its
-native mount, and VMID 7 completed the same native operation successfully.
-Both VMs remained Powered On with unchanged boot times, reported
-`toolsInstallerMounted=true`, and connected only to
-`[] /usr/lib/vmware/isoimages/windows.iso`. The Evaluation ISO remained on the
-datastore but was absent from both devices. CPU, RAM, thin disks, single-NIC
-port-group mappings, snapshots, and normalized Lab integrity were unchanged.
-Independent code review passed and security review reported no security impact.
-
-Decision:
-ACCEPT
-
-Notes:
-No retry is permitted on VMID 6; its actual state is read back instead. The
-experiment does not authorize guest operations, VMX edits, reboot, shutdown,
-network changes, or ISO file changes. The validator revision accepts only the
-exact same-inode canonical ESXi alias, not arbitrary ISO paths.
-
-## EXP-20260827-003 - ESXi HW21 PCI Root Bridge Repair
-
-Date: 2026-08-27
-Status: ACCEPTED
-
-Problem:
-Both new Windows Server HW21/UEFI VM shells fail Power On because ESXi cannot
-allocate a PCIe slot for `scsi0`.
-
-Evidence:
-Both target VMX files omit the secondary PCI root-bridge topology, expose only
-generic bus-slot data for SCSI and NIC devices, and log `No PCIe slot available
-for SCSI0`, PCI SCSI allocation failure, and `DevicePowerOn` failure. A healthy
-read-only HW21/UEFI reference on the same host contains the standard
-`pciBridge0` and `pciBridge1` root-bridge structure.
-
-Hypothesis:
-Adding only the verified `pciBridge0/1` root-bridge structure and removing the
-three failed-attempt slot values will let ESXi assign native, collision-free
-PCI slots without changing either VM's disk, controller, NIC, or network.
-
-Solution Attempt:
-After a normalized Lab integrity gate and per-VM hash-verified VMX backups, add
-the six verified bridge fields, remove only `scsi0.pciSlotNumber`,
-`ethernet0.pciSlotNumber`, and `sata0.pciSlotNumber`, reload each powered-off
-VM, and allow ESXi to assign supported slots during controlled Power On.
-
-Test:
-Require an exact allowlisted VMX diff, then test one target VM at a time. Verify
-successful Power On, actual Powered On state, no new DevicePowerOn/PCI/SCSI
-error in the test log window, valid device slot assignments, preserved disk and
-single-NIC network mappings, successful Power Off, and unchanged normalized
-Lab integrity before proceeding to the second VM.
-
-Success Criteria:
-- Each backup matches its pre-fix VMX hash and is protected with mode `0600`.
-- Only the approved bridge and failed-slot fields change before Power On.
-- Both VM hardware-start tests complete without DevicePowerOn, PCI, or SCSI
-  configuration errors.
-- Both targets finish Powered Off with their original disk and network mapping.
-- The normalized Lab integrity signature remains unchanged throughout.
-
-Result:
-Both VMX backups matched their pre-fix SHA-256 values and were stored as
-`root:root` mode `0600`. Exact pre-power diffs contained only the six verified
-root-bridge additions and removal of the three failed-attempt slot values.
-Separate Power On tasks returned success and each VM reached Powered On; the
-fresh rotated `vmware.log` window for each test contained no DevicePowerOn,
-PCI allocation, or SCSI configuration error. ESXi assigned `scsi0=32`,
-`ethernet0=33`, and `sata0=34`, then both Power Off tasks succeeded and the VMs
-finished Powered Off. The 100 GiB thin LSI SAS disks, single VMXNET3 mappings,
-empty CD backing, and normalized Lab signature remained unchanged. Independent
-code review passed and security review reported no security impact.
-
-Decision:
-ACCEPT
-
-Notes:
-Scope is limited to the two new DC VMX files. Production VMs, VMDKs, network
-configuration, ISO media, guest installation, routing, NAT, and bridging are
-excluded.
-
-## EXP-20260827-002 - ESXi Large Datastore Capacity Gate
-
-Date: 2026-08-27
-Status: ACCEPTED
-
-Problem:
-The Phase 2 fail-closed precondition rejected a datastore with approximately
-2.53 TB free before any VM write occurred.
-
-Evidence:
-The read-only pre-check reported `2532764024832` free bytes, while the remote
-BusyBox integer `test` comparison against `322122547200` returned false. The
-mutation script stopped at `final-preconditions`; both target VM names and
-datastore paths were absent before the attempt.
-
-Hypothesis:
-ESXi BusyBox integer comparison overflowed or cannot reliably represent these
-large byte values; an `awk` numeric comparison will evaluate the same captured
-values correctly without weakening the 300 GiB safety threshold.
-
-Solution Attempt:
-Change only the datastore capacity predicate from shell integer `test` to an
-`awk` numeric comparison. Keep the threshold, all other fail-closed gates, VM
-specifications, and Lab integrity checks unchanged.
-
-Test:
-Reconfirm both target names and paths are absent, print the live free-byte
-value, prove the 300 GiB predicate with `awk`, then rerun the unchanged Phase 2
-workflow with normalized Lab checks before and after every write.
-
-Success Criteria:
-- The live free-byte value is at least 322122547200 according to `awk`.
-- No pre-existing or partial target VM object is adopted or overwritten.
-- Both requested VM shells pass independent hardware and isolation read-back.
-- The normalized Lab baseline remains identical throughout the workflow.
-
-Result:
-The live value `2532764024832` passed the unchanged 300 GiB threshold when
-evaluated with `awk`. Both target names and paths were still absent before the
-retry. The workflow then created `ALM-OFF-DC01` and `ALM-LAB-DC01` as Powered
-Off Windows Server 2022 x64 VM shells. Independent read-back confirmed 2 vCPU,
-8192 MB RAM, UEFI, one LSI SAS controller, one 100 GiB thin disk, one VMXNET3
-NIC on the assigned single port group, and no CD-ROM, ISO, or snapshot. The
-normalized Lab pre/post SHA-256 remained
-`35983b18a32e5f91586efee0f6728f802db2d8cdb750918834fa0f2512a42b83`.
-Code review passed and security review reported no security impact.
-
-Decision:
-ACCEPT
-
-Notes:
-The first attempt made no remote write, so no rollback or cleanup was required.
-Later validation false negatives for the empty snapshot representation and
-case-sensitive API field names stopped fail-closed and were corrected from
-read-only host evidence without destructive cleanup.
-
-## EXP-20260827-001 - ESXi Lab Integrity Normalization
-
-Date: 2026-08-27
-Status: ACCEPTED
-
-Problem:
-The first Office vSwitch attempt stopped after a raw Lab signature comparison
-reported a difference even though the printed critical Lab configuration fields
-were unchanged.
-
-Evidence:
-The attempt created only an empty `vSwitch-OFFICE`, stopped before uplink and
-port-group changes, proved zero consumers, removed that run-owned switch, and
-reverified `vmnic0`, `vSwitch0`, `vmk0`, and the four Shimadzu VM network
-mappings. Code and security review found no Lab impact.
-
-Hypothesis:
-Comparing only normalized, sorted, persistent configuration fields will reject
-real Lab changes without treating ordering, counters, object IDs, timestamps,
-or other runtime metadata as configuration drift.
-
-Solution Attempt:
-Create a normalized baseline for the approved critical fields, apply only
-`vmnic1 -> vSwitch-OFFICE -> PG-OFFICE` with VLAN 0 and no VMkernel, then run
-the same normalized comparison after every write and at final verification.
-
-Test:
-Require pre-change target absence, `vmnic0` and `vmnic1` link gates, normalized
-Lab baseline stability, exact Office topology read-back, no Office VMkernel or
-VM consumer, and deterministic Office-only rollback on any real Lab mismatch.
-
-Success Criteria:
-- Critical Lab fields compare identically before and after every write.
-- `vSwitch-OFFICE` has MTU 1500 and only `vmnic1` as uplink.
-- `PG-OFFICE` exists only on that switch with VLAN ID 0.
-- No VMkernel or VM is attached to the Office topology.
-- `DEFERRED-NET-001` remains open for the accepted 100 Mbps link.
-- Independent code and security reviews find no blocking issue.
-
-Result:
-The normalized pre-change and post-change Lab snapshots matched exactly for
-every approved critical field. Live read-back confirmed `vSwitch-OFFICE` with
-MTU 1500 and only `vmnic1`, plus `PG-OFFICE` with VLAN ID 0 and zero active
-clients. No Office VMkernel or VM consumer exists. All four Shimadzu VMs
-remained powered on with their original `VM Network` mappings, and the
-independent post-check found no new Lab network log event. Independent code
-review passed and security review reported no security impact. The signed
-reference captures are retained on `VM_DATASTORE/ADMIN-BACKUP` with SHA-256
-digests `56331e2408dbb59ab5beb41e4eb6262ebac33715b4372ae0514b9a7ab90e5ae2`
-and `75767a39537110d4ad8d09dc5a7f465457caee4b91fc905475ddbad0238df5f4`.
-
-Decision:
-ACCEPT
-
-Notes:
-The experiment does not authorize VM, guest, ISO, routing, NAT, bridge, Lab
-network, or physical-link changes.
-
-## EXP-20260821-001 - Context7 General Setup And Node 22 Preflight
-
-Date: 2026-08-21
-Status: ACCEPTED
-
-Problem:
-The CMA general setup does not run Context7's official multi-agent setup flow,
-and mutating setup entry points do not fail closed when Node.js is older than
-the required major version 22.
-
-Evidence:
-The current `bin/codex-setup` completes without invoking `npx ctx7 setup`, and
-neither it nor `bin/codex-user-install` validates Node.js or `npx` before
-runtime mutations. A real Context7 setup configured MCP, rules, and skills for
-Claude Code, OpenCode, and Codex under the process user's global home.
-
-Hypothesis:
-An early Node.js 22 and `npx` preflight on mutating entry points, followed by an
-explicit default-yes `npx ctx7 setup` step at the end of the general wizard,
-will provide the requested multi-agent Context7 setup without leaking
-credentials or reporting false completion.
-
-Solution Attempt:
-Add equivalent fail-closed runtime preflights to `codex-setup` and
-`codex-user-install`, preserve read-only help and variant listing without the
-preflight, and let the Context7 CLI exclusively own its interactive
-authentication and global configuration flow.
-
-Test:
-Capture RED and GREEN with real setup scripts and hermetic fake `node` and
-`npx` executables. Cover missing, malformed, too-old, boundary, and newer Node
-versions; missing `npx`; exact unpinned Context7 argv; explicit skip; exact
-failure propagation; secret-free argv/output; custom runtime HOME behavior;
-focused regressions; shell syntax; diff checks; and the full repository suite.
-
-Success Criteria:
-- Node.js below 22, malformed versions, missing Node.js, and missing `npx` fail
-  before runtime or network mutation.
-- Node.js 22 and newer allow mutating setup flows to continue.
-- Read-only help and variant listing remain available without Node.js or `npx`.
-- The accepted Context7 step invokes exactly `npx ctx7 setup` once; an explicit
-  rejection invokes nothing.
-- Context7 failures preserve their exit status and suppress CMA completion.
-- CMA never adds the Context7 API key or token value to argv or its own output.
-- Focused and full regression suites pass without real network access.
-
-Result:
-The pre-change focused suite produced meaningful RED: Node.js below 22,
-malformed versions, missing Node.js, and missing `npx` did not stop mutation;
-`codex-setup --list-variants` was unavailable; no Context7 command or exit
-propagation occurred; and the required documentation was absent. After the
-implementation, the new focused suite passed 8/8, variant-install regressions
-passed 31/31, codex-tools integration regressions passed 7/7, and shell syntax
-validation passed. The first full regression passed 397/397. Code review then
-found that a valid-looking Node version printed by a failing `node --version`
-process was accepted because its exit status was swallowed. A dedicated RED
-reproduced the false continuation. The revised preflight now treats that exit
-status as terminal; the focused suite passes 9/9 and the full regression passes
-398/398. Code re-review passed after the fix. Security review passed with no blocking
-finding and retained the explicitly accepted risks of unpinned remote `npx`
-execution, user-controlled `PATH` resolution, and no transactional rollback for
-third-party partial writes. ShellCheck was unavailable; Bash syntax validation
-passed instead. The record archive regression passed 19/19, the focused suite
-remained 9/9, and the post-archive check reported every managed record below
-its compaction threshold.
-
-Decision:
-ACCEPT
-
-Notes:
-The Context7 command remains interactive and unpinned by explicit user request.
-It targets the process user's global agent locations even when CMA uses a
-custom runtime home. CMA does not install Node.js or modify shell profiles.
-
-## EXP-20260818-001 - Cross-Platform Atomic Rename
-
-Date: 2026-08-18
-Status: ACCEPTED
-
-Problem:
-The native Codex activator uses Darwin-only `renameatx_np`, so its fail-closed
-atomic publication path is unavailable on Linux and blocks CMA activation.
-
-Evidence:
-On blockmanpro Ubuntu 24.04 x86_64, libc exposes `renameat2` but not
-`renameatx_np`; the full repository suite ran 385 tests with 13 failures and
-5 errors rooted in `atomic_rename_unavailable`.
-
-Hypothesis:
-Dispatching the existing exclusive-publish and atomic-exchange semantics to
-Darwin `renameatx_np` or Linux `renameat2`, with platform-specific flags, will
-restore Linux activation without weakening no-overwrite, descriptor anchoring,
-rollback, or cleanup guarantees.
-
-Solution Attempt:
-Introduce an explicit semantic-to-platform syscall adapter: Darwin uses
-`RENAME_EXCL=4` and `RENAME_SWAP=2`; Linux uses `RENAME_NOREPLACE=1` and
-`RENAME_EXCHANGE=2`. Unsupported platforms, symbols, semantics, or kernel and
-filesystem support remain fail-closed without a plain rename fallback.
-
-Test:
-Capture RED for Linux symbol and flag dispatch before implementation; then run
-platform/errno/fallback unit tests, real-host atomic publish/no-overwrite tests,
-the focused native-activation suite, Python compilation, whitespace checks,
-and the full repository suite. Re-run the focused and full suites on
-blockmanpro after separately approved deployment.
-
-Success Criteria:
-- Darwin and Linux select their correct libc symbol and exact flags.
-- Both source and target remain anchored to the supplied directory FD.
-- Existing targets are never overwritten and staging files are cleaned.
-- Missing or unsupported atomic operations fail closed without fallback.
-- Race, rollback, cleanup, and idempotency regressions remain green.
-- The Ubuntu focused and 385-test full suites pass without skips.
-
-Result:
-The pre-change focused suite produced the required RED with exit 1: Linux
-dispatch attempted no `renameat2` call and raised `atomic_rename_unavailable`;
-unsupported syscall and semantic cases also failed. The platform adapter then
-passed all 23 focused native-activation tests. Python compilation and
-`git diff --check` passed, the full repository suite passed 389/389, and
-focused branch coverage for the activator measured 82 percent. Darwin real-host
-publication remained idempotent, preserved descriptor anchoring, rejected an
-existing target, and left no hidden staging artifact. Commit `85e0412` was then
-pushed to both the working branch and `main` and fast-forwarded into the clean
-blockmanpro repository. On Ubuntu 24.04 x86_64, the real `renameat2` focused
-suite passed 23/23 and the full repository suite passed 389/389, both with exit
-0. Independent code and security reviews found no blocking issue.
-
-Decision:
-ACCEPT
 
 ## EXP-20260811-007 - Native TDD Simplification Evaluation
 
@@ -572,63 +299,6 @@ REVISE
 Notes:
 This experiment addresses only stdin continuation after the already completed
 approved package transaction.
-
-## EXP-20260828-001 - AD DS Functional Level Enum Compatibility
-
-Date: 2026-08-28
-Status: ACCEPTED
-
-Problem:
-The first `Install-ADDSForest` invocation stopped before requesting the DSRM
-password because the Windows Server 2022 ADDSDeployment module rejected
-`Win2016` as a `ForestMode` value.
-
-Evidence:
-The live PowerShell parameter-binding error listed the accepted enum values as
-`Win2008`, `Win2008R2`, `Win2012`, `Win2012R2`, `WinThreshold`, and `Default`.
-No forest or domain was created, and no DSRM credential was entered.
-
-Hypothesis:
-On this Windows Server 2022 build, `WinThreshold` is the module's enum name for
-the Windows Server 2016 forest and domain functional level requested by the
-approved design.
-
-Solution Attempt:
-Change only `ForestMode` and `DomainMode` from `Win2016` to `WinThreshold` in
-the otherwise unchanged `Install-ADDSForest` invocation.
-
-Test:
-Require the revised command to accept both functional-level parameters and
-reach the interactive DSRM password prompt without creating a forest first.
-After user-controlled credential entry and promotion, verify the resulting
-forest and domain modes report Windows Server 2016.
-
-Success Criteria:
-- The revised invocation reaches the DSRM password prompt without a parameter
-  binding error.
-- The user alone enters and confirms the DSRM password and approves promotion.
-- Post-promotion `Get-ADForest` and `Get-ADDomain` report Windows Server 2016
-  functional levels.
-- No Lab or Shimadzu critical field changes.
-
-Result:
-The revised invocation accepted `WinThreshold`, reached the interactive DSRM
-credential prompts, and completed promotion after the user alone entered and
-confirmed the secret. Post-promotion inspection reported
-`Windows2016Forest` and `Windows2016Domain`; the writable DC is a Global
-Catalog with AD DS, DNS, Netlogon, KDC, and DFSR running. SYSVOL and NETLOGON
-are shared, the domain and `_msdcs` zones and required SRV records are
-present, and the single-DC `dcdiag` and `repadmin` checks found no blocking
-error. The DNS client now uses only `192.168.1.10`. Normalized ESXi and
-Shimadzu critical fields remained unchanged.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment changes only the ADDSDeployment functional-level enum spelling;
-it does not authorize changes to IP, routing, firewall, ALM-LAB-DC01, or any
-Lab/Shimadzu system.
 
 ## EXP-20260828-002 - RDP Keyboard-Safe PowerShell Command Delivery
 

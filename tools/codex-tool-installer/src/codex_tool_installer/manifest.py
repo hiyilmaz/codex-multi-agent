@@ -33,7 +33,7 @@ TOOL_MANIFEST = {
     "cplt": _cli("cplt", "cplt", ("brew", "install", "navikt/tap/cplt"), ("internal-github-release", "navikt/cplt", "cplt")),
     "deepwiki": ToolDefinition(
         "deepwiki", "mcp", None, ALL_PLATFORMS, (("codex", "mcp", "get", "deepwiki"),),
-        mcp={"url": "https://mcp.deepwiki.com/mcp", "expected_tools": ("ask_question", "read_wiki_contents", "read_wiki_structure"), "functional_calls": (("read_wiki_structure", {"repoName": "openai/codex"}),)},
+        mcp={"url": "https://mcp.deepwiki.com/mcp", "expected_tools": ("ask_wiki_question", "read_wiki_contents", "read_wiki_structure"), "functional_calls": (("read_wiki_structure", {"repoName": "openai/codex"}),)},
     ),
     "github": ToolDefinition(
         "github", "mcp", None, ALL_PLATFORMS, (("codex", "mcp", "get", "github"),),

@@ -47,21 +47,29 @@ class CodexVisibleMcpClient:
 def verify_mcp(definition: ToolDefinition, client: CodexMcpClient, credential_available: bool = True) -> ToolHealth:
     if definition.credential_env and not credential_available:
         return ToolHealth(definition.name, Status.AUTH_REQUIRED, f"{definition.credential_env} unavailable")
+    failure_stage = "Codex MCP visibility check failed"
     try:
         if not client.visible(definition.name):
             return ToolHealth(definition.name, Status.INVALID_CONFIG, "Codex cannot load MCP")
+        failure_stage = "MCP connection or tools/list failed"
         actual = set(client.tools(definition.name))
         expected = set(definition.mcp.get("expected_tools", ())) if definition.mcp else set()
         functional_calls = definition.mcp.get("functional_calls", ()) if definition.mcp else ()
-        if expected and not expected.issubset(actual):
-            return ToolHealth(definition.name, Status.BROKEN, "Upstream MCP tool names changed; expected=" + ",".join(sorted(expected)))
+        missing = expected - actual
+        if missing:
+            detail = (
+                f"Upstream MCP tool names changed; missing={','.join(sorted(missing))} "
+                f"expected={json.dumps(sorted(expected))} actual={json.dumps(sorted(actual))}"
+            )
+            return ToolHealth(definition.name, Status.BROKEN, detail)
         if not functional_calls:
             return ToolHealth(definition.name, Status.BROKEN, "No read-only functional validation defined")
         for tool, arguments in functional_calls:
             if any(word in tool.lower() for word in WRITE_WORDS):
                 return ToolHealth(definition.name, Status.FAILED, "Unsafe functional validation refused")
+            failure_stage = f"Read-only MCP validation failed: {tool}"
             if tool not in actual or not client.call_read_only(definition.name, tool, arguments):
-                return ToolHealth(definition.name, Status.BROKEN, f"Read-only MCP validation failed: {tool}")
+                return ToolHealth(definition.name, Status.BROKEN, failure_stage)
         return ToolHealth(definition.name, Status.HEALTHY)
     except Exception as exc:
-        return ToolHealth(definition.name, Status.BROKEN, f"MCP validation failed: {exc.__class__.__name__}")
+        return ToolHealth(definition.name, Status.BROKEN, f"{failure_stage}: {exc.__class__.__name__}")

@@ -43,6 +43,28 @@ def expected_surfaces() -> list[Path]:
 
 
 class LocalIntelligenceCoreSkillTests(unittest.TestCase):
+    def test_serena_verifies_project_context_before_symbol_lookup(self) -> None:
+        paths = (
+            ROOT / "core-skills/skills/serena/SKILL.md",
+            *(ROOT / f"core-skills/projections/{platform}/serena/SKILL.md" for platform in PLATFORMS),
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                workflow = path.read_text(encoding="utf-8").split("## Workflow\n", 1)[1].split("## Stop Conditions", 1)[0]
+                steps = (
+                    "absolute project root",
+                    "`get_current_config`",
+                    "`No active project` error",
+                    "`activate_project`",
+                    "recheck the active project",
+                    "report the reason and stop",
+                    "Locate its definition",
+                )
+                for step in steps:
+                    self.assertIn(step, workflow)
+                positions = [workflow.index(step) for step in steps]
+                self.assertEqual(sorted(positions), positions)
+
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.temp = Path(self.temporary.name)

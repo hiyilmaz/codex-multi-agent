@@ -50,7 +50,7 @@ class ConcurrentConfigEditTransport:
 class HealthyDeepwikiTransport:
     def request(self, name, method, params, environ):
         if method == "tools/list":
-            return {"tools": [{"name": item} for item in ("ask_question", "read_wiki_contents", "read_wiki_structure")]}
+            return {"tools": [{"name": item} for item in ("ask_wiki_question", "read_wiki_contents", "read_wiki_structure")]}
         return {"content": [{"type": "text", "text": "ok"}]}
 
 
@@ -62,7 +62,7 @@ class SelectiveMcpTransport:
         if name in self.broken:
             return {"tools": []} if method == "tools/list" else {"isError": True}
         tools = {
-            "deepwiki": ("ask_question", "read_wiki_contents", "read_wiki_structure"),
+            "deepwiki": ("ask_wiki_question", "read_wiki_contents", "read_wiki_structure"),
             "github": ("search_repositories",),
             "context7": ("resolve-library-id", "query-docs"),
         }
@@ -88,6 +88,27 @@ class ConfigEditingPrompt(Prompt):
 
 
 class CliJourneyTests(unittest.TestCase):
+    def test_verify_only_check_reports_deepwiki_failure_without_mutating_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / "config.toml"
+            original = b'[mcp_servers.deepwiki]\nurl = "https://mcp.deepwiki.com/mcp"\n'
+            config.write_bytes(original)
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = main(
+                    ["--mcp-mode", "verify-only", "--codex-home", str(root), "check"],
+                    environ={"HOME": str(root), "PATH": ""},
+                    platform_facts={"system": "Linux", "distribution": "Ubuntu", "version": "24.04", "machine": "x86_64"},
+                    runner=ConfiguredRunner(),
+                    connectivity_probe=lambda: True,
+                    mcp_transport=BrokenTransport(),
+                )
+            self.assertEqual(1, code)
+            self.assertEqual(original, config.read_bytes())
+            self.assertIn("DeepWiki: Upstream MCP tool names changed; missing=ask_wiki_question", output.getvalue())
+            self.assertIn("actual=[]", output.getvalue())
+
     def test_default_manage_changes_config_and_reports_not_preserved_then_is_idempotent(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -37,11 +37,11 @@ class VariantInstallTests(unittest.TestCase):
             self.assertTrue((home / variant["policy_file"]).is_file())
             self.assertTrue((home / variant["settings_file"]).is_file())
 
-    def test_catalog_registers_three_complete_unique_variants(self) -> None:
+    def test_catalog_registers_four_complete_unique_variants(self) -> None:
         variants = self.variants()
         self.assertEqual(
             [item["id"] for item in variants],
-            ["codex", "claude", "opencode"],
+            ["codex", "claude", "opencode", "grok"],
         )
         self.assertEqual(len({item["id"] for item in variants}), len(variants))
         required = {"name", "home", "default_home", "policy_file", "settings_file", "agent_format"}
@@ -73,7 +73,7 @@ class VariantInstallTests(unittest.TestCase):
                 (str(SETUP),),
                 cwd=REPO_ROOT,
                 env=environment,
-                input="y\n\ny\nn\n\ny\nn\n\ny\nn\nn\n\n\n\n\nn\n",
+                input="y\n" + "\ny\nn\n" * len(self.variants()) + "n\n\n\n\n\nn\n",
                 text=True,
                 capture_output=True,
                 check=False,
@@ -99,7 +99,7 @@ class VariantInstallTests(unittest.TestCase):
                 (str(SETUP),),
                 cwd=REPO_ROOT,
                 env=environment,
-                input="n\ny\nn\ny\n\ny\nn\n\ny\nn\nn\n\n\n\n\nn\n",
+                input="n\n" + "".join("y\n" if v["id"] in {"codex", "opencode"} else "n\n" for v in self.variants()) + "\ny\nn\n" * 2 + "n\n\n\n\n\nn\n",
                 text=True,
                 capture_output=True,
                 check=False,

@@ -4,12 +4,89 @@
 
 ## Archive Index (Previous 30 Dates)
 
+- [2026-07-27](CHANGELOG_ARCHIVE.md#2026-07-27)
+- [2026-07-26](CHANGELOG_ARCHIVE.md#2026-07-26)
+- [2026-07-16](CHANGELOG_ARCHIVE.md#2026-07-16)
 - [2026-07-14](CHANGELOG_ARCHIVE.md#2026-07-14)
 - [2026-06-26](CHANGELOG_ARCHIVE.md#2026-06-26)
 - [2026-06-24](CHANGELOG_ARCHIVE.md#2026-06-24)
 - [2026-06-11](CHANGELOG_ARCHIVE.md#2026-06-11)
 - [2026-06-10](CHANGELOG_ARCHIVE.md#2026-06-10)
 - [2026-05-22](CHANGELOG_ARCHIVE.md#2026-05-22)
+
+## 2026-11-18
+
+- [FIX] EXP-20261118-001 aligned the DeepWiki manifest with the live
+  `ask_wiki_question` tool name and surfaced read-only MCP verification
+  failures in `cma-tools check`. The Serena skill and its tracked projections
+  now require active project path verification before the first symbol query
+  and report activation failures. A live query located `ektrun`'s `businessDate`.
+
+- [OPS] Completed only approved cleanup items 3, 5, 6, and 7 on `robonets1`:
+  Docker build cache, the inactive Codex daemon release
+  `0.168.0-x86_64-unknown-linux-musl`, archived journal files in the two
+  validated machine-ID directories, and `/root/.npm/_cacache` contents.
+  Revalidated exact paths, inactive process references, and the active
+  `current` release symlink before removal. Reclaimed 3,173,748,736 bytes;
+  available space rose from 733,724,672 to 3,907,473,408 bytes, with disk
+  utilization falling from 99% to 90%. Docker build cache is now zero.
+  All 29 Docker image references, container states, monitored service PIDs,
+  and 20 protected path identities remained unchanged. Preserved the active
+  Codex 0.169.0 release, browser installations, application databases, backups,
+  volumes, and unarchived journals. No services were restarted; no other
+  numbered candidates were cleaned.
+
+- [OPS] Cleared the six explicitly approved cache targets on `robonets1`:
+  Hermes uv and pnpm stores, the user uv and pip caches, the Codex remote
+  plugin catalog, and APT package archives. Verified no active process
+  references and no runtime symlinks in the inspected installation trees
+  before cleanup. Preserved cache root directories and confirmed all six
+  targets were empty afterward, apart from APT's empty lock and partial
+  directory. Used space decreased by 653,209,600 bytes; available space rose
+  from 16,523,264 to 669,732,864 bytes, with utilization still at 99%.
+  `apt-get clean` emptied the archives but exited 100 on the lists lock held
+  by a pre-existing, nearly five-day-old `apt-get update`; that process and
+  its locks were left untouched. Five Hermes gateways remained running and
+  `wg-easy` remained healthy. No services were restarted. Docker build cache,
+  browser installations, application data, and other candidates were not
+  cleaned.
+
+## 2026-11-12
+
+- [OPS] Completed the separately approved six-category log cleanup on
+  `grpvctr-s1`: truncated five exact log files in place and vacuumed archived
+  journals with native journalctl commands. Reclaimed 8,974,336,000 bytes;
+  disk utilization fell from 71% to 61%, with 33.17 GiB available. Preserved
+  container states, six service PIDs, file inodes, and active journals; no
+  services were restarted and no persistent logging settings were changed.
+  Updated the existing disk cleanup report with the new results and limits.
+
+- [OPS] Completed the explicitly approved disk cleanup on `grpvctr-s1`
+  (`2.27.101.231:11166`): removed four exact temporary test copies and cleared
+  Docker build, npm content, VS Code VSIX, and APT package caches. Used space
+  decreased by 21,206,855,680 bytes; disk utilization fell from 94% to 71%.
+  The same eight container IDs remained running. Preserved application data,
+  database volumes, rollback images, backups, and active logs. Saved the
+  remaining-candidate inventory and verification in
+  `docs/reports/2026-11-12-grpvctr-s1-disk-cleanup.md` and its HTML version.
+
+## 2026-10-06
+
+- [FEATURE] Added the native Grok Build CMA variant to catalog-driven setup,
+  portable installation, project initialization, and schema-2 upgrades. The
+  variant projects eight native Markdown roles, four workflow skills, ten core
+  skill instructions, modules, registry records, and a GROK_HOME launcher.
+  Native activation preflights managed paths, rejects conflicts and force,
+  preserves existing settings/identity/instructions, creates private recovery
+  manifests, and rolls back unchanged files owned by a failed attempt.
+  Grok project configs use restricted sections and sensitive diffs are redacted.
+  Discovery validation and independent reviews are tracked by
+  `EXP-20261006-001`. Focused tests passed 29/29; the full suite ran 435 tests
+  with 434 passes and one existing skip. Activator coverage reached 89%, both
+  mandatory reviews passed, and native discovery verified the expected CMA
+  sources on Grok 0.2.39. Existing 3,745 files/links and 1,470 directory modes
+  were preserved; repeated activation created no files. No model/provider
+  defaults or credentials were changed; no model request was made.
 
 ## 2026-08-31
 
@@ -773,48 +850,3 @@
   for verified status-to-success mappings.
 - [INFRA] EXP-20260728-001: Activated the validated Codex policy locally with a
   checksum-verified rollback backup.
-
-## 2026-07-27
-
-- [FEAT] EXP-20260727-002: Added event-driven `record-archive` automation for
-  Deferred Findings, experiments, and changelog records.
-- [FIX] EXP-20260727-002: Limited checks to sparse record transitions, retained
-  twenty full changelog dates plus thirty archive links, and preserved complete
-  history in archive files.
-- [FIX] EXP-20260727-002: Added legacy experiment and headerless changelog
-  compatibility with dirty-file, malformed-format, duplicate, and symlink
-  fail-closed protection.
-- [TEST] EXP-20260727-002: Added 16 archive contract tests, reached 87% script
-  coverage, and validated Codex, Dolphin, active runtime, and current
-  `yedekparcasor.com` record formats.
-- [FEAT] EXP-20260727-001: Added the conditional `hypothesis-workflow` skill to
-  Codex, Dolphin, and the active local global runtime.
-- [FIX] EXP-20260727-001: Kept routine first-pass work outside the experiment
-  flow and reused existing project changelog and evidence paths.
-- [TEST] EXP-20260727-001: Added activation, non-activation, test-integrity,
-  registry, and portable-install contract coverage.
-
-## 2026-07-26
-
-- [INFRA] Added full-project ZIP backups to Git ignore rules.
-- [FIX] Preserved the mandatory four-stage orchestration chain while adding
-  bounded handoffs, no-repeat rules, fast review exits, and false-completion
-  controls.
-- [INFRA] Changed the four mandatory Codex chain agents from `high` to `medium`
-  reasoning and synchronized the validated contract to the active runtime.
-- [TEST] Added orchestration contract coverage and verified 12 tests, 24 agent
-  TOML files, and temporary Codex and Dolphin installations.
-- [DOCS] Reviewed the mandatory orchestration chain, recorded current Codex and
-  community evidence, and added a proposed latency-reduction task list without
-  changing runtime or agent configuration.
-
-## 2026-07-16
-
-- [FIX] Updated all portable Codex custom subagent model overrides to
-  `gpt-5.6-sol`, preventing forced runtime refreshes from restoring `gpt-5.5`.
-- [TEST] Verified Codex and Dolphin agent models, a clean Codex variant install,
-  and the complete project upgrade regression suite.
-- [INFRA] Updated all active user-global custom subagent model overrides to
-  `gpt-5.6-sol` and archived the previous definitions.
-- [DOCS] Recorded the deferred risk that a future forced runtime refresh could
-  restore older subagent model overrides from the Codex variant template.

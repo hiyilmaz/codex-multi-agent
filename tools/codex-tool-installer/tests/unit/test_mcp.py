@@ -13,6 +13,8 @@ class Client:
 
 
 class McpTests(unittest.TestCase):
+    deepwiki_tools = ("ask_wiki_question", "read_wiki_contents", "read_wiki_structure")
+
     def test_credentials_and_codex_visibility_are_required(self):
         self.assertEqual(Status.AUTH_REQUIRED, verify_mcp(TOOL_MANIFEST["github"], Client(), False).status)
         self.assertEqual(Status.INVALID_CONFIG, verify_mcp(TOOL_MANIFEST["github"], Client(False), True).status)
@@ -25,9 +27,35 @@ class McpTests(unittest.TestCase):
         self.assertEqual(Status.BROKEN, verify_mcp(TOOL_MANIFEST["context7"], context).status)
 
     def test_deepwiki_renames_are_reported_without_false_pass(self):
-        state = verify_mcp(TOOL_MANIFEST["deepwiki"], Client(tools=("renamed",)))
+        client = Client(tools=("ask_question", *self.deepwiki_tools[1:]))
+        state = verify_mcp(TOOL_MANIFEST["deepwiki"], client)
         self.assertEqual(Status.BROKEN, state.status)
-        self.assertIn("changed", state.detail)
+        self.assertIn("missing=ask_wiki_question", state.detail)
+        self.assertIn('expected=["ask_wiki_question", "read_wiki_contents", "read_wiki_structure"]', state.detail)
+        self.assertIn('actual=["ask_question", "read_wiki_contents", "read_wiki_structure"]', state.detail)
+        self.assertEqual([], client.calls)
+
+    def test_deepwiki_connection_failure_identifies_the_list_stage(self):
+        class DisconnectedClient(Client):
+            def tools(self, name):
+                raise TimeoutError("private transport detail")
+
+        client = DisconnectedClient()
+        state = verify_mcp(TOOL_MANIFEST["deepwiki"], client)
+        self.assertEqual(Status.BROKEN, state.status)
+        self.assertIn("connection or tools/list failed: TimeoutError", state.detail)
+        self.assertNotIn("private transport detail", state.detail)
+        self.assertEqual([], client.calls)
+
+    def test_deepwiki_requires_a_successful_read_only_call(self):
+        for succeeds, status in ((True, Status.HEALTHY), (False, Status.BROKEN)):
+            with self.subTest(succeeds=succeeds):
+                client = Client(tools=self.deepwiki_tools, succeeds=succeeds)
+                state = verify_mcp(TOOL_MANIFEST["deepwiki"], client)
+                self.assertEqual(status, state.status)
+                self.assertEqual([("deepwiki", "read_wiki_structure", {"repoName": "openai/codex"})], client.calls)
+                if not succeeds:
+                    self.assertIn("Read-only MCP validation failed: read_wiki_structure", state.detail)
 
     def test_empty_functional_result_fails_closed(self):
         class EmptyClient(Client):

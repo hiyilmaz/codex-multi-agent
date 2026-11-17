@@ -54,6 +54,7 @@ install a specific runtime variant:
 bin/codex-user-install --variant codex
 bin/codex-user-install --variant claude
 bin/codex-user-install --variant opencode
+bin/codex-user-install --variant grok
 ```
 
 Template paths are rewritten during installation so installed configs and
@@ -70,6 +71,27 @@ Default runtime homes:
 - `codex`: `$HOME/.codex`
 - `claude`: `$HOME/.claude`
 - `opencode`: `$HOME/.config/opencode`
+- `grok`: `$HOME/.grok`
+
+For Grok, native activation preserves opaque settings/authentication and
+existing instructions. It installs approved CMA agents, workflow/core skill
+instructions, and modules additively; conflicts fail before mutation. New files
+are private and have a recovery manifest under `~/.grok/backups/`. Existing
+instructions get a private snapshot and read-only merge prompt. `--force` is
+rejected. Tool instructions do not provision their MCP dependencies.
+
+```bash
+~/.grok/bin/llm-grok inspect --json
+bin/codex-project-init --variant grok /absolute/project/path
+bin/codex-project-upgrade --dry-run --variant grok /absolute/project/path
+```
+
+The Grok launcher sets its installed `GROK_HOME` and passes `--no-auto-update`.
+Native vendor compatibility paths can still be discovered. Inspect source paths
+rather than assuming isolation. Global settings belong in `~/.grok/config.toml`;
+project `.grok/config.toml` supports only MCP/plugin/permission settings. Grok
+reuses shared `AGENTS.md`, and additive init preserves existing project files.
+No model request or login is needed for installation and discovery verification.
 
 For Claude, the launcher is installed inside the runtime home:
 

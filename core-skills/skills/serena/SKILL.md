@@ -38,10 +38,12 @@ Use Serena for symbols, definitions, references, and refactor radius as one prim
 
 ## Workflow
 
-1. Resolve the smallest unambiguous symbol identity.
-2. Locate its definition and only the references needed for the question.
-3. Bound and summarize the refactor radius when requested.
-4. Stop when the symbol evidence and provenance requirements are satisfied.
+1. Before the first symbol or reference query, resolve the task's absolute project root and call `get_current_config`. Use the active-project path from Serena's session instructions if the config reports only a name and the session has not switched projects. Treat a `No active project` error as missing context.
+2. If the active path is missing or differs from the target, call `activate_project` with the task's absolute project root when the task authorizes activation. A first activation can create Serena project files. Get authorization for that side effect if the task has not already authorized it.
+3. After activation, recheck the active project with `get_current_config`. If it reports only a name, require the activation result to confirm the exact absolute path and the config to confirm the same active project. If inspection or activation fails or the exact path still cannot be verified, report the reason and stop before querying symbols or references.
+4. Resolve the smallest unambiguous symbol identity. Locate its definition and only the references needed for the question.
+5. Bound and summarize the refactor radius when requested.
+6. Stop when the symbol evidence and provenance requirements are satisfied.
 
 ## Stop Conditions
 
@@ -53,6 +55,7 @@ Use Serena for symbols, definitions, references, and refactor radius as one prim
 ## Output Contract
 
 - Report the tool availability, symbol identity, definition location, bounded reference scope, and relevant locations.
+- Report the verified active project path or the reason project verification failed.
 - Distinguish confirmed symbol results from ambiguity and state limitations.
 - Use truthful status and success fields.
 

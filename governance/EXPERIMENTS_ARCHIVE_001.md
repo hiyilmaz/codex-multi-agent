@@ -2,6 +2,440 @@
 
 [Back to active experiments](EXPERIMENTS.md)
 
+## EXP-20260827-004 - ESXi Native Tools Media Alias Validation
+
+Date: 2026-08-27
+Status: ACCEPTED
+
+Problem:
+The first native VMware Tools mount succeeded on `ALM-OFF-DC01`, but the
+fail-closed validator rejected the ESXi-reported backing
+`[] /usr/lib/vmware/isoimages/windows.iso` because it expected a ProductLocker
+path literal.
+
+Evidence:
+`vim-cmd vmsvc/tools.install 6` returned success, the VM remained Powered On
+with an unchanged boot time, the Evaluation ISO disappeared from its device
+backing, and the CD/DVD became connected to the ESXi system ISO path. The
+validator then stopped before touching `ALM-LAB-DC01`.
+
+Hypothesis:
+On this ESXi 8.0 U2 host, `/usr/lib/vmware/isoimages/windows.iso` is the native
+alias for the same VMware Tools media stored under ProductLocker. Verifying
+path resolution and content identity will allow the validator to recognize the
+native backing without weakening it to arbitrary ISO paths.
+
+Solution Attempt:
+Resolve the ESXi-reported system ISO and ProductLocker paths read-only, compare
+their file identity or SHA-256, then accept only that exact verified native
+alias for the completed first-VM check and the second native mount.
+
+Test:
+Require either equal file identity plus canonical path resolution or equal
+SHA-256 values for the ESXi system ISO and ProductLocker Windows Tools ISO.
+Then require unchanged target hardware/network and normalized Lab integrity
+before performing the same native Tools mount on VMID 7. Verify both final
+CD/DVD backings match the exact verified native path and no Evaluation ISO
+remains attached.
+
+Success Criteria:
+- The ESXi system ISO is proven identical to the ProductLocker Windows Tools
+  ISO by canonical resolution and inode identity; the ProductLocker hash is
+  captured while the file is readable.
+- Both DC VMs remain Powered On without a boot-time change.
+- Both CD/DVD devices are connected only to the verified native Tools media.
+- Disk, CPU, RAM, NIC, snapshot, isolation, and normalized Lab fields remain
+  unchanged.
+
+Result:
+The ESXi system path and ProductLocker path both reported inode `16779972`, and
+the system alias resolved directly to the ProductLocker datastore object. A
+second hash read was unavailable while the ISO was mounted because ESXi
+returned `Device or resource busy`; the pre-mount ProductLocker SHA-256 remains
+`532a3edf4faccdc93355c9810385c320d152ce8cf5ebed35a8bd45c4ce90029b`.
+The revised exact-alias validator then accepted VMID 6 without retrying its
+native mount, and VMID 7 completed the same native operation successfully.
+Both VMs remained Powered On with unchanged boot times, reported
+`toolsInstallerMounted=true`, and connected only to
+`[] /usr/lib/vmware/isoimages/windows.iso`. The Evaluation ISO remained on the
+datastore but was absent from both devices. CPU, RAM, thin disks, single-NIC
+port-group mappings, snapshots, and normalized Lab integrity were unchanged.
+Independent code review passed and security review reported no security impact.
+
+Decision:
+ACCEPT
+
+Notes:
+No retry is permitted on VMID 6; its actual state is read back instead. The
+experiment does not authorize guest operations, VMX edits, reboot, shutdown,
+network changes, or ISO file changes. The validator revision accepts only the
+exact same-inode canonical ESXi alias, not arbitrary ISO paths.
+
+## EXP-20260827-003 - ESXi HW21 PCI Root Bridge Repair
+
+Date: 2026-08-27
+Status: ACCEPTED
+
+Problem:
+Both new Windows Server HW21/UEFI VM shells fail Power On because ESXi cannot
+allocate a PCIe slot for `scsi0`.
+
+Evidence:
+Both target VMX files omit the secondary PCI root-bridge topology, expose only
+generic bus-slot data for SCSI and NIC devices, and log `No PCIe slot available
+for SCSI0`, PCI SCSI allocation failure, and `DevicePowerOn` failure. A healthy
+read-only HW21/UEFI reference on the same host contains the standard
+`pciBridge0` and `pciBridge1` root-bridge structure.
+
+Hypothesis:
+Adding only the verified `pciBridge0/1` root-bridge structure and removing the
+three failed-attempt slot values will let ESXi assign native, collision-free
+PCI slots without changing either VM's disk, controller, NIC, or network.
+
+Solution Attempt:
+After a normalized Lab integrity gate and per-VM hash-verified VMX backups, add
+the six verified bridge fields, remove only `scsi0.pciSlotNumber`,
+`ethernet0.pciSlotNumber`, and `sata0.pciSlotNumber`, reload each powered-off
+VM, and allow ESXi to assign supported slots during controlled Power On.
+
+Test:
+Require an exact allowlisted VMX diff, then test one target VM at a time. Verify
+successful Power On, actual Powered On state, no new DevicePowerOn/PCI/SCSI
+error in the test log window, valid device slot assignments, preserved disk and
+single-NIC network mappings, successful Power Off, and unchanged normalized
+Lab integrity before proceeding to the second VM.
+
+Success Criteria:
+- Each backup matches its pre-fix VMX hash and is protected with mode `0600`.
+- Only the approved bridge and failed-slot fields change before Power On.
+- Both VM hardware-start tests complete without DevicePowerOn, PCI, or SCSI
+  configuration errors.
+- Both targets finish Powered Off with their original disk and network mapping.
+- The normalized Lab integrity signature remains unchanged throughout.
+
+Result:
+Both VMX backups matched their pre-fix SHA-256 values and were stored as
+`root:root` mode `0600`. Exact pre-power diffs contained only the six verified
+root-bridge additions and removal of the three failed-attempt slot values.
+Separate Power On tasks returned success and each VM reached Powered On; the
+fresh rotated `vmware.log` window for each test contained no DevicePowerOn,
+PCI allocation, or SCSI configuration error. ESXi assigned `scsi0=32`,
+`ethernet0=33`, and `sata0=34`, then both Power Off tasks succeeded and the VMs
+finished Powered Off. The 100 GiB thin LSI SAS disks, single VMXNET3 mappings,
+empty CD backing, and normalized Lab signature remained unchanged. Independent
+code review passed and security review reported no security impact.
+
+Decision:
+ACCEPT
+
+Notes:
+Scope is limited to the two new DC VMX files. Production VMs, VMDKs, network
+configuration, ISO media, guest installation, routing, NAT, and bridging are
+excluded.
+
+## EXP-20260827-002 - ESXi Large Datastore Capacity Gate
+
+Date: 2026-08-27
+Status: ACCEPTED
+
+Problem:
+The Phase 2 fail-closed precondition rejected a datastore with approximately
+2.53 TB free before any VM write occurred.
+
+Evidence:
+The read-only pre-check reported `2532764024832` free bytes, while the remote
+BusyBox integer `test` comparison against `322122547200` returned false. The
+mutation script stopped at `final-preconditions`; both target VM names and
+datastore paths were absent before the attempt.
+
+Hypothesis:
+ESXi BusyBox integer comparison overflowed or cannot reliably represent these
+large byte values; an `awk` numeric comparison will evaluate the same captured
+values correctly without weakening the 300 GiB safety threshold.
+
+Solution Attempt:
+Change only the datastore capacity predicate from shell integer `test` to an
+`awk` numeric comparison. Keep the threshold, all other fail-closed gates, VM
+specifications, and Lab integrity checks unchanged.
+
+Test:
+Reconfirm both target names and paths are absent, print the live free-byte
+value, prove the 300 GiB predicate with `awk`, then rerun the unchanged Phase 2
+workflow with normalized Lab checks before and after every write.
+
+Success Criteria:
+- The live free-byte value is at least 322122547200 according to `awk`.
+- No pre-existing or partial target VM object is adopted or overwritten.
+- Both requested VM shells pass independent hardware and isolation read-back.
+- The normalized Lab baseline remains identical throughout the workflow.
+
+Result:
+The live value `2532764024832` passed the unchanged 300 GiB threshold when
+evaluated with `awk`. Both target names and paths were still absent before the
+retry. The workflow then created `ALM-OFF-DC01` and `ALM-LAB-DC01` as Powered
+Off Windows Server 2022 x64 VM shells. Independent read-back confirmed 2 vCPU,
+8192 MB RAM, UEFI, one LSI SAS controller, one 100 GiB thin disk, one VMXNET3
+NIC on the assigned single port group, and no CD-ROM, ISO, or snapshot. The
+normalized Lab pre/post SHA-256 remained
+`35983b18a32e5f91586efee0f6728f802db2d8cdb750918834fa0f2512a42b83`.
+Code review passed and security review reported no security impact.
+
+Decision:
+ACCEPT
+
+Notes:
+The first attempt made no remote write, so no rollback or cleanup was required.
+Later validation false negatives for the empty snapshot representation and
+case-sensitive API field names stopped fail-closed and were corrected from
+read-only host evidence without destructive cleanup.
+
+## EXP-20260827-001 - ESXi Lab Integrity Normalization
+
+Date: 2026-08-27
+Status: ACCEPTED
+
+Problem:
+The first Office vSwitch attempt stopped after a raw Lab signature comparison
+reported a difference even though the printed critical Lab configuration fields
+were unchanged.
+
+Evidence:
+The attempt created only an empty `vSwitch-OFFICE`, stopped before uplink and
+port-group changes, proved zero consumers, removed that run-owned switch, and
+reverified `vmnic0`, `vSwitch0`, `vmk0`, and the four Shimadzu VM network
+mappings. Code and security review found no Lab impact.
+
+Hypothesis:
+Comparing only normalized, sorted, persistent configuration fields will reject
+real Lab changes without treating ordering, counters, object IDs, timestamps,
+or other runtime metadata as configuration drift.
+
+Solution Attempt:
+Create a normalized baseline for the approved critical fields, apply only
+`vmnic1 -> vSwitch-OFFICE -> PG-OFFICE` with VLAN 0 and no VMkernel, then run
+the same normalized comparison after every write and at final verification.
+
+Test:
+Require pre-change target absence, `vmnic0` and `vmnic1` link gates, normalized
+Lab baseline stability, exact Office topology read-back, no Office VMkernel or
+VM consumer, and deterministic Office-only rollback on any real Lab mismatch.
+
+Success Criteria:
+- Critical Lab fields compare identically before and after every write.
+- `vSwitch-OFFICE` has MTU 1500 and only `vmnic1` as uplink.
+- `PG-OFFICE` exists only on that switch with VLAN ID 0.
+- No VMkernel or VM is attached to the Office topology.
+- `DEFERRED-NET-001` remains open for the accepted 100 Mbps link.
+- Independent code and security reviews find no blocking issue.
+
+Result:
+The normalized pre-change and post-change Lab snapshots matched exactly for
+every approved critical field. Live read-back confirmed `vSwitch-OFFICE` with
+MTU 1500 and only `vmnic1`, plus `PG-OFFICE` with VLAN ID 0 and zero active
+clients. No Office VMkernel or VM consumer exists. All four Shimadzu VMs
+remained powered on with their original `VM Network` mappings, and the
+independent post-check found no new Lab network log event. Independent code
+review passed and security review reported no security impact. The signed
+reference captures are retained on `VM_DATASTORE/ADMIN-BACKUP` with SHA-256
+digests `56331e2408dbb59ab5beb41e4eb6262ebac33715b4372ae0514b9a7ab90e5ae2`
+and `75767a39537110d4ad8d09dc5a7f465457caee4b91fc905475ddbad0238df5f4`.
+
+Decision:
+ACCEPT
+
+Notes:
+The experiment does not authorize VM, guest, ISO, routing, NAT, bridge, Lab
+network, or physical-link changes.
+
+## EXP-20260821-001 - Context7 General Setup And Node 22 Preflight
+
+Date: 2026-08-21
+Status: ACCEPTED
+
+Problem:
+The CMA general setup does not run Context7's official multi-agent setup flow,
+and mutating setup entry points do not fail closed when Node.js is older than
+the required major version 22.
+
+Evidence:
+The current `bin/codex-setup` completes without invoking `npx ctx7 setup`, and
+neither it nor `bin/codex-user-install` validates Node.js or `npx` before
+runtime mutations. A real Context7 setup configured MCP, rules, and skills for
+Claude Code, OpenCode, and Codex under the process user's global home.
+
+Hypothesis:
+An early Node.js 22 and `npx` preflight on mutating entry points, followed by an
+explicit default-yes `npx ctx7 setup` step at the end of the general wizard,
+will provide the requested multi-agent Context7 setup without leaking
+credentials or reporting false completion.
+
+Solution Attempt:
+Add equivalent fail-closed runtime preflights to `codex-setup` and
+`codex-user-install`, preserve read-only help and variant listing without the
+preflight, and let the Context7 CLI exclusively own its interactive
+authentication and global configuration flow.
+
+Test:
+Capture RED and GREEN with real setup scripts and hermetic fake `node` and
+`npx` executables. Cover missing, malformed, too-old, boundary, and newer Node
+versions; missing `npx`; exact unpinned Context7 argv; explicit skip; exact
+failure propagation; secret-free argv/output; custom runtime HOME behavior;
+focused regressions; shell syntax; diff checks; and the full repository suite.
+
+Success Criteria:
+- Node.js below 22, malformed versions, missing Node.js, and missing `npx` fail
+  before runtime or network mutation.
+- Node.js 22 and newer allow mutating setup flows to continue.
+- Read-only help and variant listing remain available without Node.js or `npx`.
+- The accepted Context7 step invokes exactly `npx ctx7 setup` once; an explicit
+  rejection invokes nothing.
+- Context7 failures preserve their exit status and suppress CMA completion.
+- CMA never adds the Context7 API key or token value to argv or its own output.
+- Focused and full regression suites pass without real network access.
+
+Result:
+The pre-change focused suite produced meaningful RED: Node.js below 22,
+malformed versions, missing Node.js, and missing `npx` did not stop mutation;
+`codex-setup --list-variants` was unavailable; no Context7 command or exit
+propagation occurred; and the required documentation was absent. After the
+implementation, the new focused suite passed 8/8, variant-install regressions
+passed 31/31, codex-tools integration regressions passed 7/7, and shell syntax
+validation passed. The first full regression passed 397/397. Code review then
+found that a valid-looking Node version printed by a failing `node --version`
+process was accepted because its exit status was swallowed. A dedicated RED
+reproduced the false continuation. The revised preflight now treats that exit
+status as terminal; the focused suite passes 9/9 and the full regression passes
+398/398. Code re-review passed after the fix. Security review passed with no blocking
+finding and retained the explicitly accepted risks of unpinned remote `npx`
+execution, user-controlled `PATH` resolution, and no transactional rollback for
+third-party partial writes. ShellCheck was unavailable; Bash syntax validation
+passed instead. The record archive regression passed 19/19, the focused suite
+remained 9/9, and the post-archive check reported every managed record below
+its compaction threshold.
+
+Decision:
+ACCEPT
+
+Notes:
+The Context7 command remains interactive and unpinned by explicit user request.
+It targets the process user's global agent locations even when CMA uses a
+custom runtime home. CMA does not install Node.js or modify shell profiles.
+
+## EXP-20260818-001 - Cross-Platform Atomic Rename
+
+Date: 2026-08-18
+Status: ACCEPTED
+
+Problem:
+The native Codex activator uses Darwin-only `renameatx_np`, so its fail-closed
+atomic publication path is unavailable on Linux and blocks CMA activation.
+
+Evidence:
+On blockmanpro Ubuntu 24.04 x86_64, libc exposes `renameat2` but not
+`renameatx_np`; the full repository suite ran 385 tests with 13 failures and
+5 errors rooted in `atomic_rename_unavailable`.
+
+Hypothesis:
+Dispatching the existing exclusive-publish and atomic-exchange semantics to
+Darwin `renameatx_np` or Linux `renameat2`, with platform-specific flags, will
+restore Linux activation without weakening no-overwrite, descriptor anchoring,
+rollback, or cleanup guarantees.
+
+Solution Attempt:
+Introduce an explicit semantic-to-platform syscall adapter: Darwin uses
+`RENAME_EXCL=4` and `RENAME_SWAP=2`; Linux uses `RENAME_NOREPLACE=1` and
+`RENAME_EXCHANGE=2`. Unsupported platforms, symbols, semantics, or kernel and
+filesystem support remain fail-closed without a plain rename fallback.
+
+Test:
+Capture RED for Linux symbol and flag dispatch before implementation; then run
+platform/errno/fallback unit tests, real-host atomic publish/no-overwrite tests,
+the focused native-activation suite, Python compilation, whitespace checks,
+and the full repository suite. Re-run the focused and full suites on
+blockmanpro after separately approved deployment.
+
+Success Criteria:
+- Darwin and Linux select their correct libc symbol and exact flags.
+- Both source and target remain anchored to the supplied directory FD.
+- Existing targets are never overwritten and staging files are cleaned.
+- Missing or unsupported atomic operations fail closed without fallback.
+- Race, rollback, cleanup, and idempotency regressions remain green.
+- The Ubuntu focused and 385-test full suites pass without skips.
+
+Result:
+The pre-change focused suite produced the required RED with exit 1: Linux
+dispatch attempted no `renameat2` call and raised `atomic_rename_unavailable`;
+unsupported syscall and semantic cases also failed. The platform adapter then
+passed all 23 focused native-activation tests. Python compilation and
+`git diff --check` passed, the full repository suite passed 389/389, and
+focused branch coverage for the activator measured 82 percent. Darwin real-host
+publication remained idempotent, preserved descriptor anchoring, rejected an
+existing target, and left no hidden staging artifact. Commit `85e0412` was then
+pushed to both the working branch and `main` and fast-forwarded into the clean
+blockmanpro repository. On Ubuntu 24.04 x86_64, the real `renameat2` focused
+suite passed 23/23 and the full repository suite passed 389/389, both with exit
+0. Independent code and security reviews found no blocking issue.
+
+Decision:
+ACCEPT
+
+## EXP-20260828-001 - AD DS Functional Level Enum Compatibility
+
+Date: 2026-08-28
+Status: ACCEPTED
+
+Problem:
+The first `Install-ADDSForest` invocation stopped before requesting the DSRM
+password because the Windows Server 2022 ADDSDeployment module rejected
+`Win2016` as a `ForestMode` value.
+
+Evidence:
+The live PowerShell parameter-binding error listed the accepted enum values as
+`Win2008`, `Win2008R2`, `Win2012`, `Win2012R2`, `WinThreshold`, and `Default`.
+No forest or domain was created, and no DSRM credential was entered.
+
+Hypothesis:
+On this Windows Server 2022 build, `WinThreshold` is the module's enum name for
+the Windows Server 2016 forest and domain functional level requested by the
+approved design.
+
+Solution Attempt:
+Change only `ForestMode` and `DomainMode` from `Win2016` to `WinThreshold` in
+the otherwise unchanged `Install-ADDSForest` invocation.
+
+Test:
+Require the revised command to accept both functional-level parameters and
+reach the interactive DSRM password prompt without creating a forest first.
+After user-controlled credential entry and promotion, verify the resulting
+forest and domain modes report Windows Server 2016.
+
+Success Criteria:
+- The revised invocation reaches the DSRM password prompt without a parameter
+  binding error.
+- The user alone enters and confirms the DSRM password and approves promotion.
+- Post-promotion `Get-ADForest` and `Get-ADDomain` report Windows Server 2016
+  functional levels.
+- No Lab or Shimadzu critical field changes.
+
+Result:
+The revised invocation accepted `WinThreshold`, reached the interactive DSRM
+credential prompts, and completed promotion after the user alone entered and
+confirmed the secret. Post-promotion inspection reported
+`Windows2016Forest` and `Windows2016Domain`; the writable DC is a Global
+Catalog with AD DS, DNS, Netlogon, KDC, and DFSR running. SYSVOL and NETLOGON
+are shared, the domain and `_msdcs` zones and required SRV records are
+present, and the single-DC `dcdiag` and `repadmin` checks found no blocking
+error. The DNS client now uses only `192.168.1.10`. Normalized ESXi and
+Shimadzu critical fields remained unchanged.
+
+Decision:
+ACCEPT
+
+Notes:
+This experiment changes only the ADDSDeployment functional-level enum spelling;
+it does not authorize changes to IP, routing, firewall, ALM-LAB-DC01, or any
+Lab/Shimadzu system.
+
 ## EXP-20260817-009 - Blockmanpro Fix Commit Deployment
 
 Date: 2026-08-17
@@ -319,413 +753,3 @@ ACCEPT
 Notes:
 The initial unqualified selectors were schema-valid but behaviorally
 ineffective for plugin-qualified skills.
-
-## EXP-20260817-003 - Evidence-First Objectivity Policy
-
-Date: 2026-08-17
-Status: ACCEPTED
-
-Problem:
-The core CMA policies require honesty and authoritative research, but they do
-not explicitly require evidence-supported conclusions over user agreement,
-credible counterevidence, source-independence checks, or a clear separation of
-verified facts, source claims, inferences, and opinions.
-
-Evidence:
-The approved policy review found these behaviors absent from the canonical
-Codex template and the Codex, Claude, and OpenCode projections. Applying an
-unbounded research rule to every task would also create unnecessary sourcing
-for routine coding, editing, translation, and operational work.
-
-Hypothesis:
-Adding one equivalent, evaluation-scoped Evidence-First Objectivity contract to
-all three runtime policies will improve neutrality and uncertainty reporting
-without forcing research for routine tasks.
-
-Solution Attempt:
-Add the approved eight-part semantic contract beneath Language And Conduct in
-the canonical template and every native projection, then document its scope.
-Do not add dependencies, automatic browsing, provider behavior, or mutate an
-active user runtime.
-
-Test:
-Capture RED with positive and negative semantic contract tests, including a
-diluted-policy mutant and an overbroad every-task research mutant. Then run
-policy parity and portable-install tests, the full repository suite, static
-checks, and independent code and security reviews.
-
-Success Criteria:
-- Codex template/projection parity remains byte-identical.
-- Codex, Claude, and OpenCode carry all eight approved semantic requirements.
-- Material decisions require genuinely independent evidence where available.
-- Counterevidence, conflicts, uncertainty, and fact/claim/inference/opinion
-  distinctions cannot be removed without failing tests.
-- Routine tasks do not acquire a mandatory research requirement.
-- No active user-global policy is modified by this repository-only change.
-
-Result:
-The canonical Codex template and Codex projection remain byte-identical at
-policy version 2.6, while Claude and OpenCode carry the same eight semantic
-requirements. Contract tests reject missing clauses, diluted objectivity,
-repeated-reporting source inflation, blanket every-task research, unconditional
-research, and explicit research mandates for routine work. Portable installs
-for all three variants expose the contract. Focused policy/runtime checks
-passed, the full repository suite passed 374/374, code review passed after two
-false-positive mutants tightened the oracle, and security review reported
-`NO_SECURITY_IMPACT` with no new browsing or execution authority.
-
-Decision:
-ACCEPT
-
-Notes:
-Existing native-policy preservation and merge-prompt behavior remains unchanged.
-
-## EXP-20260817-002 - Controlled Instruction Merge Hardening
-
-Date: 2026-08-17
-Status: ACCEPTED
-
-Problem:
-The first controlled instruction-merge implementation can replace an existing
-user prompt, treats path and document content as trusted AI instructions, and
-uses check-then-open path operations that can be redirected by a concurrent
-ancestor swap.
-
-Evidence:
-Independent security review reproduced replacement of a custom prompt and
-identified unescaped prompt metadata, missing untrusted-document boundaries,
-and pathname-based source and destination races. It also found that prompt
-validation occurred after the confidential snapshot was persisted.
-
-Hypothesis:
-A descriptor-pinned, no-clobber publication helper with encoded metadata and an
-explicit untrusted-data merge protocol will preserve user files, contain
-snapshots, and prevent loaded instructions or path names from overriding the
-diff-only contract.
-
-Solution Attempt:
-Harden the single instruction merge helper: preflight all outputs, refuse
-existing non-CMA prompts, reuse only byte-identical generated prompts, pin file
-and directory operations with directory descriptors and no-follow flags, and
-encode prompt metadata while classifying both input documents as untrusted
-data.
-
-Test:
-Add regressions for custom prompt preservation, newline/control metadata,
-embedded hostile instructions, ancestor-swap resistance, and no partial
-snapshot on an unsafe prompt destination. Run focused installer/init tests,
-the full suite, static checks, and repeated independent code/security review.
-
-Success Criteria:
-- Existing user-owned prompt content is never overwritten.
-- Generated metadata cannot create Markdown instructions or extra fields.
-- Input documents are handled only as merge data, never executable commands.
-- Concurrently swapped source/destination ancestors cannot redirect reads or writes.
-- A failed preflight leaves no new confidential snapshot.
-- All focused and full regression checks pass and both reviews approve.
-
-Result:
-The helper now pins every source and destination ancestor with directory file
-descriptors and `O_NOFOLLOW`, publishes files atomically without replacement,
-preserves differing prompt content through deterministic hash-suffixed names,
-and validates the prompt destination before persisting confidential snapshots.
-Prompt metadata is Base64URL-encoded, referenced documents are explicitly
-untrusted/non-executable data, and runtime-rewritten candidates stay private.
-Custom-prompt, unsafe-target, hostile-metadata/document, and concurrent
-source/destination ancestor-swap regressions passed; the race suite passed
-10/10 three consecutive times, the full repository suite passed 370/370, and
-independent code and security re-reviews both passed.
-
-Decision:
-ACCEPT
-
-Notes:
-This experiment is limited to the approved instruction snapshot and merge-prompt flow.
-
-## EXP-20260817-001 - Independent Codex Tools Integration
-
-Date: 2026-08-17
-Status: ACCEPTED
-
-Problem:
-The selected `codex-tools` installer is coupled to the ToolSmith benchmark
-workspace, and its default install path attempts to reconfigure healthy
-user-owned MCP entries. That prevents safe reuse as an independent CMA tool.
-
-Evidence:
-The P9 implementation passed its existing 41 tests and reported all 11 tools
-healthy in read-only checks, but a real non-interactive install exited nonzero
-after attempting to configure the healthy user-owned DeepWiki, GitHub, and
-Context7 MCP entries. The Codex config remained unchanged.
-
-Hypothesis:
-Extracting the installer as a self-contained package, adding an MCP
-`verify-only` ownership mode, and exposing it through an explicit CMA adapter
-will preserve CMA ownership while supporting both standalone and optional
-user-requested installation.
-
-Solution Attempt:
-Create `tools/codex-tool-installer` without ToolSmith runtime dependencies; add
-portable CLI, ownership, path, release-integrity, and idempotency contracts;
-add `bin/cma-tools`; and add an opt-in `--tools-mode` setup path. Do not mutate
-the active user Codex home, credential stores, remote MCP services, or host
-package managers during validation.
-
-Test:
-Capture meaningful RED for the new ownership and CMA adapter contracts, then
-run focused tests, branch coverage, the full project suite, shell syntax,
-packaging outside the repository, and independent code and security reviews.
-
-Success Criteria:
-- The package installs and runs independently of CMA and ToolSmith paths.
-- CMA mode verifies MCP entries without writing config or credentials.
-- Standalone mode changes only installer-marker-owned MCP entries and fails
-  closed on user-owned collisions.
-- JSON option placement is consistent and configuration paths fail closed on
-  symlinks or non-regular targets.
-- Downloaded releases use pinned HTTPS artifacts with verified checksums.
-- Package branch coverage is at least 80 percent and all project tests pass.
-
-Result:
-The independent package preserved the original 41-test baseline and expanded
-it to 56 passing tests with 80 percent branch coverage. Meaningful RED exposed
-missing ownership modes, option parity, symlink handling, release integrity,
-and adapter behavior. Code and security reviews then exposed four path and
-lifecycle issues plus mutable upstream references and ambient executable
-substitution; regression tests reproduced each blocking finding before the
-fixes. Final code and security re-reviews passed. A real isolated `uv tool`
-install, version/help execution, and uninstall succeeded outside the repo while
-preserving an unrelated sentinel. The full CMA suite passed 355/355, shell
-syntax and diff checks passed, and no active Codex config, credentials, remote
-MCP service, sudo command, or host package manager was mutated.
-
-Decision:
-ACCEPT
-
-Notes:
-Real Ubuntu 24 installation remains a separate live validation on an exact
-approved host. This experiment does not authorize writes to `~/.codex`.
-DF-20260817-0000-001 records the non-blocking directory-swap hardening opportunity.
-
-## EXP-20260816-001 - Multi-Runtime Registry Write Containment
-
-Date: 2026-08-16
-Status: ACCEPTED
-
-Problem:
-The multi-runtime setup flow writes status and preference files after a user
-declines template installation, allowing a symlinked runtime `registry/`
-directory to redirect those writes outside the selected runtime home.
-
-Evidence:
-Security review reproduced the redirected write with exit status zero.
-
-Hypothesis:
-Validating each selected runtime and its `registry/` directory as regular,
-non-symlinked directories before any setup-owned file write will fail closed
-and prevent writes outside the selected runtime home.
-
-Solution Attempt:
-Add a narrow runtime-registry validation helper and a regression test; retain
-the existing installer, reset, and template overwrite behavior.
-
-Test:
-Run the regression against a symlinked `registry/`, then focused setup tests,
-syntax checks, and the full regression suite.
-
-Success Criteria:
-- A redirected registry path exits nonzero without creating files outside the runtime.
-- Normal selected runtimes still receive their status and preference files.
-- Existing symlink and installer safety tests remain green.
-
-Result:
-The new regression failed before the fix by writing both files outside the
-selected runtime through a symlinked registry. The first fix prevented that
-write, but review found that its single system write could publish truncated
-content. The revised writer loops until every byte is written before fsync and
-atomic replacement, then preserves an existing regular file's mode. A later
-review found the first mode fix overrode restrictive umasks for new files; the
-final revision retains the caller umask for new files and preserves existing
-modes. Tests assert complete content, preserved restrictive permissions, and a
-new-file `077` umask result.
-
-Decision:
-ACCEPT
-
-Notes:
-This record covers only setup-owned registry writes after a declined template installation.
-
-## EXP-20260815-003 - Autonomous Main Plan Execution
-
-Date: 2026-08-15
-Status: ACCEPTED
-
-Problem:
-The per-task approval gate creates unnecessary user pauses inside a disclosed
-and approved multi-phase plan.
-
-Hypothesis:
-One initial main-plan approval can reduce interaction while preserving explicit
-approval for destructive, High, and Critical operations.
-
-Solution Attempt:
-Project the same main-plan, auxiliary-task, recommended-task, and terminal
-reporting policy to Codex, Claude, and OpenCode.
-
-Test:
-Require policy-contract, portable-install, and safety-regression tests.
-
-Success Criteria:
-Planned work proceeds without boundary approvals while safety approvals remain
-mandatory and all variants expose equivalent behavior.
-
-Evidence:
-- The four canonical policies expose one equivalent Main Plan Execution
-  contract, and the installed Codex, Claude, and official OpenCode policies
-  byte-match their sources. The legacy OpenCode copy matches the changed
-  approval sections while retaining its expected runtime-path substitution.
-- Clause-removal and contradictory-policy mutants reject missing plan,
-  deviation, recommendation, terminal-report, and destructive-safety terms.
-- Focused suites passed 5/5, 25/25, and 11/11; the full suite passed 343/343.
-- Code review passed after strengthening the public documentation contract;
-  security review found no authority widening, backup issue, secret exposure,
-  record loss, or duplicate archive entry.
-
-Result:
-Core policy 2.5 now uses one approved ordered plan for uninterrupted disclosed
-work across Codex, Claude, and OpenCode. Required plan deviations and all
-destructive, High, or Critical operations remain separately approval-gated.
-Auxiliary and recommended work stay outside automatic main-plan execution, and
-terminal reporting remains evidence-based. Active global policies were updated
-with private rollback material and require a new runtime session to be loaded.
-
-Decision:
-ACCEPT
-
-## EXP-20260815-002 - Official Native Claude and OpenCode Parity
-
-Date: 2026-08-15
-Status: ACCEPTED
-
-Problem:
-The approved CMA core-tool activation is currently Codex-only. Claude and
-OpenCode have incomplete native projections, while the retired Dolphin source
-variant remains selectable.
-
-Hypothesis:
-An additive, official-schema-only activation path can project the ten protected
-skills and narrow vendor-documentation skills to the native Claude and OpenCode
-locations without overwriting unmanaged configuration, credentials, or MCP
-entries; removing Dolphin only from repository selection preserves its existing
-installed runtime.
-
-Solution Attempt:
-Use the canonical Claude/OpenCode projections, vendor-native skill layouts, and
-the installed stable CLIs' documented configuration surfaces. Add conflict-aware
-native activation, remove Dolphin from the source catalog, and update the
-corresponding installer, tests, and user documentation.
-
-Test:
-Require positive, idempotency, unmanaged-content preservation, conflicting
-managed-content rejection, Dolphin rejection, syntax, focused, and full-suite
-checks before active-runtime verification. Do not embed credentials, enable
-xcodebuildmcp, execute cplt payloads, or delete the existing Dolphin runtime.
-
-Decision:
-ACCEPTED
-
-Result:
-The source catalog now exposes only Codex, Claude, and OpenCode; existing
-Dolphin runtime data was not removed. Official native Claude and OpenCode skill
-locations now contain the ten protected projections plus their own narrow
-vendor-documentation skill. Existing conflicting Claude managed files were
-replaced only after explicit per-file approval and saved in owner-only backup
-directories. OpenCode activation rejects unsafe ancestors and managed-path
-symlinks, rolls back created files on publication failure, preserves unrelated
-configuration, and has no configured MCP server added by this change.
-
-## EXP-20260815-001 - Global Codex Core Tool Activation
-
-Date: 2026-08-15
-Status: ACCEPTED
-
-Problem:
-The ten protected CMA repository-tool capabilities exist as canonical skills and
-inactive native projections, but the active Codex runtime does not discover all
-ten globally. Context7 is still classified as optional, and there is no bounded,
-conflict-aware activation path that preserves customized global skills and MCP
-configuration.
-
-Evidence:
-The protected registry marks Context7 optional, the Codex profile reports zero
-projected instances and explicit-only inactive representation, and only Graphify
-is present among the ten global CMA tool skills. Serena, DeepWiki, GitHub, and
-Context7 MCP servers are enabled; xcodebuildmcp is disabled. Existing accepted
-experiments explicitly stopped before active runtime synchronization.
-
-Hypothesis:
-Changing the canonical/projection contracts to required lazy routing and adding
-one additive, atomic Codex activator will make the ten capabilities globally
-discoverable while selecting only the narrowest provider, preserving customized
-Graphify state, keeping cplt explicit, and avoiding latency/context fan-out.
-
-Solution Attempt:
-Use the existing ten canonical skills and Codex projections. Make Context7 a
-required capability, enable conditional implicit invocation for the nine
-non-cplt skills, keep cplt explicit-only, update the compact repository router,
-and add a conflict-aware activator that stages writes, creates private backups,
-preserves unrelated state, merges only owned MCP flags, and rolls back on any
-failure. Synchronize only the approved active Codex runtime after temporary-home
-tests and mandatory reviews.
-
-Test:
-Capture focused RED for the old optional/inactive state and missing activator.
-Then validate exact skill IDs and policy split, single-provider routing,
-Context7 required MCP semantics, Graphify preservation, conflict and symlink
-refusal, private backup, rollback, idempotency, secret-safe output, no command
-execution, xcodebuildmcp disabled state, focused coverage, full regression,
-static checks, live global inventory, functional MCP calls, and fresh-session
-routing probes.
-
-Success Criteria:
-- Exactly the ten protected skills are globally discoverable; nine are
-  conditionally implicit and cplt remains explicit-only.
-- Context7 is required but queried only for a bounded version-specific
-  documentation need; one evidence gap never fans out across providers.
-- Existing customized skills, unrelated global files, credentials, modes, and
-  MCP/plugin settings remain unchanged.
-- Activation is atomic, private-backup-backed, idempotent, and exactly
-  rollbackable; differing or symlinked managed targets fail closed.
-- xcodebuildmcp remains disabled and no cplt payload, scanner, or Graphify build
-  runs during activation.
-- Focused and full tests, code review, security review, and live verification
-  pass without commit or push.
-
-Result:
-The bounded activator completed successfully against the active Codex runtime
-and a second run was a no-op without creating another backup. Exactly ten
-protected skill routes are globally discoverable: the preserved customized
-legacy Graphify route plus nine official user-global projections. cplt remains
-explicit-only; the other nine routes are conditionally implicit. Only the owned
-MCP flags changed, Context7 is enabled and required, xcodebuildmcp remains
-disabled, unrelated configuration is semantically unchanged, the router matches
-the approved source, and the private backup uses a 0700 directory with 0600
-files. Read-only live calls succeeded for Serena, DeepWiki, GitHub, and Context7.
-A fresh ephemeral Codex session reported all ten skills and used only local `rg`
-for the inventory request without MCP fan-out, scanner execution, cplt payloads,
-or a Graphify build. Focused activation tests passed 19/19 with 80% branch
-coverage; the full suite passed 328/328; code and security reviews passed.
-The fresh inventory probe consumed 80,079 input tokens, of which 57,600 were
-cached, so an actual total-token reduction versus a pre-activation baseline
-remains unverified.
-
-Decision:
-ACCEPTED
-
-Notes:
-User approved the complete repository, global synchronization, restart/fresh
-session verification, and mandatory orchestration scope with option A. This
-record does not authorize credential changes, dependency upgrades, commit,
-push, scanner-wide scans, cplt payload execution, or xcodebuildmcp activation.
-Acceptance covers safe global availability and narrow lazy routing; it does not
-claim a measured token-cost reduction.

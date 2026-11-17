@@ -167,7 +167,7 @@ class ProjectUpgradeTests(unittest.TestCase):
         project.mkdir()
 
         result = self.run_command(
-            PROJECT_INIT, project, input_text="n\ny\nn\ny\ny\n"
+            PROJECT_INIT, project, input_text="n\ny\nn\ny\nn\ny\n"
         )
 
         state = json.loads((project / ".codex/template-state.json").read_text())

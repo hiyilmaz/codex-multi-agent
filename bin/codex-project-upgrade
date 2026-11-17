@@ -33,7 +33,10 @@ CLAUDE_MANAGED_TEMPLATES = {
 OPENCODE_MANAGED_TEMPLATES = {
     Path(".opencode/opencode.json"): Path("OPENCODE_PROJECT_CONFIG_EXAMPLE.json"),
 }
-SENSITIVE_DIFF_PATHS = {Path(".opencode/opencode.json")}
+GROK_MANAGED_TEMPLATES = {
+    Path(".grok/config.toml"): Path("GROK_PROJECT_CONFIG_EXAMPLE.toml"),
+}
+SENSITIVE_DIFF_PATHS = {Path(".opencode/opencode.json"), Path(".grok/config.toml")}
 
 
 def variant_managed_templates(variant: str) -> dict[Path, Path]:
@@ -44,6 +47,8 @@ def variant_managed_templates(variant: str) -> dict[Path, Path]:
         templates.update(CLAUDE_MANAGED_TEMPLATES)
     elif variant == "opencode":
         templates.update(OPENCODE_MANAGED_TEMPLATES)
+    elif variant == "grok":
+        templates.update(GROK_MANAGED_TEMPLATES)
     return templates
 
 

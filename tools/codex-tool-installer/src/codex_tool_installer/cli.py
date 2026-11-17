@@ -245,6 +245,8 @@ def main(argv: Sequence[str] | None = None, *, environ: Mapping[str, str] | None
         "auth_required": run_summary.auth_required,
         "config_valid": run_summary.config_valid, "config_preserved": run_summary.config_preserved,
     }
+    if command == "check" and not args.json and results["deepwiki"].detail:
+        payload["issues"].append(f"DeepWiki: {results['deepwiki'].detail}")
     print(render_json(payload) if args.json else render_summary(payload))
     return 0 if config_after_captured and all(final.tools[name].status == Status.HEALTHY for name in selected) else 1
 

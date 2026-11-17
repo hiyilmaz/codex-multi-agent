@@ -19,6 +19,7 @@ Behavior:
   - writes <project>/.codex/prompts/fill-project-configuration.md
   - for the claude variant, writes CLAUDE.md and .claude/settings.json
   - for the opencode variant, writes .opencode/opencode.json
+  - for the grok variant, writes .grok/config.toml
   - records template version, runtime variant, and managed-file hashes
   - does not create project-local reusable rules/skills/agents directories
 EOF
@@ -128,6 +129,7 @@ PROJECT_DIRECTORIES=(
 for variant in "${VARIANT_IDS[@]}"; do
   [[ "$variant" == "claude" ]] && PROJECT_DIRECTORIES+=("$PROJECT_PATH/.claude")
   [[ "$variant" == "opencode" ]] && PROJECT_DIRECTORIES+=("$PROJECT_PATH/.opencode")
+  [[ "$variant" == "grok" ]] && PROJECT_DIRECTORIES+=("$PROJECT_PATH/.grok")
 done
 for directory in "${PROJECT_DIRECTORIES[@]}"; do
   if [[ -L "$directory" ]]; then
@@ -211,11 +213,13 @@ if [[ "$RESET" == "true" ]]; then
     "CLAUDE.md"
     ".claude/settings.json"
     ".opencode/opencode.json"
+    ".grok/config.toml"
   )
 else
   for variant in "${VARIANT_IDS[@]}"; do
     [[ "$variant" == "claude" ]] && CONFLICTS+=("CLAUDE.md" ".claude/settings.json")
     [[ "$variant" == "opencode" ]] && CONFLICTS+=(".opencode/opencode.json")
+    [[ "$variant" == "grok" ]] && CONFLICTS+=(".grok/config.toml")
   done
 fi
 
@@ -269,6 +273,9 @@ for variant in "${VARIANT_IDS[@]}"; do
     cp "$TEMPLATE_DIR/OPENCODE_PROJECT_CONFIG_EXAMPLE.json" "$PROJECT_PATH/.opencode/opencode.json"
   elif [[ "$variant" == "codex" ]]; then
     cp "$TEMPLATE_DIR/CODEX_CONFIG_EXAMPLE.toml" "$PROJECT_PATH/.codex/config.toml"
+  elif [[ "$variant" == "grok" ]]; then
+    mkdir -p "$PROJECT_PATH/.grok"
+    cp "$TEMPLATE_DIR/GROK_PROJECT_CONFIG_EXAMPLE.toml" "$PROJECT_PATH/.grok/config.toml"
   elif [[ "$variant" == "claude" ]]; then
     mkdir -p "$PROJECT_PATH/.claude"
     cp "$TEMPLATE_DIR/PROJECT_CLAUDE_TEMPLATE.md" "$PROJECT_PATH/CLAUDE.md"
@@ -297,6 +304,7 @@ echo "Created: $PROJECT_PATH/AGENTS.md"
 for variant in "${VARIANT_IDS[@]}"; do
   [[ "$variant" == "opencode" ]] && echo "Created: $PROJECT_PATH/.opencode/opencode.json"
   [[ "$variant" == "codex" ]] && echo "Created: $PROJECT_PATH/.codex/config.toml"
+  [[ "$variant" == "grok" ]] && echo "Created: $PROJECT_PATH/.grok/config.toml"
 done
 echo "Created: $PROJECT_PATH/.codex/prompts/fill-project-configuration.md"
 if [[ " ${VARIANT_IDS[*]} " == *" claude "* ]]; then

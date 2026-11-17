@@ -37,3 +37,5 @@ Codex-Multi-Agent-full-backup-*.zip
 
 # Build artifacts
 build/
+docs/
+tests/

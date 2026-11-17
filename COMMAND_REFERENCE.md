@@ -359,3 +359,20 @@ Safely update an existing initialized project:
 bin/codex-project-upgrade --dry-run "/absolute/path/to/project"
 bin/codex-project-upgrade --apply "/absolute/path/to/project"
 ```
+
+## Grok Build
+
+```bash
+bin/codex-user-install --variant grok
+bin/codex-user-install --variant grok --runtime-home /absolute/alternate/grok
+~/.grok/bin/llm-grok version
+~/.grok/bin/llm-grok inspect --json
+bin/codex-project-init --variant grok /absolute/project/path
+bin/codex-project-upgrade --dry-run --variant grok /absolute/project/path
+```
+
+An installed native `grok` CLI is required. The native installer preserves user
+settings/identity, refuses managed conflicts and `--force`, and records recovery
+manifests. Inspect confirms asset discovery; it does not prove model execution
+or runtime enforcement of tool restrictions. Native `grok` can also be used
+without the launcher; pass `--no-auto-update` during bounded verification.

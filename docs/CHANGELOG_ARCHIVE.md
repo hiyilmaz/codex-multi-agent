@@ -2,6 +2,51 @@
 
 [Back to active changelog](CHANGELOG.md)
 
+## 2026-07-27
+
+- [FEAT] EXP-20260727-002: Added event-driven `record-archive` automation for
+  Deferred Findings, experiments, and changelog records.
+- [FIX] EXP-20260727-002: Limited checks to sparse record transitions, retained
+  twenty full changelog dates plus thirty archive links, and preserved complete
+  history in archive files.
+- [FIX] EXP-20260727-002: Added legacy experiment and headerless changelog
+  compatibility with dirty-file, malformed-format, duplicate, and symlink
+  fail-closed protection.
+- [TEST] EXP-20260727-002: Added 16 archive contract tests, reached 87% script
+  coverage, and validated Codex, Dolphin, active runtime, and current
+  `yedekparcasor.com` record formats.
+- [FEAT] EXP-20260727-001: Added the conditional `hypothesis-workflow` skill to
+  Codex, Dolphin, and the active local global runtime.
+- [FIX] EXP-20260727-001: Kept routine first-pass work outside the experiment
+  flow and reused existing project changelog and evidence paths.
+- [TEST] EXP-20260727-001: Added activation, non-activation, test-integrity,
+  registry, and portable-install contract coverage.
+
+## 2026-07-26
+
+- [INFRA] Added full-project ZIP backups to Git ignore rules.
+- [FIX] Preserved the mandatory four-stage orchestration chain while adding
+  bounded handoffs, no-repeat rules, fast review exits, and false-completion
+  controls.
+- [INFRA] Changed the four mandatory Codex chain agents from `high` to `medium`
+  reasoning and synchronized the validated contract to the active runtime.
+- [TEST] Added orchestration contract coverage and verified 12 tests, 24 agent
+  TOML files, and temporary Codex and Dolphin installations.
+- [DOCS] Reviewed the mandatory orchestration chain, recorded current Codex and
+  community evidence, and added a proposed latency-reduction task list without
+  changing runtime or agent configuration.
+
+## 2026-07-16
+
+- [FIX] Updated all portable Codex custom subagent model overrides to
+  `gpt-5.6-sol`, preventing forced runtime refreshes from restoring `gpt-5.5`.
+- [TEST] Verified Codex and Dolphin agent models, a clean Codex variant install,
+  and the complete project upgrade regression suite.
+- [INFRA] Updated all active user-global custom subagent model overrides to
+  `gpt-5.6-sol` and archived the previous definitions.
+- [DOCS] Recorded the deferred risk that a future forced runtime refresh could
+  restore older subagent model overrides from the Codex variant template.
+
 ## 2026-07-14
 
 - [DOCS] Added a consolidated command reference for runtime installation,

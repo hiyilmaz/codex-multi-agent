@@ -33,6 +33,38 @@ It is self-contained and does not depend on another agent runtime.
 
 ---
 
+## Grok Build Variant
+
+The catalog includes `codex`, `claude`, `opencode`, and `grok`; Codex remains
+its default. Install the Grok CMA projection using the existing native CLI:
+
+```bash
+bin/codex-user-install --variant grok
+~/.grok/bin/llm-grok version
+~/.grok/bin/llm-grok inspect --json
+bin/codex-project-init --variant grok /absolute/project/path
+```
+
+Native activation preserves existing `~/.grok/config.toml`, credentials,
+instructions, and unrelated assets. It preflights sources/destinations, rejects
+conflicting managed files and symlinks, writes private new assets, and records
+a recovery manifest. Existing instructions receive a snapshot and merge prompt.
+The `--force` flag is rejected for Grok. Alternate `--runtime-home` installs
+rewrite portable paths and preserve the native home.
+
+The launcher sets `GROK_HOME`, prevents self-recursion, disables background
+updates, and preserves arguments and exit status. It requires an installed
+`grok`; no CLI/dependency installation, authentication, or model selection is
+performed. `GROK_HOME` does not isolate vendor compatibility discovery.
+
+Grok shares the project's `AGENTS.md` and adds `.grok/config.toml`; this project
+config contains no provider/model/auth fields or enabled servers. Init/upgrade
+retain schema-2 ownership and preserve customized shared/config files. MCP
+configuration diffs are redacted. See [the variant guide](variants/grok/home/README.md)
+and [official Grok settings](https://docs.x.ai/build/settings).
+
+---
+
 ## Runtime Model
 
 The active reusable runtime surface lives under `~/.codex/`. Project

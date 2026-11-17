@@ -247,6 +247,17 @@ if [[ -n "$VARIANT_LAUNCHER_RELATIVE" && ! -f "$REPO_ROOT/$VARIANT_LAUNCHER_RELA
   exit 1
 fi
 
+if [[ "$VARIANT_ID" == "grok" ]]; then
+  if [[ "$FORCE" == "true" ]]; then
+    echo "FAILED: Grok activation preserves existing files and does not accept --force." >&2
+    exit 1
+  fi
+  RESOLVED_GROK_TARGET="$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$RUNTIME_HOME")"
+  if [[ "$RESOLVED_GROK_TARGET" == "$HOME/.grok" ]]; then
+    exec "$REPO_ROOT/bin/grok-native-activate" --runtime-home "$RUNTIME_HOME" --user-home "$HOME" --source-root "$REPO_ROOT"
+  fi
+fi
+
 if [[ "$VARIANT_ID" == "claude" || "$VARIANT_ID" == "opencode" ]]; then
   RESOLVED_RUNTIME_HOME="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$RUNTIME_HOME")"
   if [[ "$VARIANT_ID" == "claude" ]]; then
@@ -467,7 +478,7 @@ install_variant_launcher() {
 POLICY_WAS_EXISTING="false"
 POLICY_TARGET="$RUNTIME_HOME/$POLICY_FILE"
 DEFAULT_HOME_REWRITE=""
-if [[ "$VARIANT_ID" == "opencode" ]]; then
+if [[ "$VARIANT_ID" == "opencode" || "$VARIANT_ID" == "grok" ]]; then
   DEFAULT_HOME_REWRITE="$DEFAULT_RUNTIME_HOME"
 fi
 CANDIDATE_REPLACE_ARGS=(
