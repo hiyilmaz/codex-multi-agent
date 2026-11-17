@@ -5,6 +5,7 @@ import os
 import shutil
 import sys
 import urllib.request
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -12,11 +13,11 @@ from typing import Mapping, Sequence
 from .config import ConfigTransactionError, restore_config_exact, update_config_transactionally
 from .credentials import LibsecretStore, MacOSKeychainStore, MaskedPrompt, ProtectedFileStore, credential_value_is_usable, resolve_credential
 from .dependencies import dependency_plan
-from .discovery import discover, managed_bin_environment, preflight
+from .discovery import codex_config_path, discover, managed_bin_environment, preflight
 from .execution import LifecycleExecutor, LifecycleStatusError, PendingTransaction, default_selection, interactive_selection, parse_selection
 from .manifest import TOOL_MANIFEST
-from .models import Status, ToolHealth
-from .mcp import CodexVisibleMcpClient, verify_mcp
+from .models import CheckResult, Status, ToolDefinition, ToolHealth
+from .mcp import MCP_STAGES, CodexMcpClient, CodexVisibleMcpClient, check_visibility, verify_mcp
 from .platforms import install_plan
 from .process import ProcessRunner
 from .releases import install_cplt_release, install_opengrep_release
@@ -68,9 +69,73 @@ def _internet_available() -> bool:
 
 def _read_config_bytes(path: Path) -> tuple[bool, bytes | None]:
     try:
-        return (True, path.read_bytes()) if path.exists() else (True, None)
+        if path.is_file():
+            return True, path.read_bytes()
+        return not path.exists(), None
     except OSError:
         return False, None
+
+
+def _check_tool(definition: ToolDefinition, initial: ToolHealth, client: CodexMcpClient) -> ToolHealth:
+    if definition.kind == "mcp":
+        if initial.status == Status.HEALTHY:
+            return verify_mcp(definition, client)
+        checks = {stage: CheckResult("NOT_CHECKED") for stage in MCP_STAGES}
+        if initial.status == Status.AUTH_REQUIRED:
+            checks["mcp_config"] = initial.checks.get("mcp_config") or check_visibility(definition.name, client)
+            checks["mcp_connection"] = CheckResult(initial.status.value, initial.detail)
+        else:
+            checks["mcp_config"] = CheckResult(initial.status.value, initial.detail)
+        return replace(initial, checks=checks)
+
+    version = "".join(char for char in (initial.version or "")[:200] if char.isprintable())
+    checks = {"cli_version": CheckResult(initial.status.value, initial.detail or version)}
+    if definition.kind == "cli_mcp":
+        registration = initial.checks["mcp_config"]
+        if registration.status == "NOT_CHECKED":
+            registration = check_visibility(definition.name, client)
+        checks["mcp_config"] = registration
+        for stage in MCP_STAGES[1:]:
+            checks[stage] = CheckResult("NOT_CHECKED", "This check does not start the local MCP server")
+        checks["project_context"] = CheckResult("NOT_CHECKED", "Verify the active project in the task session")
+        if initial.status == Status.HEALTHY and registration.status != Status.HEALTHY.value:
+            return replace(initial, status=Status(registration.status), detail=registration.detail, checks=checks)
+    return replace(initial, checks=checks)
+
+
+def _run_health_check(args, environ, runner, platform_facts, mcp_transport):
+    path = codex_config_path(environ)
+    before_captured, before = _read_config_bytes(path)
+    initial = discover(environ, runner, platform_facts, health_check=True)
+    selected = default_selection(TOOL_MANIFEST)
+    expected_urls = {
+        name: str(definition.mcp["url"])
+        for name, definition in TOOL_MANIFEST.items()
+        if definition.mcp and "url" in definition.mcp
+    }
+    client = CodexVisibleMcpClient(runner, mcp_transport or HttpMcpTransport(), environ, expected_urls=expected_urls)
+    results = {
+        name: _check_tool(definition, initial.tools[name], client)
+        for name, definition in TOOL_MANIFEST.items()
+    }
+    after_captured, after = _read_config_bytes(path)
+    preserved = before_captured and after_captured and before == after
+    issues = list(initial.issues)
+    if not before_captured or not after_captured:
+        issues.append("Codex config could not be captured safely")
+    elif not preserved:
+        issues.append("Codex config changed during the health check")
+    final = replace(initial, tools=results, issues=tuple(issues))
+    payload = discovery_payload(final, selected, show_checks=True)
+    summary = summarize(final, final, config_preserved=preserved, selected=selected)
+    payload["summary"] = {
+        "installed": summary.installed, "repaired": summary.repaired,
+        "already_healthy": summary.already_healthy, "failed": summary.failed,
+        "auth_required": summary.auth_required,
+        "config_valid": summary.config_valid, "config_preserved": summary.config_preserved,
+    }
+    print(render_json(payload) if args.json else render_summary(payload))
+    return 0 if preserved and initial.config_valid and all(results[name].status == Status.HEALTHY for name in selected) else 1
 
 
 def main(argv: Sequence[str] | None = None, *, environ: Mapping[str, str] | None = None, platform_facts: Mapping[str, str] | None = None, runner: ProcessRunner | None = None, connectivity_probe=None, mcp_transport=None) -> int:
@@ -80,6 +145,8 @@ def main(argv: Sequence[str] | None = None, *, environ: Mapping[str, str] | None
         environ["CODEX_HOME"] = str(Path(args.codex_home).expanduser())
     runner = runner or ProcessRunner()
     environ = managed_bin_environment(environ, runner)
+    if args.command == "check" and not args.dry_run:
+        return _run_health_check(args, environ, runner, platform_facts, mcp_transport)
     initial = discover(environ, runner, platform_facts)
     config_parent = Path(initial.config_path).parent
     config_path = Path(initial.config_path)
@@ -245,8 +312,6 @@ def main(argv: Sequence[str] | None = None, *, environ: Mapping[str, str] | None
         "auth_required": run_summary.auth_required,
         "config_valid": run_summary.config_valid, "config_preserved": run_summary.config_preserved,
     }
-    if command == "check" and not args.json and results["deepwiki"].detail:
-        payload["issues"].append(f"DeepWiki: {results['deepwiki'].detail}")
     print(render_json(payload) if args.json else render_summary(payload))
     return 0 if config_after_captured and all(final.tools[name].status == Status.HEALTHY for name in selected) else 1
 

@@ -136,8 +136,9 @@ bin/codex-setup --variant codex --tools-mode check
 bin/codex-setup --variant codex --tools-mode install
 ```
 
-The default is `--tools-mode skip`. Direct standalone installation is
-`uv tool install ./tools/codex-tool-installer`; CMA usage should go through
+Native Codex setup runs the read-only check by default. Use `--tools-mode skip`
+to omit the report. The Context7 setup prompt defaults to no. For direct
+standalone installation, use `uv tool install ./tools/codex-tool-installer`. CMA usage goes through
 `bin/cma-tools` so MCP configuration remains verify-only.
 
 The setup wizard asks whether to install all catalog models first. Answering

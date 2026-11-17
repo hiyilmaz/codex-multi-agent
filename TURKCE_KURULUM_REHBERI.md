@@ -63,7 +63,7 @@ Sihirbaz şunları sorar:
 - YOLO modu
 - hata, izin, tamamlandı ve karar bekleme mesajları
 - istenirse proje içine Codex yapısı kurulumu
-- varsayılanı **Evet** olan resmi `npx ctx7 setup` adımı
+- varsayılanı **Hayır** olan resmi `npx ctx7 setup` adımı
 
 Context7 kimlik doğrulamayı ve algılanan Claude Code, OpenCode ve Codex için
 global MCP, rule ve skill değişikliklerini süreç kullanıcısının `HOME` dizini
@@ -193,15 +193,16 @@ bin/cma-tools dry-run
 bin/cma-tools install
 ```
 
-Kurulum sihirbazına isteğe bağlı eklemek için:
+Kurulum sihirbazında araç modunu açıkça seçmek için:
 
 ```bash
 bin/codex-setup --variant codex --tools-mode check
 bin/codex-setup --variant codex --tools-mode install
 ```
 
-Varsayılan `--tools-mode skip` değeridir. CMA adaptörü MCP kayıtlarını yalnızca
-doğrular; değiştirmez. Bağımsız `codex-tools` kullanımı ise varsayılan
+Yerel Codex kurulumunun sonunda salt okunur kontrol varsayılan olarak çalışır.
+`--tools-mode skip` kontrolü atlar. CMA adaptörü MCP kayıtlarını salt okunur
+doğrular. Bağımsız `codex-tools` kullanımı ise varsayılan
 `manage` modunda yalnızca eksik veya kendi işaretiyle sahip olduğu MCP
 tablolarını yönetir ve kullanıcıya ait isim çakışmasında durur.
 

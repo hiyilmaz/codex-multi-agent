@@ -213,11 +213,11 @@ class CodexSetupContext7Tests(unittest.TestCase):
             self.assertFalse(install_runtime.exists())
             self.assertFalse(npx_log.exists())
 
-    def test_context7_default_yes_runs_exact_unpinned_command_once(self) -> None:
+    def test_context7_explicit_yes_runs_exact_unpinned_command_once(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             environment, npx_log, npx_home_log = self.make_environment(root)
-            result, runtime = self.run_setup(root, environment, context7_answer="")
+            result, runtime = self.run_setup(root, environment, context7_answer="y")
             combined = result.stdout + result.stderr
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue((runtime / "AGENTS.md").is_file())
@@ -227,6 +227,14 @@ class CodexSetupContext7Tests(unittest.TestCase):
             self.assertNotIn("--yes", npx_log.read_text(encoding="utf-8"))
             self.assertNotIn(environment["CONTEXT7_API_KEY"], combined)
             self.assertNotIn(environment["CONTEXT7_API_KEY"], npx_log.read_text(encoding="utf-8"))
+
+    def test_context7_default_no_does_not_invoke_npx(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            environment, npx_log, _ = self.make_environment(root)
+            result, _ = self.run_setup(root, environment, context7_answer="")
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertFalse(npx_log.exists())
 
     def test_context7_explicit_no_does_not_invoke_npx(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

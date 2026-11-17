@@ -58,6 +58,11 @@ class CmaToolsIntegrationTests(unittest.TestCase):
             encoding="utf-8",
         )
         uv.chmod(0o755)
+        npx = fake_bin / "npx"
+        npx.write_text(
+            '#!/usr/bin/env bash\nprintf "%s\\n" "$*" >> "$NPX_TEST_LOG"\n', encoding="utf-8",
+        )
+        npx.chmod(0o755)
         return {
             **os.environ,
             "HOME": str(root / "home"),
@@ -68,6 +73,7 @@ class CmaToolsIntegrationTests(unittest.TestCase):
             "INSTALLED_CODEX_TOOLS_TEST_LOG": str(installed_log),
             "UV_TEST_LOG": str(uv_log),
             "UV_TEST_BIN_DIR": str(uv_tool_bin),
+            "NPX_TEST_LOG": str(root / "npx.log"),
         }, ambient_log, python_log, python_probe_log, installed_log, uv_log
 
     def test_adapter_always_forces_verify_only_for_read_paths(self):
@@ -80,7 +86,7 @@ class CmaToolsIntegrationTests(unittest.TestCase):
             lines = python_log.read_text(encoding="utf-8").splitlines()
             self.assertEqual(2, len(lines))
             self.assertTrue(all("--mcp-mode verify-only" in line for line in lines))
-            self.assertTrue(all("-I -S -c" in line for line in lines))
+            self.assertTrue(all("-B -I -S -c" in line for line in lines))
             self.assertTrue(all("run_module(\"codex_tool_installer\"" in line for line in lines))
             self.assertTrue(all(str(REPO_ROOT / "tools/codex-tool-installer/src") in line for line in lines))
             self.assertIn("check", lines[0])
@@ -89,6 +95,15 @@ class CmaToolsIntegrationTests(unittest.TestCase):
             self.assertEqual(2, len(probes))
             self.assertTrue(all(line.startswith("-I -S -c") for line in probes))
             self.assertFalse(ambient_log.exists())
+
+    def test_adapter_forwards_json_for_check(self):
+        with tempfile.TemporaryDirectory() as directory:
+            environment, _, python_log, _, _, _ = self.fake_environment(Path(directory))
+            result = subprocess.run(
+                (str(ADAPTER), "check", "--json"), env=environment, text=True, capture_output=True,
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn("check --json", python_log.read_text(encoding="utf-8"))
 
     def test_read_paths_propagate_bundled_python_failures_without_path_fallback(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -140,8 +155,8 @@ class CmaToolsIntegrationTests(unittest.TestCase):
             self.assertIn("tool install --force --python 3.11", uv_log.read_text(encoding="utf-8"))
             self.assertFalse(ambient_log.exists())
 
-    def test_setup_default_skips_tools_and_explicit_check_runs_once(self):
-        setup_input = "\nn\nn\n\n\n\n\nn\n"
+    def test_setup_defaults_to_check_and_preserves_explicit_modes(self):
+        setup_input = "\nn\nn\n\n\n\n\nn\n\n"
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             environment, ambient_log, python_log, _python_probe_log, installed_log, uv_log = self.fake_environment(root)
@@ -155,8 +170,18 @@ class CmaToolsIntegrationTests(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(0, default.returncode, default.stderr)
-            self.assertFalse(python_log.exists())
+            self.assertEqual(1, len(python_log.read_text(encoding="utf-8").splitlines()))
+            self.assertIn("--mcp-mode verify-only", python_log.read_text(encoding="utf-8"))
             self.assertFalse(installed_log.exists())
+            self.assertFalse(uv_log.exists())
+            self.assertFalse((root / "npx.log").exists())
+
+            skipped = subprocess.run(
+                (str(SETUP), "--variant", "codex", "--tools-mode", "skip"),
+                cwd=REPO_ROOT, env=environment, input=setup_input, text=True, capture_output=True,
+            )
+            self.assertEqual(0, skipped.returncode, skipped.stderr)
+            self.assertEqual(1, len(python_log.read_text(encoding="utf-8").splitlines()))
 
             checked = subprocess.run(
                 (str(SETUP), "--variant", "codex", "--tools-mode", "check"),
@@ -168,7 +193,7 @@ class CmaToolsIntegrationTests(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(0, checked.returncode, checked.stderr)
-            self.assertEqual(1, len(python_log.read_text(encoding="utf-8").splitlines()))
+            self.assertEqual(2, len(python_log.read_text(encoding="utf-8").splitlines()))
 
             installed = subprocess.run(
                 (str(SETUP), "--variant", "codex", "--tools-mode", "install"),
@@ -184,6 +209,47 @@ class CmaToolsIntegrationTests(unittest.TestCase):
             self.assertIn("--mcp-mode verify-only", installed_log.read_text(encoding="utf-8"))
             self.assertIn("tool install --force --python 3.11", uv_log.read_text(encoding="utf-8"))
             self.assertFalse(ambient_log.exists())
+
+    def test_setup_default_health_failure_is_reported_and_explicit_exit_is_preserved(self):
+        setup_input = "\nn\nn\n\n\n\n\nn\n\n"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            environment, _, python_log, _, installed_log, uv_log = self.fake_environment(root)
+            environment.update(PYTHON_TEST_EXIT="37", PYTHON_TEST_STDERR="probe failed\n")
+            config = root / "home/.codex/config.toml"
+            config.parent.mkdir(parents=True)
+            config.write_bytes(b'model = "preserved"\n')
+            for extra, expected in (((), 0), (("--tools-mode", "check"), 37)):
+                with self.subTest(extra=extra):
+                    result = subprocess.run(
+                        (str(SETUP), "--variant", "codex", *extra), cwd=REPO_ROOT, env=environment,
+                        input=setup_input, text=True, capture_output=True,
+                    )
+                    self.assertEqual(expected, result.returncode, result.stderr)
+                    self.assertIn("probe failed", result.stderr)
+                    self.assertIn("STATUS_MESSAGES.md", result.stdout)
+                    if not extra:
+                        self.assertIn("exit 37", result.stderr)
+                        self.assertIn("Kurulum tamamlandı.", result.stdout)
+            self.assertEqual(2, len(python_log.read_text(encoding="utf-8").splitlines()))
+            self.assertEqual(b'model = "preserved"\n', config.read_bytes())
+            self.assertFalse(installed_log.exists())
+            self.assertFalse(uv_log.exists())
+            self.assertFalse((root / "npx.log").exists())
+
+    def test_setup_default_check_skips_other_variants_and_custom_homes(self):
+        setup_input = "\nn\nn\n\n\n\n\nn\n\n"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            environment, _, python_log, _, _, _ = self.fake_environment(root)
+            for args in (("--variant", "claude"), ("--variant", "codex", "--runtime-home", str(root / "custom"))):
+                with self.subTest(args=args):
+                    result = subprocess.run(
+                        (str(SETUP), *args), cwd=REPO_ROOT, env=environment,
+                        input=setup_input, text=True, capture_output=True,
+                    )
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    self.assertFalse(python_log.exists())
 
     def test_setup_rejects_tools_for_non_codex_variant_before_writes(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -16,6 +16,11 @@
 
 ## 2026-11-18
 
+- [FEAT] EXP-20261118-002 added separate CLI, MCP, and project context results
+  to `cma-tools check`, including JSON output. Native Codex setup now runs the
+  read-only check by default and reports its result after setup actions.
+  Package installation and official Context7 setup require explicit selection.
+
 - [FIX] EXP-20261118-001 aligned the DeepWiki manifest with the live
   `ask_wiki_question` tool name and surfaced read-only MCP verification
   failures in `cma-tools check`. The Serena skill and its tracked projections

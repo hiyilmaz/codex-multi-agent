@@ -7,7 +7,7 @@ from typing import Iterable
 from .models import DiscoveryResult, RunSummary, Status
 
 
-def discovery_payload(result: DiscoveryResult, selected=None, actions=None):
+def discovery_payload(result: DiscoveryResult, selected=None, actions=None, *, show_checks=False):
     selected = set(result.tools) if selected is None else set(selected)
     return {
         "platform": {
@@ -18,7 +18,8 @@ def discovery_payload(result: DiscoveryResult, selected=None, actions=None):
         },
         "codex": {"installed": result.codex_installed, "config": result.config_path, "config_valid": result.config_valid},
         "tools": [
-            {"name": name, "status": health.status.value, "detail": health.detail, "selected": name in selected}
+            {"name": name, "status": health.status.value, "detail": health.detail, "selected": name in selected,
+             **({"checks": {stage: asdict(check) for stage, check in health.checks.items()}} if show_checks else {})}
             for name, health in result.tools.items()
         ],
         "selected_count": len(selected),
@@ -38,6 +39,9 @@ def render_summary(payload) -> str:
     for tool in payload["tools"]:
         mark = "x" if tool["selected"] else " "
         lines.append(f"[{mark}] {tool['name']:<14} {tool['status']}")
+        for stage, check in tool.get("checks", {}).items():
+            detail = f" — {check['detail']}" if check["detail"] else ""
+            lines.append(f"    {stage}: {check['status']}{detail}")
     lines.append(f"\n{payload['selected_count']} tools selected")
     if payload.get("planned_actions"):
         lines.append("\nPlanned actions:")

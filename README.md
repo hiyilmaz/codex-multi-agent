@@ -175,6 +175,7 @@ adapter always uses MCP verify-only mode:
 
 ```bash
 bin/cma-tools check
+bin/cma-tools check --json
 bin/cma-tools dry-run
 bin/cma-tools install
 ```
@@ -272,8 +273,10 @@ bin/codex-setup
 Without `--variant`, setup asks whether to install all catalog variants. Answer
 yes to install every active variant without further selection questions; answer
 no to choose each variant individually. `--variant <id>` keeps the explicit
-single-variant flow. Before reporting completion, setup offers to run the
-official interactive `npx ctx7 setup` command with a default answer of yes.
+single-variant flow. Setup offers the official interactive `npx ctx7 setup`
+command with a default answer of no. Native Codex setup ends with a read-only
+tool health report. Use `--tools-mode skip` to omit it or `--tools-mode install`
+to explicitly install development tools.
 Context7 owns authentication and the resulting Claude Code, OpenCode, and Codex
 MCP, rule, and skill changes under the process user's global `HOME`. A custom
 `--runtime-home` does not redirect those Context7 targets. CMA never passes an

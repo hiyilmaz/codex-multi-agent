@@ -33,11 +33,18 @@ class ToolDefinition:
 
 
 @dataclass(frozen=True)
+class CheckResult:
+    status: str
+    detail: str = ""
+
+
+@dataclass(frozen=True)
 class ToolHealth:
     name: str
     status: Status
     detail: str = ""
     version: str | None = None
+    checks: Mapping[str, CheckResult] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

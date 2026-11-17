@@ -8,7 +8,8 @@ Usage: codex-setup [--runtime-home <path>] [--variant <id>] [--tools-mode <mode>
        codex-setup --list-variants
 
 Runs an interactive setup for the selected runtime variant and optional project
-initialization.
+initialization. Native Codex setup runs a read-only tool check by default.
+Use --tools-mode skip to omit it or --tools-mode install to install tools.
 EOF
 }
 
@@ -18,6 +19,7 @@ VARIANTS_CONFIG="$TEMPLATE_DIR/variants/config.toml"
 RUNTIME_HOME=""
 VARIANT_ID=""
 TOOLS_MODE="skip"
+TOOLS_MODE_EXPLICIT="false"
 VARIANT_IDS=()
 
 require_node22_and_npx() {
@@ -58,7 +60,12 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --tools-mode)
-      TOOLS_MODE="$2"
+      TOOLS_MODE="${2:-}"
+      TOOLS_MODE_EXPLICIT="true"
+      if [[ -z "$TOOLS_MODE" ]]; then
+        echo "FAILED: --tools-mode requires skip, check, or install." >&2
+        exit 1
+      fi
       shift 2
       ;;
     --list-variants)
@@ -356,8 +363,11 @@ for variant in "${VARIANT_IDS[@]}"; do
   selected_home="$(expand_home_path "$selected_home")"
   if [[ "$variant" == "codex" ]]; then
     TOOLS_CODEX_HOME="$selected_home"
-    if [[ "$TOOLS_MODE" != "skip" && "$selected_home" != "$(expand_home_path "$DEFAULT_RUNTIME_HOME")" ]]; then
-      echo "FAILED: codex-tools integration requires the native Codex home: $(expand_home_path "$DEFAULT_RUNTIME_HOME")" >&2
+    native_home="$(expand_home_path "$DEFAULT_RUNTIME_HOME")"
+    if [[ "$TOOLS_MODE_EXPLICIT" == "false" && "$selected_home" == "$native_home" ]]; then
+      TOOLS_MODE="check"
+    elif [[ "$TOOLS_MODE" != "skip" && "$selected_home" != "$native_home" ]]; then
+      echo "FAILED: codex-tools integration requires the native Codex home: $native_home" >&2
       exit 1
     fi
   fi
@@ -410,20 +420,28 @@ if ask_yes_no "Bir proje içine CMA yapısı kurulsun mu?" "n"; then
   "$TEMPLATE_DIR/bin/codex-project-init" "${PROJECT_VARIANT_ARGS[@]}" "$PROJECT_PATH"
 fi
 
-if [[ "$TOOLS_MODE" != "skip" ]]; then
+if [[ "$TOOLS_MODE" == "install" ]]; then
   echo
   echo "Codex tools mode: $TOOLS_MODE"
-  if [[ "$TOOLS_MODE" == "install" ]]; then
-    CODEX_HOME="$TOOLS_CODEX_HOME" "$TEMPLATE_DIR/bin/cma-tools" install --yes
-  else
-    CODEX_HOME="$TOOLS_CODEX_HOME" "$TEMPLATE_DIR/bin/cma-tools" "$TOOLS_MODE"
-  fi
+  CODEX_HOME="$TOOLS_CODEX_HOME" "$TEMPLATE_DIR/bin/cma-tools" install --yes
 fi
 
 echo
-if ask_yes_no "Context7 resmi genel kurulumu çalıştırılsın mı?" "y"; then
+if ask_yes_no "Context7 resmi genel kurulumu çalıştırılsın mı?" "n"; then
   echo "Context7 setup başlatılıyor. Kimlik doğrulama ve agent seçimlerini Context7 yönetecek."
   npx ctx7 setup
+fi
+
+if [[ "$TOOLS_MODE" == "check" ]]; then
+  echo
+  echo "Codex tools mode: $TOOLS_MODE"
+  if CODEX_HOME="$TOOLS_CODEX_HOME" CODEX_CONFIG="$TOOLS_CODEX_HOME/config.toml" "$TEMPLATE_DIR/bin/cma-tools" check; then
+    :
+  else
+    tools_exit=$?
+    if [[ "$TOOLS_MODE_EXPLICIT" == "true" ]]; then exit "$tools_exit"; fi
+    echo "Tool health check did not pass (exit $tools_exit). Review the tool report above." >&2
+  fi
 fi
 
 echo

@@ -43,13 +43,13 @@ bin/codex-setup
 ```
 
 Mutating setup requires Node.js 22 or newer and `npx`; help and variant
-discovery bypass this preflight. Before completion, the wizard offers the
-default-yes official `npx ctx7 setup` flow. Context7 owns authentication and
+discovery bypass this preflight. The wizard offers the opt-in official
+`npx ctx7 setup` flow. Context7 owns authentication and
 updates the detected Claude Code, OpenCode, and Codex global MCP, rule, and
 skill locations under the process `HOME`. `--runtime-home` does not redirect
 those Context7 targets. CMA does not put an API key in command arguments, and a
 failed Context7 process keeps its exit status and suppresses completion.
-Because Context7 runs last, that failure does not roll back earlier CMA writes.
+Context7 runs after the CMA writes and before the final health report.
 
 Without `--variant`, this asks whether to install all active catalog variants.
 Yes installs all without individual prompts; no asks once per variant. A custom
@@ -77,15 +77,18 @@ protected core tools additively, makes Context7 required/lazy, keeps cplt
 explicit-only, and leaves xcodebuildmcp disabled. Custom runtime homes and
 other variants remain isolated; restart Codex after installation.
 
-Optionally check or install development tools during native Codex setup:
+Choose a tool mode during native Codex setup:
 
 ```bash
 bin/codex-setup --variant codex --tools-mode check
 bin/codex-setup --variant codex --tools-mode install
 ```
 
-The default is `--tools-mode skip`. Tool mode is rejected for custom runtime
-homes and non-Codex variants.
+Setup checks tools by default when it targets the native Codex home. Use
+`--tools-mode skip` to omit the check. Automatic check failures appear in the
+output and preserve the setup result. An explicit `--tools-mode check`
+returns the health check exit status. Explicit check and install modes require
+the native Codex home.
 
 ## Independent Development Tools
 

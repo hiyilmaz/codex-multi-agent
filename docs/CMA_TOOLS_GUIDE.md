@@ -14,6 +14,7 @@ Run commands from the repository root:
 
 ```bash
 bin/cma-tools check
+bin/cma-tools check --json
 bin/cma-tools dry-run
 bin/cma-tools install --yes
 ```
@@ -31,6 +32,15 @@ bin/cma-tools check --codex-home /path/to/.codex
 Runs the bundled Python package directly from
 `tools/codex-tool-installer/src`. It performs a read-only health check and
 does not use an ambient `codex-tools` executable from `PATH`.
+
+Text and JSON reports show CLI version checks, Codex MCP registration, the
+provider connection and tool list, tool name validation, and read-only calls.
+Endpoint probes run only when the active Codex registration matches the
+manifest's provider URL. The Serena entry shows CLI
+and configuration results while leaving the local server and project context
+`NOT_CHECKED`. A missing or invalid registration affects Serena's overall
+status even when its CLI passes. Verify the active project in the session that
+needs Serena.
 
 ### `dry-run`
 
@@ -50,15 +60,18 @@ bin directory. It does not substitute another executable found in `PATH`.
 
 ## Setup Integration
 
-The Codex setup flow is opt-in:
+The native Codex setup flow ends with the read-only health report:
 
 ```bash
 bin/codex-setup --variant codex --tools-mode check
 bin/codex-setup --variant codex --tools-mode install
+bin/codex-setup --variant codex --tools-mode skip
 ```
 
-The default is `--tools-mode skip`. Tool modes are rejected for non-Codex
-variants.
+Automatic check failures are visible and preserve the setup result. An explicit
+`--tools-mode check` returns the check's exit code. Automatic checks apply only
+to the native Codex home. Package install and official Context7 setup require
+explicit selection.
 
 ## Standalone Package Use
 

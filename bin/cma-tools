@@ -3,7 +3,8 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: cma-tools <check|dry-run|install> [--yes] [--codex-home <path>]
+Usage: cma-tools check [--json] [--codex-home <path>]
+       cma-tools <dry-run|install> [--yes] [--codex-home <path>]
 
 Runs codex-tools with CMA-owned MCP configuration in verify-only mode. The
 install action first installs the bundled independent package with uv.
@@ -16,6 +17,7 @@ PACKAGE_ROOT="$REPO_ROOT/tools/codex-tool-installer"
 MODE="${1:-}"
 ASSUME_YES="false"
 CODEX_HOME_ARG=()
+OUTPUT_FORMAT_ARG=()
 
 if [[ -z "$MODE" ]]; then usage >&2; exit 2; fi
 shift
@@ -28,6 +30,11 @@ esac
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --yes) ASSUME_YES="true"; shift ;;
+    --json)
+      if [[ "$MODE" != "check" ]]; then echo "FAILED: --json requires check" >&2; exit 2; fi
+      OUTPUT_FORMAT_ARG=(--json)
+      shift
+      ;;
     --codex-home)
       if [[ $# -lt 2 || -z "$2" ]]; then echo "FAILED: --codex-home requires a path" >&2; exit 2; fi
       CODEX_HOME_ARG=(--codex-home "$2")
@@ -86,7 +93,7 @@ if [[ "$MODE" != "install" ]]; then
 fi
 
 case "$MODE" in
-  check) exec "$PYTHON_COMMAND" -I -S -c "$PYTHON_BOOTSTRAP" "$PACKAGE_SOURCE" --mcp-mode verify-only "${CODEX_HOME_ARG[@]}" check ;;
-  dry-run) exec "$PYTHON_COMMAND" -I -S -c "$PYTHON_BOOTSTRAP" "$PACKAGE_SOURCE" --mcp-mode verify-only "${CODEX_HOME_ARG[@]}" --dry-run ;;
+  check) exec "$PYTHON_COMMAND" -B -I -S -c "$PYTHON_BOOTSTRAP" "$PACKAGE_SOURCE" --mcp-mode verify-only "${CODEX_HOME_ARG[@]}" check "${OUTPUT_FORMAT_ARG[@]}" ;;
+  dry-run) exec "$PYTHON_COMMAND" -B -I -S -c "$PYTHON_BOOTSTRAP" "$PACKAGE_SOURCE" --mcp-mode verify-only "${CODEX_HOME_ARG[@]}" --dry-run ;;
   install) exec "$TOOL_COMMAND" --mcp-mode verify-only "${CODEX_HOME_ARG[@]}" --non-interactive install ;;
 esac

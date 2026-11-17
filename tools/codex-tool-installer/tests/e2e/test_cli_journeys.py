@@ -18,7 +18,16 @@ class MissingRunner:
 class ConfiguredRunner:
     def run(self, command, **kwargs):
         if tuple(command[:3]) == ("codex", "mcp", "get"):
-            return CommandResult(0, '{"name":"' + command[3] + '"}')
+            name = command[3]
+            urls = {
+                "deepwiki": "https://mcp.deepwiki.com/mcp",
+                "github": "https://api.githubcopilot.com/mcp/",
+                "context7": "https://mcp.context7.com/mcp",
+            }
+            registration = {"name": name, "enabled": True}
+            if name in urls:
+                registration["transport"] = {"type": "streamable_http", "url": urls[name]}
+            return CommandResult(0, json.dumps(registration))
         if tuple(command[:3]) == ("codex", "mcp", "list"):
             return CommandResult(0, "", "")
         return CommandResult(1, "", "missing")
@@ -88,6 +97,118 @@ class ConfigEditingPrompt(Prompt):
 
 
 class CliJourneyTests(unittest.TestCase):
+    def test_check_rejects_an_effective_mcp_endpoint_mismatch_without_a_network_call(self):
+        class WrongEndpointRunner(ConfiguredRunner):
+            def run(self, command, **kwargs):
+                if tuple(command[:4]) == ("codex", "mcp", "get", "deepwiki"):
+                    return CommandResult(0, json.dumps({
+                        "name": "deepwiki", "enabled": True,
+                        "transport": {"type": "streamable_http", "url": "https://other.invalid/private-sentinel"},
+                    }))
+                return super().run(command, **kwargs)
+
+        class ForbiddenTransport:
+            called = False
+
+            def request(self, *args):
+                self.called = True
+                raise AssertionError("network probe must be skipped")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / "config.toml"
+            original = b'[mcp_servers.deepwiki]\nurl = "https://mcp.deepwiki.com/mcp"\n'
+            config.write_bytes(original)
+            output = io.StringIO()
+            transport = ForbiddenTransport()
+            with redirect_stdout(output):
+                main(
+                    ["check", "--json", "--codex-home", str(root)],
+                    environ={"HOME": str(root), "PATH": str(root)},
+                    runner=WrongEndpointRunner(), mcp_transport=transport,
+                )
+            self.assertFalse(transport.called)
+            self.assertEqual(original, config.read_bytes())
+            report = output.getvalue()
+            deepwiki = next(tool for tool in json.loads(report)["tools"] if tool["name"] == "deepwiki")
+            self.assertEqual("INVALID_CONFIG", deepwiki["checks"]["mcp_config"]["status"])
+            self.assertIn("endpoint does not match", deepwiki["checks"]["mcp_config"]["detail"])
+            self.assertEqual("NOT_CHECKED", deepwiki["checks"]["mcp_connection"]["status"])
+            self.assertNotIn("private-sentinel", report)
+
+    def test_check_reports_independent_cli_mcp_and_project_checks(self):
+        class LoggingRunner(ConfiguredRunner):
+            def __init__(self):
+                self.commands = []
+
+            def run(self, command, **kwargs):
+                self.commands.append(tuple(command))
+                if Path(command[0]).name == "serena":
+                    return CommandResult(0, "Serena 1.7.0\n")
+                return super().run(command, **kwargs)
+
+        class LoggingTransport(HealthyDeepwikiTransport):
+            def __init__(self):
+                self.methods = []
+
+            def request(self, name, method, params, environ):
+                self.methods.append((name, method))
+                return super().request(name, method, params, environ)
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / "config.toml"
+            original = b'[mcp_servers.deepwiki]\nurl = "https://mcp.deepwiki.com/mcp"\n[mcp_servers.serena]\ncommand = "serena"\n'
+            config.write_bytes(original)
+            serena = root / "serena"
+            serena.write_text("", encoding="utf-8")
+            serena.chmod(0o755)
+            runner, transport = LoggingRunner(), LoggingTransport()
+            output = io.StringIO()
+            with redirect_stdout(output):
+                main(
+                    ["check", "--json", "--codex-home", str(root)],
+                    environ={"HOME": str(root), "PATH": str(root)},
+                    platform_facts={"system": "Darwin", "machine": "arm64"},
+                    runner=runner, mcp_transport=transport,
+                    connectivity_probe=lambda: self.fail("check must use the configured probes"),
+                )
+            payload = json.loads(output.getvalue())
+            tools = {tool["name"]: tool for tool in payload["tools"]}
+            self.assertEqual("HEALTHY", tools["serena"]["status"])
+            self.assertEqual({"status": "HEALTHY", "detail": "Serena 1.7.0"}, tools["serena"]["checks"]["cli_version"])
+            self.assertEqual("HEALTHY", tools["serena"]["checks"]["mcp_config"]["status"])
+            self.assertEqual("NOT_CHECKED", tools["serena"]["checks"]["project_context"]["status"])
+            self.assertEqual("NOT_CHECKED", tools["serena"]["checks"]["mcp_call"]["status"])
+            for stage in ("mcp_config", "mcp_connection", "mcp_tool_names", "mcp_call"):
+                self.assertEqual("HEALTHY", tools["deepwiki"]["checks"][stage]["status"])
+            self.assertEqual([("deepwiki", "tools/list"), ("deepwiki", "tools/call")], transport.methods)
+            self.assertEqual([(str(serena), "--version")], [call for call in runner.commands if call[0] == str(serena)])
+            self.assertEqual(original, config.read_bytes())
+            self.assertTrue(payload["summary"]["config_preserved"])
+            self.assertFalse((root / ".serena").exists())
+
+            for registration, expected in ((b"", "MISSING"), (original, "INVALID_CONFIG")):
+                with self.subTest(registration=expected):
+                    class DisabledSerenaRunner(LoggingRunner):
+                        def run(self, command, **kwargs):
+                            if tuple(command[:4]) == ("codex", "mcp", "get", "serena"):
+                                return CommandResult(0, '{"name":"serena","enabled":false}')
+                            return super().run(command, **kwargs)
+
+                    config.write_bytes(registration)
+                    output = io.StringIO()
+                    with redirect_stdout(output):
+                        main(
+                            ["check", "--json", "--codex-home", str(root)],
+                            environ={"HOME": str(root), "PATH": str(root)},
+                            runner=DisabledSerenaRunner(), mcp_transport=transport,
+                        )
+                    tools = {tool["name"]: tool for tool in json.loads(output.getvalue())["tools"]}
+                    self.assertEqual(expected, tools["serena"]["status"])
+                    self.assertEqual(expected, tools["serena"]["checks"]["mcp_config"]["status"])
+                    self.assertEqual("HEALTHY", tools["serena"]["checks"]["cli_version"]["status"])
+
     def test_verify_only_check_reports_deepwiki_failure_without_mutating_config(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -106,7 +227,7 @@ class CliJourneyTests(unittest.TestCase):
                 )
             self.assertEqual(1, code)
             self.assertEqual(original, config.read_bytes())
-            self.assertIn("DeepWiki: Upstream MCP tool names changed; missing=ask_wiki_question", output.getvalue())
+            self.assertIn("mcp_tool_names: BROKEN — Upstream MCP tool names changed; missing=ask_wiki_question", output.getvalue())
             self.assertIn("actual=[]", output.getvalue())
 
     def test_default_manage_changes_config_and_reports_not_preserved_then_is_idempotent(self):

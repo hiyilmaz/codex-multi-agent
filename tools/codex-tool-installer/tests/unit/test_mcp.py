@@ -33,6 +33,9 @@ class McpTests(unittest.TestCase):
         self.assertIn("missing=ask_wiki_question", state.detail)
         self.assertIn('expected=["ask_wiki_question", "read_wiki_contents", "read_wiki_structure"]', state.detail)
         self.assertIn('actual=["ask_question", "read_wiki_contents", "read_wiki_structure"]', state.detail)
+        self.assertEqual("HEALTHY", state.checks["mcp_connection"].status)
+        self.assertEqual("BROKEN", state.checks["mcp_tool_names"].status)
+        self.assertEqual("NOT_CHECKED", state.checks["mcp_call"].status)
         self.assertEqual([], client.calls)
 
     def test_deepwiki_connection_failure_identifies_the_list_stage(self):
@@ -45,6 +48,9 @@ class McpTests(unittest.TestCase):
         self.assertEqual(Status.BROKEN, state.status)
         self.assertIn("connection or tools/list failed: TimeoutError", state.detail)
         self.assertNotIn("private transport detail", state.detail)
+        self.assertEqual("HEALTHY", state.checks["mcp_config"].status)
+        self.assertEqual("BROKEN", state.checks["mcp_connection"].status)
+        self.assertEqual("NOT_CHECKED", state.checks["mcp_tool_names"].status)
         self.assertEqual([], client.calls)
 
     def test_deepwiki_requires_a_successful_read_only_call(self):
@@ -53,6 +59,7 @@ class McpTests(unittest.TestCase):
                 client = Client(tools=self.deepwiki_tools, succeeds=succeeds)
                 state = verify_mcp(TOOL_MANIFEST["deepwiki"], client)
                 self.assertEqual(status, state.status)
+                self.assertEqual(status.value, state.checks["mcp_call"].status)
                 self.assertEqual([("deepwiki", "read_wiki_structure", {"repoName": "openai/codex"})], client.calls)
                 if not succeeds:
                     self.assertIn("Read-only MCP validation failed: read_wiki_structure", state.detail)

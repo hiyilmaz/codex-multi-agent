@@ -2,6 +2,39 @@
 
 [Terminal experiment archive](EXPERIMENTS_ARCHIVE.md)
 
+## EXP-20261118-002 - Read-Only Setup Health Reporting
+
+Date: 2026-11-18
+Status: ACCEPTED
+
+Problem: The health report hides the evidence behind each tool status, and
+native Codex setup skips the health check by default.
+
+Hypothesis: Reporting CLI, MCP registration, connection, tool contract, call,
+and project context independently will make the default setup check actionable.
+
+Solution Attempt: Verify the staged health report first. Then run it at the
+end of eligible setup sessions and make Context7 setup opt-in.
+
+Test: Verify staged outcomes against actual probe calls, compare MCP config
+bytes, and exercise the default and explicit setup modes with isolated homes.
+
+Success Criteria: The report represents skipped and failed stages accurately.
+Automatic setup checks preserve config and never install tools or activate Serena.
+
+Result: RED tests reproduced the missing health stages and the old setup
+defaults. The initial setup test fetched Context7 under an isolated test home.
+Subsequent tests used a logged `npx` stand-in. All 80 installer tests passed,
+including endpoint mismatch and disabled Serena registration cases. The
+repository suite passed 439 tests and skipped one that requires root. Live JSON
+reported healthy read-only calls for DeepWiki, GitHub, and Context7. Serena
+reported a healthy CLI and `NOT_CHECKED` project context. `config.toml` matched
+its pre-check checksum. An isolated setup completed with exit 0 while reporting
+the automatic check's exit 1. It preserved configuration bytes and created no
+Context7 package cache. Code and security reviews closed without blockers.
+
+Decision: ACCEPT
+
 ## EXP-20261118-001 - MCP Tool Verification and Serena Project Context
 
 Date: 2026-11-18

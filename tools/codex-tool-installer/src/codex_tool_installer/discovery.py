@@ -8,7 +8,7 @@ from typing import Mapping
 from .config import ConfigError, parse_toml
 from .credentials import credential_value_is_usable
 from .manifest import TOOL_MANIFEST
-from .models import DiscoveryResult, Status, ToolHealth
+from .models import CheckResult, DiscoveryResult, Status, ToolHealth
 from .platforms import detect_platform
 from .process import ProcessRunner
 
@@ -43,29 +43,41 @@ def managed_bin_environment(
     return effective
 
 
+def codex_config_path(environ: Mapping[str, str]) -> Path:
+    home = Path(environ.get("HOME", str(Path.home())))
+    codex_home = Path(environ.get("CODEX_HOME", str(home / ".codex")))
+    return Path(environ.get("CODEX_CONFIG", str(codex_home / "config.toml")))
+
+
 def discover(
     environ: Mapping[str, str] | None = None,
     runner: ProcessRunner | None = None,
     platform_facts: Mapping[str, str] | None = None,
     manifest=TOOL_MANIFEST,
+    *,
+    health_check: bool = False,
 ) -> DiscoveryResult:
     """Perform discovery without writes, prompts, installs, or store mutation."""
     environ = dict(os.environ if environ is None else environ)
     runner = runner or ProcessRunner()
     platform_info = detect_platform(environ, platform_facts)
-    home = Path(environ.get("HOME", str(Path.home())))
-    codex_home = Path(environ.get("CODEX_HOME", str(home / ".codex")))
-    config_path = Path(environ.get("CODEX_CONFIG", str(codex_home / "config.toml")))
+    config_path = codex_config_path(environ)
     config_valid = True
     parsed = {}
     issues = []
     if config_path.exists():
         try:
+            if not config_path.is_file():
+                raise OSError("Codex config is not a regular file")
             parsed = parse_toml(config_path.read_text(encoding="utf-8"))
-        except (OSError, ConfigError) as exc:
+        except (OSError, UnicodeError, ConfigError) as exc:
             config_valid = False
             issues.append(str(exc))
     mcp_config = parsed.get("mcp_servers", {}) if isinstance(parsed, dict) else {}
+    if not isinstance(mcp_config, dict):
+        mcp_config = {}
+        config_valid = False
+        issues.append("Codex MCP configuration must be a table")
     tools = {}
     credentials = {}
     for name, definition in manifest.items():
@@ -74,24 +86,38 @@ def discover(
                 environ.get(definition.credential_env)
             )
         if definition.kind in {"cli", "cli_mcp"}:
+            checks = {}
+            if health_check and definition.kind == "cli_mcp":
+                if not config_valid:
+                    checks["mcp_config"] = CheckResult(Status.INVALID_CONFIG.value, "Codex config is invalid")
+                elif name not in mcp_config:
+                    checks["mcp_config"] = CheckResult(Status.MISSING.value, "MCP config missing")
+                else:
+                    checks["mcp_config"] = CheckResult("NOT_CHECKED")
             executable = shutil.which(definition.executable, path=environ.get("PATH")) if definition.executable else None
             if not executable:
-                tools[name] = ToolHealth(name, Status.MISSING, "Executable not found")
+                tools[name] = ToolHealth(name, Status.MISSING, "Executable not found", checks=checks)
                 continue
             command = list(definition.verify[0])
             command[0] = executable
-            result = runner.run(command)
-            tools[name] = ToolHealth(name, Status.HEALTHY if result.returncode == 0 else Status.BROKEN, result.stderr.strip(), result.stdout.strip().splitlines()[0] if result.stdout.strip() else None)
+            result = runner.run(command, env=environ)
+            detail = result.stderr.strip()
+            if health_check:
+                detail = f"Version command exited {result.returncode}" if result.returncode else ""
+            tools[name] = ToolHealth(name, Status.HEALTHY if result.returncode == 0 else Status.BROKEN, detail, result.stdout.strip().splitlines()[0] if result.stdout.strip() else None, checks)
         else:
             configured = name in mcp_config
             if not config_valid:
                 tools[name] = ToolHealth(name, Status.INVALID_CONFIG, "Codex config is invalid")
             elif definition.credential_env and not credentials.get(definition.credential_env):
-                tools[name] = ToolHealth(name, Status.AUTH_REQUIRED, f"{definition.credential_env} unavailable")
+                checks = {"mcp_config": CheckResult(Status.MISSING.value, "MCP config missing")} if health_check and not configured else {}
+                tools[name] = ToolHealth(name, Status.AUTH_REQUIRED, f"{definition.credential_env} unavailable", checks=checks)
             elif not configured:
                 tools[name] = ToolHealth(name, Status.MISSING, "MCP config missing")
+            elif health_check:
+                tools[name] = ToolHealth(name, Status.HEALTHY)
             else:
-                result = runner.run(("codex", "mcp", "get", name))
+                result = runner.run(("codex", "mcp", "get", name), env=environ)
                 tools[name] = ToolHealth(name, Status.HEALTHY if result.returncode == 0 else Status.BROKEN, result.stderr.strip())
     capabilities = {
         key: shutil.which(key, path=environ.get("PATH")) is not None
