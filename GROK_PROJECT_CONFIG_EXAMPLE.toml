@@ -1,0 +1,4 @@
+# Grok project configuration accepts MCP servers, plugins, and permission rules.
+# Global models and UI settings belong in $GROK_HOME/config.toml.
+# No servers are enabled or credentials stored by this template.
+[mcp_servers]

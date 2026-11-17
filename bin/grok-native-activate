@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+"""Add approved CMA assets to native Grok without replacing user state."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import runpy
+import secrets
+import stat
+import subprocess
+import sys
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+HELPER = runpy.run_path(str(ROOT / "bin/cma-instruction-merge-prompt"),
+                        run_name="cma_instruction_io")
+normalize_path = HELPER["normalize_path"]
+open_directory = HELPER["open_directory"]
+read_regular = HELPER["read_regular"]
+existing_content = HELPER["existing_content"]
+ROLES = {"planner", "tdd-guide", "code-reviewer", "security-reviewer",
+         "explorer", "reviewer", "docs-researcher", "skill-agent-governor"}
+WORKFLOWS = {"tdd-workflow", "orchestration-gate", "hypothesis-workflow", "record-archive"}
+
+
+def validate_path(path: Path, directory: bool = False) -> None:
+    """Check all existing ancestors without creating anything."""
+    path = normalize_path(path)
+    for ancestor in reversed(path.parents):
+        if ancestor.is_symlink():
+            raise ValueError(f"refusing symbolic link ancestor: {ancestor}")
+        if ancestor.exists() and not ancestor.is_dir():
+            raise ValueError(f"non-directory ancestor: {ancestor}")
+    if path.is_symlink():
+        raise ValueError(f"refusing symbolic link target: {path}")
+    if path.exists():
+        mode = path.stat().st_mode
+        if not (stat.S_ISDIR(mode) if directory else stat.S_ISREG(mode)):
+            raise ValueError(f"non-regular target or invalid directory: {path}")
+
+
+def publish_file(path: Path, content: bytes, mode: int = 0o600):
+    """Publish without replacement and return the created file identity."""
+    parent_fd, _ = open_directory(path.parent, create=True)
+    temporary = f".{path.name}.{secrets.token_hex(12)}"
+    staged = False
+    linked = False
+    try:
+        current = existing_content(parent_fd, path.name)
+        if current is not None:
+            if current != content:
+                raise ValueError(f"conflicting publication target: {path}")
+            return None
+        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                             mode, dir_fd=parent_fd)
+        staged = True
+        try:
+            os.fchmod(descriptor, mode)
+            view = memoryview(content)
+            while view:
+                written = os.write(descriptor, view)
+                if written <= 0:
+                    raise OSError("short write while publishing Grok asset")
+                view = view[written:]
+            os.fsync(descriptor)
+            identity = os.fstat(descriptor)
+        finally:
+            os.close(descriptor)
+        try:
+            os.link(temporary, path.name, src_dir_fd=parent_fd, dst_dir_fd=parent_fd,
+                    follow_symlinks=False)
+            linked = True
+        except FileExistsError:
+            current = existing_content(parent_fd, path.name)
+            if current != content:
+                raise ValueError(f"conflicting concurrently created target: {path}")
+            os.unlink(temporary, dir_fd=parent_fd)
+            staged = False
+            return None
+        os.unlink(temporary, dir_fd=parent_fd)
+        staged = False
+        os.fsync(parent_fd)
+        return identity.st_dev, identity.st_ino
+    except BaseException as error:
+        if staged:
+            error.staging_path = str(path.parent / temporary)
+        if linked:
+            current = os.stat(path.name, dir_fd=parent_fd, follow_symlinks=False)
+            if ((current.st_dev, current.st_ino) == (identity.st_dev, identity.st_ino)
+                    and existing_content(parent_fd, path.name) == content):
+                os.unlink(path.name, dir_fd=parent_fd)
+        raise
+    finally:
+        if staged:
+            try:
+                os.unlink(temporary, dir_fd=parent_fd)
+            except OSError:
+                print(f"FAILED: private staging file retained for recovery: {path.parent / temporary}",
+                      file=sys.stderr)
+        os.close(parent_fd)
+
+
+def projected_files(runtime: Path, source_root: Path) -> dict[Path, bytes]:
+    source = source_root / "variants/grok/home"
+    validate_path(source, directory=True)
+    required = {source / p for p in ("AGENTS.md", "config.toml", "README.md",
+                                    "registry/ORCHESTRATION.md", "registry/AGENTS_INDEX.md",
+                                    "registry/SKILLS_INDEX.md", "registry/AUDIT_LOG.md")}
+    required.update(source / f"agents/{role}.md" for role in ROLES)
+    required.update(source / f"skills/{skill}/SKILL.md" for skill in WORKFLOWS)
+    required.update(source / f"registry/modules/CMA_{name}.md" for name in
+                    ("ORCHESTRATION", "TDD", "SECURITY", "RECORDS", "MEMORY_ROUTING",
+                     "REPO_TOOLS", "DOCS_RESEARCH", "FRONTEND", "REMOTE_ADMIN"))
+    for path in required:
+        validate_path(path)
+        if not path.is_file():
+            raise ValueError(f"incomplete Grok source: {path}")
+    files = {}
+    for path in sorted(source.rglob("*")):
+        if path.is_symlink():
+            raise ValueError(f"refusing symbolic link source: {path}")
+        if path.is_dir():
+            continue
+        validate_path(path)
+        _, content = read_regular(path, "Grok source")
+        relative = path.relative_to(source)
+        files[runtime / relative] = content.replace(b"~/.grok", str(runtime).encode())
+    _, launcher = read_regular(source_root / "variants/grok/bin/grok", "Grok launcher")
+    files[runtime / "bin/llm-grok"] = launcher
+    files[runtime / "registry/CMA_GLOBAL.md"] = files[runtime / "AGENTS.md"]
+    return files
+
+
+def rollback(created: list[tuple[Path, bytes, tuple[int, int]]]) -> list[str]:
+    """Remove only unchanged files still owned by this attempt."""
+    retained = []
+    for path, content, identity in reversed(created):
+        parent_fd = -1
+        try:
+            parent_fd, _ = open_directory(path.parent, create=False)
+            current = os.stat(path.name, dir_fd=parent_fd, follow_symlinks=False)
+            if (current.st_dev, current.st_ino) != identity:
+                retained.append(str(path))
+                continue
+            _, current_bytes = read_regular(path, "rollback target")
+            if current_bytes != content:
+                retained.append(str(path))
+                continue
+            os.unlink(path.name, dir_fd=parent_fd)
+            os.fsync(parent_fd)
+        except FileNotFoundError:
+            pass
+        except (OSError, ValueError):
+            retained.append(str(path))
+        finally:
+            if parent_fd >= 0:
+                os.close(parent_fd)
+    return retained
+
+
+def activate(runtime: Path, source_root: Path) -> dict:
+    runtime = normalize_path(runtime)
+    source_root = normalize_path(source_root)
+    validate_path(runtime, directory=True)
+    for name in ("agents", "skills", "registry", "prompts", "backups", "bin"):
+        validate_path(runtime / name, directory=True)
+    files = projected_files(runtime, source_root)
+    policy = runtime / "AGENTS.md"
+    validate_path(policy)
+    existing_policy = policy.exists()
+    needs_merge = existing_policy and read_regular(policy, "Grok instructions")[1] != files[policy]
+    preserved = []
+    pending = {}
+    for path, content in files.items():
+        validate_path(path)
+        if path.exists():
+            if path in (policy, runtime / "config.toml", runtime / "README.md"):
+                preserved.append(str(path.relative_to(runtime)))
+                continue
+            _, current = read_regular(path, "managed Grok asset")
+            if current != content:
+                raise ValueError(f"conflicting managed Grok asset: {path}")
+            continue
+        pending[path] = content
+    helper = source_root / "bin/cma-instruction-merge-prompt"
+    validate_path(helper)
+    if not helper.is_file():
+        raise ValueError("missing instruction merge helper")
+    validate_path(runtime / "backups/instruction-merge", directory=True)
+    validate_path(runtime / "prompts/merge-existing-instructions.md")
+    # Preflight finishes before any native state is created.
+    journal = None
+    created = []
+    if pending:
+        journal = runtime / "backups" / f"cma-activation-{secrets.token_hex(12)}"
+        directory_fd, _ = open_directory(journal, create=True, private=True)
+        os.close(directory_fd)
+        manifest = {"schema_version": 1, "runtime": str(runtime),
+                    "preserved": preserved,
+                    "created_files": {str(p.relative_to(runtime)): hashlib.sha256(b).hexdigest()
+                                      for p, b in pending.items()}}
+        publish_file(journal / "manifest.json", json.dumps(manifest, indent=2).encode() + b"\n")
+    try:
+        for path, content in pending.items():
+            mode = 0o700 if path == runtime / "bin/llm-grok" else 0o600
+            identity = publish_file(path, content, mode)
+            if identity is not None:
+                created.append((path, content, identity))
+        if needs_merge:
+            result = subprocess.run(
+                [sys.executable, str(helper), "--source", str(policy),
+                 "--candidate", str(runtime / "registry/CMA_GLOBAL.md"),
+                 "--snapshot-root", str(runtime / "backups/instruction-merge"),
+                 "--prompt", str(runtime / "prompts/merge-existing-instructions.md"),
+                 "--scope", "user-global", "--variant", "grok"],
+                capture_output=True, text=True, timeout=30,
+            )
+            if result.returncode:
+                raise ValueError("instruction merge preparation failed; existing policy preserved")
+        if journal:
+            publish_file(journal / "completed.json", b'{"status":"passed","success":true}\n')
+    except BaseException as error:
+        retained = rollback(created)
+        if journal:
+            # Preserve recovery evidence even when the storage failure prevents writing it.
+            try:
+                failure = {"status": "failed", "success": False,
+                           "retained_concurrent_edits": retained,
+                           "staging_file": getattr(error, "staging_path", None)}
+                publish_file(journal / "failed.json", json.dumps(failure).encode() + b"\n")
+            except (OSError, ValueError):
+                print(f"FAILED: recovery journal could not be completed: {journal}", file=sys.stderr)
+        raise
+    return {"status": "passed", "success": True, "created": len(created),
+            "preserved": preserved, "backup": str(journal) if journal else None}
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--runtime-home")
+    parser.add_argument("--user-home", default=str(Path.home()))
+    parser.add_argument("--source-root", default=str(ROOT))
+    args = parser.parse_args()
+    try:
+        user_home = normalize_path(Path(args.user_home))
+        validate_path(user_home, directory=True)
+        native = user_home / ".grok"
+        runtime = normalize_path(Path(args.runtime_home)) if args.runtime_home else native
+        validate_path(runtime, directory=True)
+        if runtime != native:
+            raise ValueError(f"native Grok activation target must be {native}")
+        result = activate(runtime, Path(args.source_root))
+        print(json.dumps(result))
+        return 0
+    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+        print(f"FAILED: {error}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

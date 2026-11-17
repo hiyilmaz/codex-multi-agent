@@ -1,0 +1,2 @@
+# Grok user configuration. Native activation preserves existing settings.
+# Inherit model and permission defaults; no credentials or provider pins.
